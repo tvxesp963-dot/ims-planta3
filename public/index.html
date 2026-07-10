@@ -93,6 +93,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pd{background:rgba(0,230,118,.1);color:var(--green)}
 .pp{background:rgba(255,179,0,.1);color:var(--amber)}
 .pl{background:rgba(77,166,255,.1);color:var(--accent)}
+.ir-loc{text-align:center;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;color:var(--green)}
+.ir-loc.na{color:var(--text3)}
+.ir-c-loc{flex:0 0 70px;text-align:center;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;color:var(--green)}
+.ir-c-loc.na{color:var(--text3)}
+.ir-loc-mobile{display:none}
+.ir-loc-b{font-size:8px;color:var(--text2);background:rgba(255,255,255,.05);padding:2px 6px;border-radius:5px;font-weight:600}
+.ir-loc-b b{color:var(--green);font-weight:700}
+.ir-loc-b.na b{color:var(--text3)}
 .tcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.85rem;margin-bottom:.5rem}
 .tflow{display:flex;align-items:center;margin-top:.6rem;overflow-x:auto}
 .ts{display:flex;flex-direction:column;align-items:center;min-width:52px}
@@ -281,6 +289,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <button onclick="exportExcel()" style="background:var(--green2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">↓ Excel</button>
     </div>
+    <div class="ir-head" style="display:grid;grid-template-columns:1fr 80px 70px 70px 70px 80px;padding:6px 12px;font-size:10px;color:var(--text2);font-weight:600;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)">
+      <div>Part Number</div>
+      <div style="text-align:center">Familia</div>
+      <div style="text-align:center">Loc1</div>
+      <div style="text-align:center">Loc2</div>
+      <div style="text-align:center">Loc3</div>
+      <div style="text-align:right">Stock</div>
+    </div>
     <div id="invList"></div>
   </div>
 
@@ -408,6 +424,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="ac" onclick="resetStock()"><div class="ac-i">🔄</div><div class="ac-l">Reset stock</div><div class="ac-s">Volver a inicial</div></div>
       <div class="ac" onclick="abrirCargaExcel()" style="border-color:rgba(0,230,118,.3)"><div class="ac-i">📥</div><div class="ac-l">Cargar Excel</div><div class="ac-s">Reemplazar inventario</div></div>
       <div class="ac" onclick="abrirImportPrecios()" style="border-color:rgba(255,179,0,.4)"><div class="ac-i">💲</div><div class="ac-l">Importar Precios</div><div class="ac-s">Desde Excel PN+Price</div></div>
+      <div class="ac" onclick="abrirImportLoc()" style="border-color:rgba(0,230,118,.4)"><div class="ac-i">📍</div><div class="ac-l">Importar Locaciones</div><div class="ac-s">Desde Excel PN+Loc1+Loc2+Loc3</div></div>
     </div>
     <div class="sh">Usuarios IMS</div>
     <div class="card" style="padding:.9rem">
@@ -1319,6 +1336,9 @@ function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)
 
 // ── INVENTARIO ──
 function setFam(f,el) { invFam=f; document.querySelectorAll('#pgInv .ft').forEach(t=>t.classList.remove('on')); el.classList.add('on'); renderInv(); }
+function locCell(v){ v=(v===undefined||v===null||v==='')?null:v; return '<div class="ir-c-loc'+(v===null?' na':'')+'"> '+(v===null?'—':(parseFloat(v)||0).toLocaleString())+'</div>'; }
+function locBadge(label,v){ v=(v===undefined||v===null||v==='')?null:v; return '<span class="ir-loc-b'+(v===null?' na':'')+'" >'+label+' <b>'+(v===null?'—':(parseFloat(v)||0).toLocaleString())+'</b></span>'; }
+
 function renderInv() {
   const q = document.getElementById('invS').value.toLowerCase();
   let f = items.filter(i=>{
@@ -1333,7 +1353,22 @@ function renderInv() {
   if (!f.length) { el.innerHTML='<div class="empty">📦<br>Sin resultados</div>'; return; }
   el.innerHTML = f.slice(0,80).map(item=>{
     const idx = items.indexOf(item);
-    var canEdit=user&&(user.role==='admin'||user.role==='operador'); return '<div class="ir" style="display:flex;align-items:center"><div onclick="openItem('+idx+')" style="flex:1;min-width:0;cursor:pointer"><div class="ir-pn">'+item.pn+'</div><div class="ir-d">'+item.desc+'</div><div class="ir-tags"><span class="pill '+(item.estatus==="DONE"?"pd":"pp")+'">'+item.estatus+'</span><span class="pill pl">📍'+(item.ubicacion||'Almacén')+'</span></div></div><div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="ir-s" style="color:'+(item.actual>0?'var(--accent)':'var(--text2)')+'">'+(parseFloat(item.actual)||0).toLocaleString()+'</div><div style="font-size:9px;color:var(--text2)">'+item.familia+'</div>'+(canEdit?'<button onclick="event.stopPropagation();openEdit('+idx+')" style="background:rgba(77,166,255,.15);border:1px solid rgba(77,166,255,.3);border-radius:6px;color:var(--accent);font-size:11px;padding:2px 8px;cursor:pointer">Editar</button>':'')+'</div></div>';
+    var canEdit=user&&(user.role==='admin'||user.role==='operador');
+    var locMobile = '<div class="ir-loc-mobile">'+locBadge('L1',item.loc1)+locBadge('L2',item.loc2)+locBadge('L3',item.loc3)+'</div>';
+    return '<div class="ir ir-g" style="display:grid;grid-template-columns:1fr 80px 70px 70px 70px 80px;align-items:center;gap:4px">'+
+      '<div onclick="openItem('+idx+')" style="min-width:0;cursor:pointer">'+
+        '<div class="ir-pn">'+item.pn+'</div>'+
+        '<div class="ir-d">'+item.desc+'</div>'+
+        '<div class="ir-tags"><span class="pill '+(item.estatus==="DONE"?"pd":"pp")+'">'+item.estatus+'</span><span class="pill pl">📍'+(item.ubicacion||'Almacén')+'</span></div>'+
+        locMobile+
+      '</div>'+
+      '<div style="text-align:center;font-size:9px;color:var(--text2)">'+item.familia+'</div>'+
+      locCell(item.loc1)+locCell(item.loc2)+locCell(item.loc3)+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+
+        '<div class="ir-s" style="color:'+(item.actual>0?'var(--accent)':'var(--text2)')+'">'+(parseFloat(item.actual)||0).toLocaleString()+'</div>'+
+        (canEdit?'<button onclick="event.stopPropagation();openEdit('+idx+')" style="background:rgba(77,166,255,.15);border:1px solid rgba(77,166,255,.3);border-radius:6px;color:var(--accent);font-size:11px;padding:2px 8px;cursor:pointer">Editar</button>':'')+
+      '</div>'+
+    '</div>';
   }).join('') + (f.length>80?'<div class="empty">+'+( f.length-80)+' más</div>':'');
 }
 
@@ -2243,7 +2278,172 @@ function xlsConfirmar(){
   </div>
 </div>
 
+<!-- ═══ MODAL IMPORTAR LOCACIONES ═══ -->
+<div id="modalImportLoc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:700;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);padding:0">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:1.5rem 1.2rem 2.5rem;border-top:1px solid var(--border2);max-height:88vh;overflow-y:auto;position:relative">
+    <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1.2rem"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700">📍 Importar Locaciones</div>
+      <button onclick="cerrarImportLoc()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:1rem">Carga tu Excel con columnas <b style="color:var(--accent)">PN</b>, <b style="color:var(--accent)">Loc1</b>, <b style="color:var(--accent)">Loc2</b> y <b style="color:var(--accent)">Loc3</b> — actualiza las 3 locaciones de un clic</div>
+    <div id="ilStep1">
+      <label style="display:block;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;margin-bottom:.8rem">
+        <div style="font-size:24px;margin-bottom:6px">📂</div>
+        <div id="ilFileName" style="font-size:12px;color:var(--text2)">Seleccionar archivo Excel</div>
+        <input id="ilFileInput" type="file" accept=".xlsx,.xls" style="display:none" onchange="ilLeerExcel(this)">
+      </label>
+      <div id="ilError" style="display:none;background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.3);border-radius:8px;padding:.6rem .8rem;font-size:11px;color:#ff6b6b;margin-bottom:.8rem"></div>
+    </div>
+    <div id="ilStep2" style="display:none">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:.5rem">Vista previa (primeros 5):</div>
+      <div style="border-radius:8px;border:1px solid var(--border);overflow:hidden;margin-bottom:10px">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:var(--bg3)">
+            <th style="padding:5px 8px;text-align:left;color:var(--text2);border:1px solid var(--border)">Part Number</th>
+            <th style="padding:5px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">Loc1</th>
+            <th style="padding:5px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">Loc2</th>
+            <th style="padding:5px 8px;text-align:center;color:var(--text2);border:1px solid var(--border)">Loc3</th>
+          </tr></thead>
+          <tbody id="ilPreviewBody"></tbody>
+        </table>
+      </div>
+      <div id="ilNoMatch" style="display:none;background:rgba(255,179,0,.1);border:1px solid rgba(255,179,0,.3);border-radius:8px;padding:.6rem .8rem;font-size:11px;color:var(--amber);margin-bottom:.8rem"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="cerrarImportLoc()" style="flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:13px;cursor:pointer">Cancelar</button>
+        <button id="ilBtnConf" onclick="ilConfirmar()" style="display:none;flex:2;padding:11px;background:var(--green);border:none;border-radius:9px;color:#000;font-size:13px;font-weight:700;cursor:pointer">✓ Aplicar Locaciones</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+var _ilDatos={};
+
+function abrirImportLoc(){
+  _ilDatos={};
+  document.getElementById('ilFileName').textContent='Seleccionar archivo Excel';
+  document.getElementById('ilFileInput').value='';
+  document.getElementById('ilError').style.display='none';
+  document.getElementById('ilBtnConf').style.display='none';
+  document.getElementById('ilStep1').style.display='block';
+  document.getElementById('ilStep2').style.display='none';
+  document.getElementById('ilNoMatch').style.display='none';
+  document.getElementById('modalImportLoc').style.display='flex';
+}
+
+function cerrarImportLoc(){
+  document.getElementById('modalImportLoc').style.display='none';
+}
+
+function ilError(msg){
+  var el=document.getElementById('ilError');
+  el.style.display='block';
+  el.textContent='⚠️ '+msg;
+  document.getElementById('ilBtnConf').style.display='none';
+}
+
+function ilFindCol(row,candidates){
+  for(var i=0;i<candidates.length;i++){
+    var idx=row.indexOf(candidates[i]);
+    if(idx>=0)return idx;
+  }
+  return -1;
+}
+
+function ilParseNum(v){
+  if(v===undefined||v===null||v==='')return null;
+  var n=parseFloat(v);
+  return isNaN(n)?null:n;
+}
+
+function ilLeerExcel(input){
+  var file=input.files[0];
+  if(!file)return;
+  document.getElementById('ilFileName').textContent=file.name;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'binary'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!raw||raw.length<2){return ilError('Archivo vacío o sin datos');}
+      var hRow=-1,hData=null;
+      for(var i=0;i<Math.min(5,raw.length);i++){
+        var r=raw[i].map(function(c){return String(c).trim();});
+        var pnC=ilFindCol(r,['PN','Part Number','PART NUMBER','Pn','pn']);
+        if(pnC>=0){hRow=i;hData=r;break;}
+      }
+      var l1Cands=['Loc1','LOC1','loc1','LOCA1','Locacion1'];
+      var l2Cands=['Loc2','LOC2','loc2','LOCA2','Locacion2'];
+      var l3Cands=['Loc3','LOC3','loc3','LOCA3','Locacion3'];
+      if(!hData||hRow<0){return ilError('No se reconocen las columnas. Acepta: PN + Loc1/Loc2/Loc3 (al menos una)');}
+      var pnC=ilFindCol(hData,['PN','Part Number','PART NUMBER','Pn','pn']);
+      var l1C=ilFindCol(hData,l1Cands);
+      var l2C=ilFindCol(hData,l2Cands);
+      var l3C=ilFindCol(hData,l3Cands);
+      if(l1C<0&&l2C<0&&l3C<0){return ilError('Se necesita al menos una columna Loc1, Loc2 o Loc3');}
+      _ilDatos={};
+      for(var i=hRow+1;i<raw.length;i++){
+        var row=raw[i];
+        var pnVal=String(row[pnC]||'').trim().toUpperCase();
+        if(!pnVal)continue;
+        var entry={};var has=false;
+        if(l1C>=0){var v1=ilParseNum(row[l1C]);if(v1!==null){entry.loc1=v1;has=true;}}
+        if(l2C>=0){var v2=ilParseNum(row[l2C]);if(v2!==null){entry.loc2=v2;has=true;}}
+        if(l3C>=0){var v3=ilParseNum(row[l3C]);if(v3!==null){entry.loc3=v3;has=true;}}
+        if(has)_ilDatos[pnVal]=entry;
+      }
+      if(!Object.keys(_ilDatos).length){return ilError('No se encontraron datos válidos en el archivo');}
+      var shown=Object.keys(_ilDatos).slice(0,5);
+      var map=_ilDatos;
+      document.getElementById('ilPreviewBody').innerHTML=
+        shown.map(function(pn){var e=map[pn];return '<tr><td style="padding:5px 8px;border:1px solid var(--border);font-family:monospace;font-size:10px;color:var(--text)">'+pn+'</td><td style="padding:5px 8px;border:1px solid var(--border);text-align:center;color:var(--green)">'+(e.loc1!==undefined?e.loc1:'—')+'</td><td style="padding:5px 8px;border:1px solid var(--border);text-align:center;color:var(--green)">'+(e.loc2!==undefined?e.loc2:'—')+'</td><td style="padding:5px 8px;border:1px solid var(--border);text-align:center;color:var(--green)">'+(e.loc3!==undefined?e.loc3:'—')+'</td></tr>';}).join('');
+      document.getElementById('ilStep1').style.display='none';
+      document.getElementById('ilStep2').style.display='block';
+      document.getElementById('ilBtnConf').style.display='block';
+    }catch(err){ilError('Error al leer el archivo: '+err.message);}
+  };
+  reader.readAsBinaryString(file);
+}
+
+function ilConfirmar(){
+  if(!Object.keys(_ilDatos).length){cerrarImportLoc();return;}
+  var matched=0,noMatch=[];
+  items.forEach(function(it){
+    var pnUp=(it.pn||'').trim().toUpperCase();
+    var e=_ilDatos[pnUp];
+    if(e){
+      if(e.loc1!==undefined)it.loc1=e.loc1;
+      if(e.loc2!==undefined)it.loc2=e.loc2;
+      if(e.loc3!==undefined)it.loc3=e.loc3;
+      matched++;
+      // Guardar en Firestore
+      if(typeof db!=='undefined'){
+        var docId=it.pn+'_'+(it.desc||'').replace(/[^a-zA-Z0-9]/g,'_');
+        var upd={};
+        if(e.loc1!==undefined)upd.loc1=it.loc1;
+        if(e.loc2!==undefined)upd.loc2=it.loc2;
+        if(e.loc3!==undefined)upd.loc3=it.loc3;
+        db.collection('planta3_inventario').doc(docId).update(upd).catch(function(){});
+      }
+    } else {
+      noMatch.push(it.pn);
+    }
+  });
+  if(typeof saveLocal==='function')saveLocal();
+  renderInv();
+  if(noMatch.length>0){
+    var nm=document.getElementById('ilNoMatch');
+    nm.style.display='block';
+    nm.textContent='⚠️ '+noMatch.length+' PNs del Excel no coincidieron con el inventario';
+  }
+  toast(matched+' PNs actualizados con locaciones','ok');
+  setTimeout(cerrarImportLoc,2200);
+}
+</script>
+
 <script>
 var _ipDatos={};
 
