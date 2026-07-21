@@ -3190,7 +3190,7 @@ function ipAplicar(){
     var count=0;
     items.forEach(function(it){
       if(_ipDatos[it.pn]!==undefined){
-        batch.update(db.collection('planta3_inventario').doc(typeof getDocId==='function'?getDocId(it.pn,it.desc):it.pn),{precio:it.precio});
+        batch.set(db.collection('planta3_inventario').doc(typeof getDocId==='function'?getDocId(it.pn,it.desc):it.pn),{precio:it.precio},{merge:true});
         count++;
         if(count%400===0){batch.commit();batch=db.batch();}
       }
