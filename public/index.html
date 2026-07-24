@@ -2030,6 +2030,28 @@ function showMovGuide(t) {
 }
 window.showMovGuide = showMovGuide;
 
+// Llena el dropdown de ubicaciones (mfDest) con las ubicaciones reales que existen hoy en el inventario (Firestore)
+function updateMfDestOptions() {
+  const sel = document.getElementById('mfDest');
+  if (!sel) return;
+  const current = sel.value;
+  const icons = {'Almacén':'📦','Línea S1':'🏭','Línea S2':'🏭','Línea S3':'🏭','Línea S4':'🏭','Línea ASSY1':'🔧','Línea VC':'✅','Zhongke':'🔬','Cuarentena':'⚠️','Producción Terminada':'🎯'};
+  // Ubicaciones estándar de la planta: siempre disponibles como destino, aunque hoy no tengan stock
+  const ESTANDAR = ['Almacén','Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Cuarentena','Producción Terminada'];
+  const locs = {};
+  ESTANDAR.forEach(l => locs[l] = true);
+  // Agregar cualquier ubicación nueva que ya exista en el inventario real (Firestore) y no esté en la lista estándar
+  items.forEach(i => { const loc = (i.ubicacion||'').trim(); if (loc) locs[loc] = true; });
+  const extra = Object.keys(locs).filter(l => !ESTANDAR.includes(l)).sort((a,b)=>a.localeCompare(b));
+  const list = [...ESTANDAR, ...extra];
+  sel.innerHTML = list.map(l => {
+    const ic = icons[l] || (l.startsWith('Línea') ? '🏭' : '📍');
+    return '<option value="'+l+'">'+ic+' '+l+'</option>';
+  }).join('');
+  if (list.includes(current)) sel.value = current;
+}
+window.updateMfDestOptions = updateMfDestOptions;
+
 function initMov(t) {
   movTipo = t;
   const labels = {E:'⬇️ ENTRADA',S:'⬆️ SALIDA',T:'🔀 TRASLADO'};
@@ -2038,6 +2060,7 @@ function initMov(t) {
   document.getElementById('mfTipo').textContent = labels[t];
   document.getElementById('mfBtn').className = 'btn-conf bc-'+t;
   document.getElementById('mfDW').style.display = (t==='E'||t==='T')?'block':'none';
+  updateMfDestOptions();
   if (selIdx===null) { document.getElementById('mfPN').textContent='← Selecciona un Part Number'; document.getElementById('mfSt').textContent=''; }
 }
 
