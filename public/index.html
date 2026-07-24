@@ -1147,7 +1147,11 @@ async function loadFromFirestore() {
     const snap = await db.collection('planta3_inventario').get();
     if (snap.empty) return;
     const firestoreItems = [];
-    snap.forEach(d => firestoreItems.push(d.data()));
+    snap.forEach(d => {
+      const data = d.data();
+      if (!data.pn) console.warn('⚠️ Documento sin PN en planta3_inventario, docId:', d.id, data);
+      firestoreItems.push(data);
+    });
     if (firestoreItems.length > 0) {
       const masterOnly = items.filter(i => !firestoreItems.find(fi => fi.pn === i.pn && fi.desc === i.desc));
       items = [...firestoreItems, ...masterOnly];
@@ -2068,7 +2072,7 @@ function renderMovList() {
   const q = document.getElementById('movS').value.toLowerCase();
   const el = document.getElementById('movList');
   if (!q) { el.innerHTML=''; return; }
-  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)).slice(0,12);
+  const f = items.filter(i=>(i.pn||'').toLowerCase().includes(q)||(i.desc||'').toLowerCase().includes(q)).slice(0,12);
   el.innerHTML = f.map(item=>'<div class="ir" onclick="selForMov('+items.indexOf(item)+')" style="padding:.55rem .75rem;margin-bottom:.3rem"><div style="flex:1"><div class="ir-pn" style="font-size:11px">'+item.pn+'</div><div class="ir-d" style="font-size:9px">'+item.desc+' · 📍'+(item.ubicacion||'Almacén')+'</div></div><div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent)">'+(parseFloat(item.actual)||0).toLocaleString()+'</div></div>').join('');
 }
 
@@ -2138,7 +2142,7 @@ function renderTraz() {
   const q = document.getElementById('trazS').value.toLowerCase();
   const el = document.getElementById('trazResult');
   if (!q) { el.innerHTML='<div class="empty">🗺️<br>Escribe un Part Number para rastrear</div>'; return; }
-  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)).slice(0,5);
+  const f = items.filter(i=>(i.pn||'').toLowerCase().includes(q)||(i.desc||'').toLowerCase().includes(q)).slice(0,5);
   if (!f.length) { el.innerHTML='<div class="empty">🔍<br>Sin resultados</div>'; return; }
   el.innerHTML = f.map(item=>{
     const hist = (item.historial||[]).slice(-5);
@@ -2161,7 +2165,7 @@ function renderQRList() {
   const q = document.getElementById('qrS').value.toLowerCase();
   const el = document.getElementById('qrList');
   if (!q) { el.innerHTML=''; return; }
-  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)).slice(0,12);
+  const f = items.filter(i=>(i.pn||'').toLowerCase().includes(q)||(i.desc||'').toLowerCase().includes(q)).slice(0,12);
   el.innerHTML = f.map(item=>'<div class="ir" onclick="genQR('+items.indexOf(item)+')" style="padding:.55rem .75rem;margin-bottom:.3rem"><div style="flex:1"><div class="ir-pn" style="font-size:11px">'+item.pn+'</div><div class="ir-d" style="font-size:9px">'+item.desc+'</div></div><div class="pill pd">'+item.familia+'</div></div>').join('');
 }
 function genQR(idx) {
