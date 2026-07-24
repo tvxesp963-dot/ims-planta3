@@ -2030,23 +2030,6 @@ function showMovGuide(t) {
 }
 window.showMovGuide = showMovGuide;
 
-// Llena el dropdown de ubicaciones (mfDest) con las ubicaciones reales que existen hoy en el inventario (Firestore)
-function updateMfDestOptions() {
-  const sel = document.getElementById('mfDest');
-  if (!sel) return;
-  const current = sel.value;
-  const icons = {'Almacén':'📦','Zhongke':'🔬','Cuarentena':'⚠️','Producción Terminada':'🎯'};
-  const locs = {'Almacén': true}; // siempre disponible aunque no tenga stock ahí todavía
-  items.forEach(i => { const loc = (i.ubicacion||'').trim(); if (loc) locs[loc] = true; });
-  const list = Object.keys(locs).sort((a,b) => a==='Almacén' ? -1 : b==='Almacén' ? 1 : a.localeCompare(b));
-  sel.innerHTML = list.map(l => {
-    const ic = icons[l] || (l.startsWith('Línea') ? '🏭' : '📍');
-    return '<option value="'+l+'">'+ic+' '+l+'</option>';
-  }).join('');
-  if (list.includes(current)) sel.value = current;
-}
-window.updateMfDestOptions = updateMfDestOptions;
-
 function initMov(t) {
   movTipo = t;
   const labels = {E:'⬇️ ENTRADA',S:'⬆️ SALIDA',T:'🔀 TRASLADO'};
@@ -2055,7 +2038,6 @@ function initMov(t) {
   document.getElementById('mfTipo').textContent = labels[t];
   document.getElementById('mfBtn').className = 'btn-conf bc-'+t;
   document.getElementById('mfDW').style.display = (t==='E'||t==='T')?'block':'none';
-  updateMfDestOptions();
   if (selIdx===null) { document.getElementById('mfPN').textContent='← Selecciona un Part Number'; document.getElementById('mfSt').textContent=''; }
 }
 
