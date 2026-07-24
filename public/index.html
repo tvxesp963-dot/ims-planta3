@@ -1152,7 +1152,7 @@ async function loadFromFirestore() {
       const masterOnly = items.filter(i => !firestoreItems.find(fi => fi.pn === i.pn && fi.desc === i.desc));
       items = [...firestoreItems, ...masterOnly];
       saveLocal();
-      updateDash(); renderInv(); renderHist(); renderLocMap();
+      updateDash(); renderInv(); renderHist(); renderLocMap(); renderMovList();
       toast('📦 Inventario sincronizado (' + firestoreItems.length + ' items)', 'ok');
     }
   } catch(e) { console.error('loadFromFirestore:', e); }
@@ -1183,7 +1183,7 @@ function startSync() {
           else { items.push(fi); }
         }
       });
-      saveLocal(); updateDash(); renderInv(); renderLocMap();
+      saveLocal(); updateDash(); renderInv(); renderLocMap(); renderMovList();
     }, () => {});
 }
 
