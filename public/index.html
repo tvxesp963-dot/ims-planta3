@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260724a";
+var APP_VERSION = "20260908a";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -2980,6 +2980,7 @@ function xlsConfirmar(){
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script>
 var _ilDatos={};
 
@@ -3497,29 +3498,103 @@ async function generarReporteFecha(){
       const precio = Number(it.precio)||0;
       const valor = stock*precio;
       totalValor += valor;
-      filas.push({Familia:it.familia||'', 'Part Number':it.pn||'', 'Descripción':it.desc||'',
-        ['Inventario al '+fechaInput]:stock, 'Precio Unit ($)':precio, 'Valor ($)':Math.round(valor*100)/100});
+      filas.push({familia:it.familia||'SIN FAMILIA', pn:it.pn||'', desc:it.desc||'', stock, precio, valor:Math.round(valor*100)/100});
     });
     if (filas.length===0){ st.style.background='#fee2e2'; st.style.color='#991b1b'; st.textContent='No hay partes con historial hasta esa fecha.'; btn.disabled=false; return; }
-    filas.sort((a,b)=>(a.Familia+a['Part Number']).localeCompare(b.Familia+b['Part Number']));
+    filas.sort((a,b)=>(a.familia+a.pn).localeCompare(b.familia+b.pn));
 
     const porFam = {};
-    filas.forEach(f=>{ const fam=f.Familia||'SIN FAMILIA'; if(!porFam[fam]) porFam[fam]={l:0,u:0,v:0}; porFam[fam].l++; porFam[fam].u+=f['Inventario al '+fechaInput]; porFam[fam].v+=f['Valor ($)']; });
-    const resumen = Object.keys(porFam).sort().map(f=>({Familia:f,'# Líneas':porFam[f].l,'Inventario Total':porFam[f].u,'Valor Total ($)':Math.round(porFam[f].v*100)/100}));
-    resumen.push({Familia:'TOTAL','# Líneas':filas.length,'Inventario Total':filas.reduce((s,f)=>s+f['Inventario al '+fechaInput],0),'Valor Total ($)':Math.round(totalValor*100)/100});
+    filas.forEach(f=>{ if(!porFam[f.familia]) porFam[f.familia]={l:0,u:0,v:0}; porFam[f.familia].l++; porFam[f.familia].u+=f.stock; porFam[f.familia].v+=f.valor; });
+    const familias = Object.keys(porFam).sort();
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), 'Resumen');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), 'Detalle');
-
-    const negativos = filas.filter(f=>f['Inventario al '+fechaInput]<0);
-    if (negativos.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(negativos), 'Revisar (negativos)');
-
+    const negativos = filas.filter(f=>f.stock<0);
     const dup = [];
-    Object.keys(conteoPN).forEach(pn=>{ if(conteoPN[pn].length>1) conteoPN[pn].forEach(id=>dup.push({'Part Number':pn,'Firestore Doc ID':id})); });
-    if (dup.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dup), 'PN Duplicados');
+    Object.keys(conteoPN).forEach(pn=>{ if(conteoPN[pn].length>1) conteoPN[pn].forEach(id=>dup.push({pn, id})); });
 
-    XLSX.writeFile(wb, 'Inventario_P3_'+fechaInput.replace(/-/g,'')+'.xlsx');
+    st.textContent = 'Dando formato al Excel...';
+
+    const AZUL='FF1F4E78', AZUL_CLARO='FFDCE6F1', BLANCO='FFFFFFFF', ROJO_CLARO='FFFCE4E4', ROJO_TXT='FFB42318';
+    const borde = { top:{style:'thin',color:{argb:'FFD0D0D0'}}, bottom:{style:'thin',color:{argb:'FFD0D0D0'}}, left:{style:'thin',color:{argb:'FFD0D0D0'}}, right:{style:'thin',color:{argb:'FFD0D0D0'}} };
+    function headerRow(ws, headers){
+      const r = ws.addRow(headers);
+      r.eachCell(c=>{ c.font={bold:true,color:{argb:BLANCO},size:11}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:AZUL}}; c.alignment={vertical:'middle',horizontal:'center'}; c.border=borde; });
+      r.height=20;
+      ws.views=[{state:'frozen', ySplit: r.number}];
+      return r;
+    }
+    function moneyCell(c,v){ c.value=v; c.numFmt='"$"#,##0.00'; c.alignment={horizontal:'right'}; c.border=borde; }
+    function numCell(c,v){ c.value=v; c.numFmt='#,##0.##'; c.alignment={horizontal:'right'}; c.border=borde; }
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator='IMS Planta 3'; wb.created=new Date();
+
+    // ===== Resumen =====
+    const wsR = wb.addWorksheet('Resumen');
+    wsR.columns=[{width:24},{width:12},{width:16},{width:16}];
+    headerRow(wsR, ['Familia','# Líneas','Inventario Total','Valor Total ($)']);
+    familias.forEach(fam=>{
+      const d=porFam[fam];
+      const r = wsR.addRow([fam, d.l, Math.round(d.u*100)/100, Math.round(d.v*100)/100]);
+      r.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:AZUL_CLARO}};
+      r.getCell(1).font={bold:true};
+      r.eachCell(c=>{c.border=borde;});
+      moneyCell(r.getCell(4), Math.round(d.v*100)/100);
+      numCell(r.getCell(3), Math.round(d.u*100)/100);
+    });
+    const totalRow = wsR.addRow(['TOTAL', filas.length, filas.reduce((s,f)=>s+f.stock,0), Math.round(totalValor*100)/100]);
+    totalRow.eachCell(c=>{ c.font={bold:true,color:{argb:BLANCO}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:AZUL}}; c.border=borde; });
+    moneyCell(totalRow.getCell(4), Math.round(totalValor*100)/100);
+    numCell(totalRow.getCell(3), filas.reduce((s,f)=>s+f.stock,0));
+
+    // ===== Detalle (agrupado por familia) =====
+    const wsD = wb.addWorksheet('Detalle');
+    wsD.columns=[{width:16},{width:34},{width:14},{width:14},{width:14}];
+    headerRow(wsD, ['Part Number','Descripción','Inventario al '+fechaInput,'Precio Unit ($)','Valor ($)']);
+    familias.forEach(fam=>{
+      const gr = wsD.addRow([fam,'','','','']);
+      wsD.mergeCells(gr.number,1,gr.number,5);
+      gr.getCell(1).font={bold:true};
+      gr.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:AZUL_CLARO}};
+      gr.eachCell(c=>{c.border=borde;});
+      filas.filter(f=>f.familia===fam).forEach(f=>{
+        const r = wsD.addRow([f.pn, f.desc, f.stock, f.precio, f.valor]);
+        r.eachCell(c=>{c.border=borde;});
+        numCell(r.getCell(3), f.stock);
+        moneyCell(r.getCell(4), f.precio);
+        moneyCell(r.getCell(5), f.valor);
+        if (f.stock<0){ r.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:ROJO_CLARO}};}); r.getCell(3).font={color:{argb:ROJO_TXT},bold:true}; }
+      });
+    });
+
+    // ===== Revisar (negativos) =====
+    if (negativos.length){
+      const wsN = wb.addWorksheet('Revisar (negativos)');
+      wsN.columns=[{width:20},{width:16},{width:34},{width:14}];
+      headerRow(wsN, ['Familia','Part Number','Descripción','Inventario al '+fechaInput]);
+      negativos.forEach(f=>{
+        const r = wsN.addRow([f.familia,f.pn,f.desc,f.stock]);
+        r.eachCell(c=>{c.border=borde; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:ROJO_CLARO}};});
+        r.getCell(4).font={color:{argb:ROJO_TXT},bold:true};
+      });
+    }
+
+    // ===== PN Duplicados =====
+    if (dup.length){
+      const wsP = wb.addWorksheet('PN Duplicados');
+      wsP.columns=[{width:20},{width:34}];
+      headerRow(wsP, ['Part Number','Firestore Doc ID']);
+      dup.forEach(d=>{ const r=wsP.addRow([d.pn,d.id]); r.eachCell(c=>{c.border=borde;}); });
+    }
+
+    st.textContent = 'Guardando archivo...';
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='Inventario_P3_'+fechaInput.replace(/-/g,'')+'.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
     st.style.background='#dcfce7'; st.style.color='#166534';
     st.textContent = '✅ Excel generado · '+filas.length+' partes';
   } catch(err){
