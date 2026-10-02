@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260908a";
+var APP_VERSION = "20261002a";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -2113,6 +2113,11 @@ async function doMov() {
   if (movTipo==='S'&&qty>item.actual) { toast('Stock insuficiente: '+item.actual.toLocaleString()+' disponibles','err'); return; }
   const dest = document.getElementById('mfDest').value;
   const ref = document.getElementById('mfRef').value.trim();
+  if (scanPallet && movTipo==='E' && ref.toUpperCase()===scanPallet.id.toUpperCase()) {
+    try { const pd = await db.collection('pallets_medio').doc(scanPallet.id).get();
+      if (pd.exists && (pd.data().status==='RECEIVED' || pd.data().status==='VOID')) { toast('Pallet '+scanPallet.id+(pd.data().status==='VOID'?' anulado':' ya recibido')+' — no se registra de nuevo','err'); return; }
+    } catch(e) {}
+  }
   if (movTipo==='E') { item.entradas+=qty; item.actual+=qty; }
   else if (movTipo==='S') { item.salidas+=qty; item.actual-=qty; }
   else { item.salidas+=qty; item.actual-=qty; }
@@ -2124,6 +2129,7 @@ async function doMov() {
   movs.unshift(mov);
   saveLocal();
   await pushMov(mov);
+  if (movTipo==='E') await marcarPalletRecibido(ref);
   updateDash(); renderInv(); renderHist(); renderLocMap();
   const lbl = {E:'✅ Entrada',S:'📤 Salida',T:'🔀 Traslado'};
   toast(lbl[movTipo]+': '+qty.toLocaleString()+' pzas · '+item.pn,'ok');
@@ -2353,7 +2359,35 @@ function processInvQRScan(text){
 window.startInvScan=startInvScan;
 window.stopInvScan=stopInvScan;
 
+// ── PALLET DE LÍNEA (QR con cantidad e ID: PN|DESC|FAMILIA|CANTIDAD|ID-PALLET) ──
+var scanPallet=null;
+var PALLET_DEST='IMS P3';
+async function aplicarPallet(parts){
+  scanPallet=null;
+  var q=parseInt(parts[3]), id=(parts[4]||'').trim();
+  if(!id||!(q>0)) return;
+  scanPallet={id:id,qty:q};
+  document.getElementById('mfQty').value=q;
+  document.getElementById('mfRef').value=id.toUpperCase();
+  try{
+    var d=await db.collection('pallets_medio').doc(id).get();
+    if(d.exists){
+      var p=d.data();
+      if(p.status==='RECEIVED') toast('⚠️ Pallet '+id+' YA fue recibido ('+(p.recibidoEn||'')+')','err');
+      else if(p.status==='VOID') toast('⚠️ Pallet '+id+' está ANULADO','err');
+      else if(p.destino&&p.destino!==PALLET_DEST) toast('⚠️ Este pallet es para '+p.destino,'err');
+    }
+  }catch(e){}
+}
+async function marcarPalletRecibido(ref){
+  if(!scanPallet||!ref||ref.toUpperCase()!==scanPallet.id.toUpperCase()) return;
+  try{
+    await db.collection('pallets_medio').doc(scanPallet.id).update({status:'RECEIVED',recibidoEn:'P3',recibidoPor:(user&&user.name)||'',recibidoFecha:new Date().toISOString()});
+  }catch(e){ toast('Entrada guardada, pero no se marcó el pallet: '+e.message,'err'); }
+  scanPallet=null;
+}
 function processQRScan(text){
+  scanPallet=null;
   const parts=text.split('|');
   const pn=(parts[0]||text).trim();
   const desc=(parts[1]||'').trim();
@@ -2368,13 +2402,13 @@ function processQRScan(text){
   }
   if(idx>=0){
     if(!movTipo) initMov('E');
-    selForMov(idx);
+    selForMov(idx); aplicarPallet(parts);
     toast('✅ '+items[idx].pn+' · '+items[idx].desc+' encontrado','ok');
   } else {
     const idx2=items.findIndex(i=>i.pn.includes(pn)||pn.includes(i.pn));
     if(idx2>=0){
       if(!movTipo) initMov('E');
-      selForMov(idx2);
+      selForMov(idx2); aplicarPallet(parts);
       toast('✅ '+items[idx2].pn+' · '+items[idx2].desc+' encontrado','ok');
     } else {
       document.getElementById('movS').value=pn;
