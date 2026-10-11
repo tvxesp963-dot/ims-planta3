@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011d";
+var APP_VERSION = "20261011e";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -4031,7 +4031,7 @@ window.generarReporteFecha = generarReporteFecha;
       sistema: 'Sistema', samsung: 'Samsung', estado: 'Estado', cuadra: 'Cuadra', revisar: 'Revisar', tipoSam: 'Tipo Samsung',
       tipo: 'Movimiento', cant: 'Cantidad', ref: 'Documento / referencia', nota: 'Nota', registrar: 'Registrar', loc: 'Locación', kind: 'Tipo de cable', motivo: 'Motivo (obligatorio)',
       t_ISSUE: 'Surtir de Almacén P3 a WIP P3', t_ASSEMBLE: 'Ensamblar bundle en P3', t_SHIP_P4: 'Enviar bundle a Almacén P4', t_RUN_P4: 'Corrida: Almacén P4 a línea (WIP P4)', t_QR: 'Etiqueta QR: descuenta y envía a Dallas', t_LOSS: 'Pérdida / merma',
-      c_ISSUE: 'Surtido P3', c_ASSEMBLE: 'Ensamble', c_SHIP_P4: 'Envío a P4', c_RUN_P4: 'Corrida', c_QR: 'Etiqueta QR', c_LOSS: 'Pérdida',
+      c_OPEN: 'Saldo inicial', openT: 'Saldo inicial en WIP P3 (solo una vez)', openNota: 'Cable que ya está en WIP P3 antes de usar esta pantalla. No mueve el inventario del IMS P3. Almacén P3, Almacén P4, piso y Dallas se leen solos.', openBtn: 'Registrar saldo inicial', openYa: 'Ya hay un saldo inicial para {p}. Anúlalo primero en Movimientos recientes.', openVacio: 'Captura al menos una cantidad.', openConf: '¿Registrar el saldo inicial en WIP P3? Solo debe hacerse una vez.', openOk: 'Saldo inicial registrado', c_ISSUE: 'Surtido P3', c_ASSEMBLE: 'Ensamble', c_SHIP_P4: 'Envío a P4', c_RUN_P4: 'Corrida', c_QR: 'Etiqueta QR', c_LOSS: 'Pérdida',
       hora: 'Fecha', usuario: 'Usuario', rol: 'Rol', accion: 'Acción', anular: 'Anular', anulado: 'Anulado', anularMotivo: 'Motivo de la anulación:', anularISSUE: 'Un surtido no se anula aquí: registra una Entrada en el IMS P3.',
       invalida: 'Cantidad inválida', sinStock: 'No hay suficiente en el origen: disponibles {n}.', sinPN: 'Ese número de parte no está en el inventario del IMS P3.', sinMotivo: 'Escribe el motivo.',
       okReg: 'Movimiento registrado', okAnul: 'Movimiento anulado', sinPermiso: 'Sin permiso',
@@ -4056,7 +4056,7 @@ window.generarReporteFecha = generarReporteFecha;
       sistema: 'System', samsung: 'Samsung', estado: 'Status', cuadra: 'Matches', revisar: 'Review', tipoSam: 'Samsung type',
       tipo: 'Movement', cant: 'Quantity', ref: 'Document / reference', nota: 'Note', registrar: 'Record', loc: 'Location', kind: 'Cable type', motivo: 'Reason (required)',
       t_ISSUE: 'Issue from P3 Warehouse to WIP P3', t_ASSEMBLE: 'Assemble bundle in P3', t_SHIP_P4: 'Ship bundle to P4 Warehouse', t_RUN_P4: 'Model run: P4 Warehouse to line (WIP P4)', t_QR: 'QR label: deduct and ship to Dallas', t_LOSS: 'Loss / scrap',
-      c_ISSUE: 'P3 issue', c_ASSEMBLE: 'Assembly', c_SHIP_P4: 'Ship to P4', c_RUN_P4: 'Model run', c_QR: 'QR label', c_LOSS: 'Loss',
+      c_OPEN: 'Opening balance', openT: 'Opening balance in WIP P3 (once only)', openNota: 'Cable already in WIP P3 before using this screen. It does not move IMS P3 inventory. P3 Warehouse, P4 Warehouse, floor and Dallas are read automatically.', openBtn: 'Record opening balance', openYa: 'There is already an opening balance for {p}. Void it first in Recent movements.', openVacio: 'Enter at least one quantity.', openConf: 'Record the opening balance in WIP P3? It should only be done once.', openOk: 'Opening balance recorded', c_ISSUE: 'P3 issue', c_ASSEMBLE: 'Assembly', c_SHIP_P4: 'Ship to P4', c_RUN_P4: 'Model run', c_QR: 'QR label', c_LOSS: 'Loss',
       hora: 'Date', usuario: 'User', rol: 'Role', accion: 'Action', anular: 'Void', anulado: 'Voided', anularMotivo: 'Reason for voiding:', anularISSUE: 'An issue is not voided here: record an Entry in IMS P3.',
       invalida: 'Invalid quantity', sinStock: 'Not enough at the source: {n} available.', sinPN: 'That part number is not in the IMS P3 inventory.', sinMotivo: 'Enter the reason.',
       okReg: 'Movement recorded', okAnul: 'Movement voided', sinPermiso: 'No permission',
@@ -4081,7 +4081,7 @@ window.generarReporteFecha = generarReporteFecha;
       sistema: '시스템', samsung: '삼성', estado: '상태', cuadra: '일치', revisar: '확인', tipoSam: '삼성 구분',
       tipo: '이동', cant: '수량', ref: '문서 / 참조', nota: '메모', registrar: '등록', loc: '위치', kind: '케이블 구분', motivo: '사유 (필수)',
       t_ISSUE: 'P3 창고에서 P3 WIP로 불출', t_ASSEMBLE: 'P3에서 번들 조립', t_SHIP_P4: 'P4 창고로 번들 출고', t_RUN_P4: '모델 투입: P4 창고에서 라인(P4 WIP)으로', t_QR: 'QR 라벨: 차감 후 달라스 출고', t_LOSS: '분실 / 손실',
-      c_ISSUE: 'P3 불출', c_ASSEMBLE: '조립', c_SHIP_P4: 'P4 출고', c_RUN_P4: '모델 투입', c_QR: 'QR 라벨', c_LOSS: '분실',
+      c_OPEN: '기초 재고', openT: 'P3 WIP 기초 재고 (1회만)', openNota: '이 화면을 사용하기 전부터 P3 WIP에 있던 케이블입니다. IMS P3 재고는 움직이지 않습니다. P3 창고, P4 창고, 현장, 달라스는 자동으로 읽습니다.', openBtn: '기초 재고 등록', openYa: '{p}의 기초 재고가 이미 있습니다. 최근 이동 내역에서 먼저 취소하세요.', openVacio: '수량을 하나 이상 입력하세요.', openConf: 'P3 WIP 기초 재고를 등록할까요? 한 번만 해야 합니다.', openOk: '기초 재고가 등록되었습니다', c_ISSUE: 'P3 불출', c_ASSEMBLE: '조립', c_SHIP_P4: 'P4 출고', c_RUN_P4: '모델 투입', c_QR: 'QR 라벨', c_LOSS: '분실',
       hora: '일시', usuario: '사용자', rol: '권한', accion: '작업', anular: '취소', anulado: '취소됨', anularMotivo: '취소 사유:', anularISSUE: '불출은 여기서 취소할 수 없습니다. IMS P3에 입고를 등록하세요.',
       invalida: '수량이 올바르지 않습니다', sinStock: '출발 위치 수량이 부족합니다: 가용 {n}.', sinPN: '해당 품번이 IMS P3 재고에 없습니다.', sinMotivo: '사유를 입력하세요.',
       okReg: '이동이 등록되었습니다', okAnul: '이동이 취소되었습니다', sinPermiso: '권한 없음',
@@ -4112,6 +4112,7 @@ window.generarReporteFecha = generarReporteFecha;
       var r = res[m.pn]; if (!r) return;
       var q = Number(m.qty) || 0;
       switch (m.tipo) {
+        case 'OPEN': r.p3wip.item += q; r.p3wip.bundle += Number(m.bundle) || 0; break;
         case 'ISSUE': r.p3wip.item += q; break;                    // el IMS ya descontó Almacén P3
         case 'ASSEMBLE': r.p3wip.item -= q; r.p3wip.bundle += q; r.ultEnsamble = Date.parse(m.fecha) || 0; break;
         case 'SHIP_P4': r.p3wip.bundle -= q; r.p4ims.bundle += q; break;
@@ -4427,7 +4428,7 @@ window.generarReporteFecha = generarReporteFecha;
       lista.map(function (m) {
         var d = new Date(m.fecha);
         var f = isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-        return '<tr' + (m.anulado ? ' style="opacity:.45;text-decoration:line-through"' : '') + '><td>' + h(f) + '</td><td>' + h(T('c_' + m.tipo)) + '</td><td>' + chip(colorDe(m.pn)) + h(m.pn) + '</td><td><b>' + n(m.qty) + '</b></td><td>' + h((m.ref || '') + (m.nota ? ' · ' + m.nota : '')) + '</td><td>' + h(m.usuario || '') + '</td><td>' +
+        return '<tr' + (m.anulado ? ' style="opacity:.45;text-decoration:line-through"' : '') + '><td>' + h(f) + '</td><td>' + h(T('c_' + m.tipo)) + '</td><td>' + chip(colorDe(m.pn)) + h(m.pn) + '</td><td><b>' + (m.tipo === 'OPEN' ? n(m.qty) + ' it / ' + n(m.bundle || 0) + ' bu' : n(m.qty)) + '</b></td><td>' + h((m.ref || '') + (m.nota ? ' · ' + m.nota : '')) + '</td><td>' + h(m.usuario || '') + '</td><td>' +
           (m.anulado ? '<span class="dlc-pill warn">' + h(T('anulado')) + '</span>' : (esAdmin() ? '<button class="dlc-b2" onclick="dlc.anular(\'' + m.id + '\')">' + h(T('anular')) + '</button>' : '')) + '</td></tr>';
       }).join('') + '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('sinMov')) + '</div>';
 
@@ -4441,6 +4442,14 @@ window.generarReporteFecha = generarReporteFecha;
             ['inv', 'wip', 'fg'].map(function (k) { return '<label>' + (k === 'inv' ? 'W/H' : k === 'wip' ? 'WIP P3' : 'FG P4') + '<input id="dlc-s-' + p.pn + '-' + k + '" class="dlc-in" type="number" value="' + (Number(s[k]) || 0) + '"></label>'; }).join('');
         }).join('') +
         '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.guardarSamsung()">' + h(T('guardarSam')) + '</button></div>';
+      html += '<div class="sh">' + h(T('openT')) + '</div><div class="card dlc-form" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' +
+        '<div class="dlc-mut" style="grid-column:1/-1">' + h(T('openNota')) + '</div>' +
+        PARTES.map(function (p) {
+          return '<div style="grid-column:1/-1"><b>' + chip(p.color) + p.pn + '</b></div>' +
+            '<label>' + h(T('item')) + '<input id="dlc-o-' + p.pn + '-item" class="dlc-in" type="number" min="0" value="0"></label>' +
+            '<label>' + h(T('bundle')) + '<input id="dlc-o-' + p.pn + '-bundle" class="dlc-in" type="number" min="0" value="0"></label>';
+        }).join('') +
+        '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.saldoInicial()">' + h(T('openBtn')) + '</button></div>';
 
       html += '<details class="dlc-det"><summary>🔐 ' + h(T('sec')) + '</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secRoles')) + '</div><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secPw')) + '</div><div class="dlc-mut" style="margin-bottom:.7rem">' + h(T('secLock')) + '</div>' +
         '<div class="dlc-form" style="grid-template-columns:1fr 1fr"><label>' + h(T('pwNew')) + '<input id="dlc-cp1" class="dlc-in" type="password"></label><label>' + h(T('pwRep')) + '<input id="dlc-cp2" class="dlc-in" type="password"></label>' +
@@ -4504,6 +4513,29 @@ window.generarReporteFecha = generarReporteFecha;
       m.anulado = true; audit('ANULAR_' + m.tipo, m.pn + ' x' + m.qty + ' · ' + motivo);
       say(T('okAnul'), true); pintar();
     } catch (e) { say(T('err') + e.message); }
+  }
+
+  async function saldoInicial() {
+    if (!esAdmin()) { say(T('soloAdmin')); return; }
+    if (Date.now() >= st.ok) { bloquear(); return; }
+    var altas = [];
+    for (var i = 0; i < PARTES.length; i++) {
+      var pn = PARTES[i].pn, it = Math.max(0, parseInt(val('dlc-o-' + pn + '-item'), 10) || 0), bu = Math.max(0, parseInt(val('dlc-o-' + pn + '-bundle'), 10) || 0);
+      if (!it && !bu) continue;
+      if (st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) { say(T('openYa', { p: pn })); return; }
+      altas.push({ pn: pn, it: it, bu: bu });
+    }
+    if (!altas.length) { say(T('openVacio')); return; }
+    if (!confirm(T('openConf'))) return;
+    try {
+      for (var j = 0; j < altas.length; j++) {
+        var a = altas[j];
+        var m = { tipo: 'OPEN', pn: a.pn, color: colorDe(a.pn), qty: a.it, bundle: a.bu, ref: '', nota: '', usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3' };
+        var d = await db.collection(COL_MOV).add(m); m.id = d.id; st.movs.unshift(m);
+        audit('SALDO_INICIAL', a.pn + ' item ' + a.it + ' / bundle ' + a.bu);
+      }
+      say(T('openOk'), true); pintar();
+    } catch (e) { say(T('err') + e.message); console.error(e); }
   }
 
   async function guardarSamsung() {
@@ -4756,7 +4788,7 @@ window.generarReporteFecha = generarReporteFecha;
   W.dlc = {
     crearPrimera: crearPrimera, desbloquear: desbloquear, bloquear: function () { bloquear(false); },
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
-    registrar: registrar, anular: anular, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, cambioTipo: cambioTipo,
+    registrar: registrar, anular: anular, saldoInicial: saldoInicial, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, cambioTipo: cambioTipo,
     _calcular: calcular
   };
   if (typeof document !== 'undefined' && document.addEventListener) {
