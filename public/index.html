@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011k";
+var APP_VERSION = "20261011l";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -586,7 +586,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bni" onclick="goPage('pgTraz',this)"><span class="bni-i">🗺️</span><span id="t-navTraz">Traz.</span></button>
     <button class="bni" onclick="goPage('pgQR',this)"><span class="bni-i">📷</span>QR</button>
     <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span><span id="t-navHist">Hist.</span></button>
-    <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">📋</span><span id="t-navPlan">Plan</span></button>
     <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span><span id="t-navAdmin">Admin</span></button>
     <button class="bni" id="navDLC" onclick="goPage('pgDLC',this)"><span class="bni-i">💾</span><span id="t-navDLC">Cable DLC</span></button>
   </div>
@@ -1922,7 +1921,7 @@ function goBack() {
   pageHistory.pop(); // quitar actual
   const prev = pageHistory[pageHistory.length-1] || 'pgDash';
   const navMap = {
-    pgDash:0, pgInv:1, pgMov:2, pgTraz:3, pgQR:4, pgHist:5, pgPlan:6, pgAdmin:7, pgDLC:8
+    pgDash:0, pgInv:1, pgMov:2, pgTraz:3, pgQR:4, pgHist:5, pgAdmin:6, pgDLC:7
   };
   const bniBtns = document.querySelectorAll('.bni');
   const btn = bniBtns[navMap[prev]] || bniBtns[0];
