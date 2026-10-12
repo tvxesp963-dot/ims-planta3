@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011l";
+var APP_VERSION = "20261011m";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -1298,6 +1298,7 @@ async function doLogin() {
   // Leer rol desde Firestore colección ims_usuarios
   let role = 'viewer'; // default
   let nombre = e.split('@')[0];
+  let dlc = false;
   if (db) {
     try {
       const snap = await db.collection('ims_usuarios').where('email','==',e).get();
@@ -1309,12 +1310,13 @@ async function doLogin() {
         }
         role = u.role || u.rol || 'viewer';
         nombre = u.nombre || nombre;
+        dlc = u.dlc === true;
       } else {
         err.textContent = 'Usuario no registrado. Contacta al administrador.'; return;
       }
     } catch(ex) { console.error('Error leyendo usuario:', ex); }
   }
-  user = {email:e, name:nombre, role};
+  user = {email:e, name:nombre, role, dlc};
   localStorage.setItem('ims3_user', JSON.stringify(user));
   err.textContent = '';
   launch();
@@ -1874,7 +1876,7 @@ function launch() {
     const btn = document.querySelector(`.bni[onclick*="${id}"]`);
     if(btn) btn.style.display = isViewer ? 'none' : '';
   });
-  const navDLC = document.getElementById('navDLC'); if(navDLC) navDLC.style.display = isViewer?'none':'flex';
+  const navDLC = document.getElementById('navDLC'); if(navDLC) navDLC.style.display = (user.role==='admin'||user.dlc===true)?'flex':'none';
   // Ocultar módulo de movimientos para viewers
   const navMov = document.getElementById('navMov');
   if(navMov) navMov.style.display = isViewer?'none':'flex';
@@ -2820,7 +2822,8 @@ async function loadImsUsers() {
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="font-size:.6rem;background:${rolColor}22;color:${rolColor};padding:2px 8px;border-radius:20px;font-weight:600">${role}</span></td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${activo?'var(--green)':'var(--red)'};margin-right:4px"></span>${activo?'Activo':'Inactivo'}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)">${isMe?'<span style="font-size:.65rem;color:var(--text2)">Tú</span>':
-          `<button onclick="toggleImsUser('${u.docId}',${activo})" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">${activo?'Desactivar':'Activar'}</button>
+          `<button onclick="toggleDlcUser('${u.docId}',${u.dlc===true})" style="border:1px solid ${u.dlc===true?'var(--green)':'var(--border2)'};background:${u.dlc===true?'rgba(46,204,113,.15)':'var(--bg3)'};color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">💾 DLC ${u.dlc===true?'✔':'✖'}</button>
+           <button onclick="toggleImsUser('${u.docId}',${activo})" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">${activo?'Desactivar':'Activar'}</button>
            <button onclick="deleteImsUser('${u.docId}','${u.nombre||u.email}')" style="border:1px solid var(--red);background:transparent;color:var(--red);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer">✕</button>`}</td>`;
       tb.appendChild(tr);
     });
@@ -2850,6 +2853,15 @@ async function toggleImsUser(id,activo) {
   toast('Usuario actualizado','ok'); loadImsUsers();
 }
 window.toggleImsUser = toggleImsUser;
+
+async function toggleDlcUser(id,actual) {
+  if(!user||user.role!=='admin'){toast('Solo admins','err');return;}
+  try {
+    await db.collection('ims_usuarios').doc(id).update({dlc:!actual});
+    toast(!actual?'Acceso a Cable DLC concedido (debe volver a entrar)':'Acceso a Cable DLC quitado','ok'); loadImsUsers();
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+window.toggleDlcUser = toggleDlcUser;
 
 async function deleteImsUser(id,nombre) {
   if(!confirm('¿Eliminar perfil de "'+nombre+'"?'))return;
@@ -4015,6 +4027,8 @@ window.generarReporteFecha = generarReporteFecha;
   };
   // quién puede intentar entrar (los demás ni ven la pestaña) y quién administra
   var ROLES_ENTRAR = ['admin', 'operador'];
+  // ve la pantalla: admin, o usuario con permiso Cable DLC (campo dlc en ims_usuarios)
+  function puedeVer() { return !!user && (user.role === 'admin' || user.dlc === true); }
 
   var st = { ok: 0, movs: [], samsung: null, audit: [], filtro: 'all', cargado: false, p4: { ok: false, err: '', t: 0, alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0 }, msg: '', msgOk: false, cfgAcceso: null };
 
@@ -4544,7 +4558,7 @@ window.generarReporteFecha = generarReporteFecha;
   }
 
   async function registrar() {
-    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0) { say(T('sinPermiso')); return; }
+    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
     extender();
     var tipo = val('dlc-f-tipo'), pn = val('dlc-f-pn'), qty = parseInt(val('dlc-f-qty'), 10) || 0, ref = val('dlc-f-ref').trim();
@@ -4843,7 +4857,7 @@ window.generarReporteFecha = generarReporteFecha;
   // lo llama goPage(id)
   function alEntrar(id) {
     if (id !== 'pgDLC') { if (st.ok) { st.ok = 0; } return; }
-    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0) return;
+    if (!puedeVer()) return;
     if (Date.now() < st.ok) { extender(); pintar(); } else pintarCandado();
   }
 
