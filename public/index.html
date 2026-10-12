@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011n";
+var APP_VERSION = "20261011o";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -4848,13 +4848,32 @@ window.generarReporteFecha = generarReporteFecha;
 
   async function destinatarios() {
     if (!esAdmin()) { say(T('soloAdmin')); return; }
-    var v = window.prompt(T('destAsk'), (st.correos || []).join(', '));
-    if (v === null) return;
-    var lista = v.split(/[,;\s]+/).map(function (x) { return x.trim().toLowerCase(); }).filter(function (x) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
+    var L = { es: ['Elige quién recibe el reporte', 'Guardar', 'Cancelar', 'Usuarios del IMS P3 con correo'], en: ['Choose who receives the report', 'Save', 'Cancel', 'IMS P3 users with email'], ko: ['보고서를 받을 사람 선택', '저장', '취소', '이메일이 있는 IMS P3 사용자'] }[lang()] || [];
+    var usuarios = [];
     try {
-      await db.collection(COL_CFG).doc('reporte').set({ correos: lista, at_iso: new Date().toISOString(), por: (user && user.name) || '' });
-      st.correos = lista; audit('DESTINATARIOS', lista.join(',')); say(T('destOk'), true);
-    } catch (e) { say(T('err') + e.message); }
+      var q = await db.collection('ims_usuarios').get();
+      q.docs.forEach(function (d) { var u = d.data(); if (u.email && u.activo !== false) usuarios.push({ email: String(u.email).toLowerCase(), nombre: u.nombre || '' }); });
+    } catch (e) { say(T('err') + e.message); return; }
+    var sel = {}; (st.correos || []).forEach(function (e) { sel[e] = 1; });
+    usuarios.forEach(function (u) { delete sel['_' + u.email]; });
+    (st.correos || []).forEach(function (e) { if (!usuarios.some(function (u) { return u.email === e; })) usuarios.push({ email: e, nombre: '' }); });
+    usuarios.sort(function (x, y) { return (x.nombre || x.email).localeCompare(y.nombre || y.email); });
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div style="background:var(--bg2,#fff);color:var(--text,#111);border:1px solid var(--border2,#ccc);border-radius:14px;max-width:460px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:16px">' +
+      '<div style="font-weight:700;font-size:16px;margin-bottom:4px">👥 ' + h(L[0]) + '</div><div class="dlc-mut" style="margin-bottom:8px">' + h(L[3]) + '</div>' +
+      '<div style="overflow:auto;flex:1;border:1px solid var(--border2,#ccc);border-radius:10px">' +
+      usuarios.map(function (u, i) { return '<label style="display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border2,#ddd);cursor:pointer;font-size:14px"><input type="checkbox" data-e="' + h(u.email) + '" style="width:18px;height:18px"' + (sel[u.email] ? ' checked' : '') + '><span><b>' + h(u.nombre || u.email) + '</b><br><span class="dlc-mut">' + h(u.email) + '</span></span></label>'; }).join('') +
+      '</div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="dlc-b2" id="dlc-dest-no">' + h(L[2]) + '</button><button class="dlc-b" id="dlc-dest-si">' + h(L[1]) + '</button></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#dlc-dest-no').onclick = function () { ov.remove(); };
+    ov.querySelector('#dlc-dest-si').onclick = async function () {
+      var lista = [].slice.call(ov.querySelectorAll('input[type=checkbox]')).filter(function (c) { return c.checked; }).map(function (c) { return c.getAttribute('data-e'); });
+      try {
+        await db.collection(COL_CFG).doc('reporte').set({ correos: lista, at_iso: new Date().toISOString(), por: (user && user.name) || '' });
+        st.correos = lista; audit('DESTINATARIOS', lista.join(',')); ov.remove(); say(T('destOk'), true);
+      } catch (e) { say(T('err') + e.message); }
+    };
   }
 
   async function enviar() {
