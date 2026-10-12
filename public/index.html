@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011j";
+var APP_VERSION = "20261011k";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -990,6 +990,11 @@ const MASTER = [
 // ── STATE ──
 let items = JSON.parse(localStorage.getItem('ims3_items')||'null') || MASTER.map(r=>({...r,entradas:0,salidas:0,actual:r.inicial,ubicacion:'Almacén',historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:r.inicial,loc:'Almacén',user:'Sistema',ref:'Inv. inicial'}]}));
 let movs = JSON.parse(localStorage.getItem('ims3_movs')||'[]');
+// (constantes de ubicaciones: deben declararse ANTES de launch(), que corre al cargar)
+// Ubicaciones de IMS Planta 3 (líneas de P3). Las de P4 que quedaron en datos viejos ya no se ofrecen como destino.
+const LINEAS_P3 = ['Pre-Kit','B2','B1','Pre-Folding','Bandita'];
+const UBIC_P3 = ['Almacén', ...LINEAS_P3, 'Cuarentena'];
+const UBIC_P4_VIEJAS = ['Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Producción Terminada'];
 let user = JSON.parse(localStorage.getItem('ims3_user')||'null');
 let _blockSnapshot = false;
 let selIdx = null, movTipo = 'E', invFam = 'TODOS', histFam = 'TODOS', selRole = 'admin';
@@ -2083,10 +2088,6 @@ function showMovGuide(t) {
 window.showMovGuide = showMovGuide;
 
 // Llena el dropdown de ubicaciones (mfDest) con las ubicaciones reales que existen hoy en el inventario (Firestore)
-// Ubicaciones de IMS Planta 3 (líneas de P3). Las de P4 que quedaron en datos viejos ya no se ofrecen como destino.
-const LINEAS_P3 = ['Pre-Kit','B2','B1','Pre-Folding','Bandita'];
-const UBIC_P3 = ['Almacén', ...LINEAS_P3, 'Cuarentena'];
-const UBIC_P4_VIEJAS = ['Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Producción Terminada'];
 function updateMfDestOptions() {
   const sel = document.getElementById('mfDest');
   if (!sel) return;
