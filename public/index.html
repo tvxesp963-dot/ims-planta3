@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011b";
+var APP_VERSION = "20261013a";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -1085,24 +1085,31 @@ async function saveEdit() {
     historial: nuevoHistorial
   });
   saveLocal();
-  if (db) {
-    try {
-      const oldDocId = getDocId(oldItem.pn, oldItem.desc);
-      const newDocId = getDocId(newPN, newDesc);
-      if (oldDocId !== newDocId) {
-        await db.collection('planta3_inventario').doc(oldDocId).delete();
-      }
-      // Quitar _docId antes de guardar (es campo interno)
-      var dataGuardar = Object.assign({}, items[idx]);
-      delete dataGuardar._docId;
-      await db.collection('planta3_inventario').doc(newDocId).set(dataGuardar, {merge:true});
-      items[idx]._docId = newDocId;
-    } catch(e) { console.error('saveEdit Firestore:', e); toast('Local OK. Firebase: '+e.message, 'warn'); }
-  }
+  // FIX: se usa el ID REAL del documento (_docId) cuando PN y descripción no cambiaron,
+  // para no crear un documento duplicado en Firebase.
+  var oldDocId = oldItem._docId || getDocId(oldItem.pn, oldItem.desc);
+  var newDocId = getDocId(newPN, newDesc);
+  var mismaLlave = (oldItem.pn === newPN && (oldItem.desc||'') === newDesc);
+  var targetDocId = mismaLlave ? oldDocId : newDocId;
+  items[idx]._docId = targetDocId;
+  // FIX: se cierra la ventana y se refresca YA (sin esperar a Firebase, que puede tardar o no responder)
   closeEdit();
   renderInv(); updateDash(); if (typeof updatePNList==='function') updatePNList();
   if (typeof renderHist==='function') renderHist();
   toast('✅ Parte actualizada' + (cambios.length?' · '+cambios.length+' campo(s)':''), 'ok');
+  if (db) {
+    try {
+      var dataGuardar = Object.assign({}, items[idx]);
+      delete dataGuardar._docId; // campo interno
+      var pFs = db.collection('planta3_inventario').doc(targetDocId).set(dataGuardar, {merge:true});
+      if (!mismaLlave && oldDocId !== targetDocId) {
+        pFs = pFs.then(function(){ return db.collection('planta3_inventario').doc(oldDocId).delete(); });
+      }
+      // FIX: máximo 10 s de espera; si Firebase no responde, queda guardado local y se sincroniza solo
+      var rFs = await Promise.race([pFs, new Promise(function(res){ setTimeout(function(){ res('timeout'); }, 10000); })]);
+      if (rFs === 'timeout') toast('Guardado local. Firebase sin respuesta; se sincronizará al reconectar', 'warn');
+    } catch(e) { console.error('saveEdit Firestore:', e); toast('Local OK. Firebase: '+e.message, 'warn'); }
+  }
 }
 window.saveEdit = saveEdit;
 
@@ -1111,6 +1118,7 @@ async function deleteFromEdit() {
   if (idx === undefined || idx === null) return;
   if (!user || user.role !== 'admin') { toast('Solo admin puede eliminar','err'); return; }
   const it = items[idx];
+  if (!it) { toast('No se encontró la parte','err'); return; }
   var nombre = (it.pn||'') + ' · ' + (it.desc||'');
   var actual = Number(it.actual)||0;
   var msg = 'Eliminar definitivamente esta parte?\n\n' + nombre;
@@ -1118,39 +1126,64 @@ async function deleteFromEdit() {
   msg += '\n\nTambién se borrarán todos sus movimientos del historial.\n\nEsta acción NO se puede deshacer.';
   if (!confirm(msg)) return;
 
+  var btnDel = document.getElementById('t-btnEliminar');
+  var txtDel = btnDel ? btnDel.textContent : '';
+  if (btnDel) { btnDel.disabled = true; btnDel.textContent = '⏳ Eliminando...'; }
+  // Espera máxima de 12 s por operación para que nunca se quede "ciclando"
+  var esperar = function(p){ return Promise.race([p, new Promise(function(res){ setTimeout(function(){ res('timeout'); }, 12000); })]); };
+  var dsU = (it.desc||'').toUpperCase();
+  var bm = 0, avisoFs = '';
+  _blockSnapshot = true; // evita que el listener en vivo mueva la lista mientras se borra
   try {
-    var docId = it._docId || getDocId(it.pn, it.desc);
-    // Borrar item
-    if (db) await db.collection('planta3_inventario').doc(docId).delete();
-    // Borrar movimientos asociados
-    var bm = 0;
     if (db) {
-      var snap = await db.collection('planta3_movimientos').get();
-      for (var k = 0; k < snap.docs.length; k++) {
-        var d = snap.docs[k];
-        var r = d.data();
-        if ((r.pn||'').toUpperCase() === (it.pn||'').toUpperCase() &&
-            (r.desc||'').toUpperCase() === (it.desc||'').toUpperCase()) {
-          await d.ref.delete();
-          bm++;
-        }
+      // 1) Reunir TODOS los documentos reales de esa parte (ID guardado, ID calculado y búsqueda por PN)
+      var refs = {};
+      [it._docId, getDocId(it.pn, it.desc)].forEach(function(id){
+        if (id) refs[id] = db.collection('planta3_inventario').doc(id);
+      });
+      var qInv = await esperar(db.collection('planta3_inventario').where('pn','==',it.pn).get());
+      if (qInv && qInv !== 'timeout') {
+        qInv.forEach(function(d){
+          if (((d.data().desc||'').toUpperCase()) === dsU) refs[d.id] = d.ref;
+        });
       }
+      var batchInv = db.batch();
+      Object.keys(refs).forEach(function(k){ batchInv.delete(refs[k]); });
+      var rDel = await esperar(batchInv.commit());
+      if (rDel === 'timeout') avisoFs = ' (Firebase sin respuesta, se aplicará al reconectar)';
+
+      // 2) Borrar movimientos de esa parte (si falla, no se detiene el borrado de la parte)
+      try {
+        var qMov = await esperar(db.collection('planta3_movimientos').where('pn','==',it.pn).get());
+        if (qMov && qMov !== 'timeout') {
+          var docsMov = qMov.docs.filter(function(d){ return ((d.data().desc||'').toUpperCase()) === dsU; });
+          for (var k = 0; k < docsMov.length; k += 400) {
+            var bMov = db.batch();
+            docsMov.slice(k, k + 400).forEach(function(d){ bMov.delete(d.ref); });
+            await esperar(bMov.commit());
+          }
+          bm = docsMov.length;
+        }
+      } catch(eMov) { console.error('deleteFromEdit movimientos:', eMov); avisoFs += ' (movimientos no borrados: ' + eMov.message + ')'; }
     }
-    // Borrar local
-    items.splice(idx, 1);
+    // 3) Borrar local (por PN + descripción, no por posición, porque la lista pudo cambiar)
+    items = items.filter(function(i){ return !(i.pn === it.pn && (i.desc||'') === (it.desc||'')); });
     movs = movs.filter(function(m){
       return !((m.pn||'').toUpperCase()===(it.pn||'').toUpperCase() &&
-               (m.desc||'').toUpperCase()===(it.desc||'').toUpperCase());
+               (m.desc||'').toUpperCase()===dsU);
     });
     saveLocal();
     closeEdit();
     renderInv(); updateDash();
     if (typeof renderHist === 'function') renderHist();
     if (typeof renderLocMap === 'function') renderLocMap();
-    toast('🗑️ Eliminado · ' + bm + ' mov(s) borrados', 'ok');
+    toast('🗑️ Eliminado · ' + bm + ' mov(s) borrados' + avisoFs, 'ok');
   } catch(e) {
     console.error('deleteFromEdit:', e);
-    toast('Error: ' + e.message, 'err');
+    toast('Error al eliminar: ' + e.message, 'err');
+  } finally {
+    if (btnDel) { btnDel.disabled = false; btnDel.textContent = txtDel; }
+    setTimeout(function(){ _blockSnapshot = false; }, 3000);
   }
 }
 window.deleteFromEdit = deleteFromEdit;

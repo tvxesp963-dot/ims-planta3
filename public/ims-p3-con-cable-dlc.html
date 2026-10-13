@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261011a";
+var APP_VERSION = "20261011b";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -4012,7 +4012,7 @@ window.generarReporteFecha = generarReporteFecha;
   // quién puede intentar entrar (los demás ni ven la pestaña) y quién administra
   var ROLES_ENTRAR = ['admin', 'operador'];
 
-  var st = { ok: 0, movs: [], samsung: null, audit: [], filtro: 'all', cargado: false, msg: '', msgOk: false, cfgAcceso: null };
+  var st = { ok: 0, movs: [], samsung: null, audit: [], filtro: 'all', cargado: false, p4: { ok: false, err: '', t: 0, alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0 }, msg: '', msgOk: false, cfgAcceso: null };
 
   /* ---------------- IDIOMAS ES / EN / KO ---------------- */
   var I18N = {
@@ -4039,7 +4039,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: 'Roles que pueden intentar entrar: Admin y Operador. Viewer ni ve la pestaña. Aun así piden la contraseña.', secPw: 'Contraseña (solo Admin la crea y cambia). Se guarda cifrada con SHA-256 y sal, nunca en texto.',
       secLock: 'Bloqueo: 10 min sin uso. 5 intentos fallidos bloquean 5 min.', cambiarPw: 'Cambiar contraseña', pwCambiada: 'Contraseña actualizada',
       guardarSam: 'Guardar reporte Samsung', samOk: 'Reporte Samsung guardado', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      excelOk: 'Excel generado', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
+      excelOk: 'Excel generado', p4Ok: 'Conectado a IMS P4 y ShipQR · actualizado {h}', p4Err: 'No se pudo leer IMS P4 / ShipQR: {e}. Lo de P4 no es confiable.', p4SinMapa: 'El BOM no relaciona ningún bundle GH90 con el cable DLC. Carga el BOM en el BOM Simulator.', p4Nota: 'WIP P4 = bundles con etiqueta QR aún sin embarcar (ShipQR). Almacén P4 = bundles en IMS P4.', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
     },
     en: {
       nav: 'DLC Cable', title: 'DLC Cable · Control', sub: 'Samsung-owned cable. Quantities in pieces. 1 bundle = 1 cable.',
@@ -4064,7 +4064,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: 'Roles that can try to enter: Admin and Operator. Viewer does not even see the tab. They still need the password.', secPw: 'Password (only Admin creates and changes it). Stored encrypted with SHA-256 and salt, never as plain text.',
       secLock: 'Lock: 10 min without use. 5 failed attempts lock it for 5 min.', cambiarPw: 'Change password', pwCambiada: 'Password updated',
       guardarSam: 'Save Samsung report', samOk: 'Samsung report saved', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      excelOk: 'Excel generated', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
+      excelOk: 'Excel generated', p4Ok: 'Connected to IMS P4 and ShipQR · updated {h}', p4Err: 'Could not read IMS P4 / ShipQR: {e}. P4 data is not reliable.', p4SinMapa: 'The BOM does not link any GH90 bundle to the DLC cable. Load the BOM in the BOM Simulator.', p4Nota: 'WIP P4 = bundles with QR label not yet shipped (ShipQR). P4 Warehouse = bundles in IMS P4.', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
     },
     ko: {
       nav: 'DLC 케이블', title: 'DLC 케이블 · 관리', sub: '삼성 소유 케이블. 수량 단위: 개. 번들 1개 = 케이블 1개.',
@@ -4089,7 +4089,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: '접근 시도 가능 권한: 관리자와 작업자. Viewer는 탭이 보이지 않습니다. 그래도 비밀번호가 필요합니다.', secPw: '비밀번호(관리자만 생성·변경). SHA-256과 솔트로 암호화하여 저장하며 평문은 저장하지 않습니다.',
       secLock: '잠금: 10분간 미사용. 5회 실패 시 5분간 잠금.', cambiarPw: '비밀번호 변경', pwCambiada: '비밀번호가 변경되었습니다',
       guardarSam: '삼성 보고서 저장', samOk: '삼성 보고서가 저장되었습니다', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      excelOk: 'Excel이 생성되었습니다', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: 'Item / 번들'
+      excelOk: 'Excel이 생성되었습니다', p4Ok: 'IMS P4 및 ShipQR 연결됨 · 업데이트 {h}', p4Err: 'IMS P4 / ShipQR을 읽을 수 없습니다: {e}. P4 데이터는 신뢰할 수 없습니다.', p4SinMapa: 'BOM에 DLC 케이블과 연결된 GH90 번들이 없습니다. BOM Simulator에서 BOM을 불러오세요.', p4Nota: 'P4 WIP = QR 라벨이 있고 아직 출고되지 않은 번들(ShipQR). P4 창고 = IMS P4의 번들.', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: 'Item / 번들'
     }
   };
   function lang() { return (typeof IMS_LANG !== 'undefined' && I18N[IMS_LANG]) ? IMS_LANG : 'es'; }
@@ -4101,7 +4101,7 @@ window.generarReporteFecha = generarReporteFecha;
 
   /* ---------------- CÁLCULO (puro, probado) ---------------- */
   function vacio() { return { item: 0, bundle: 0 }; }
-  function calcular(movs, imsStock, hoyISO, ahora) {
+  function calcular(movs, imsStock, hoyISO, p4) {
     var res = {};
     PARTES.forEach(function (p) {
       res[p.pn] = { p3wh: { item: imsStock[p.pn] || 0, bundle: 0 }, p3wip: vacio(), p4ims: vacio(), p4wip: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0 };
@@ -4120,6 +4120,15 @@ window.generarReporteFecha = generarReporteFecha;
         case 'LOSS': if (r[m.loc]) { r[m.loc][m.kind === 'bundle' ? 'bundle' : 'item'] -= q; } r.perdido += q; break;
       }
     });
+    // Lado P4: si hay conexión con IMS P4 / ShipQR, la realidad manda sobre lo capturado
+    if (p4 && p4.ok) {
+      PARTES.forEach(function (p) {
+        var r2 = res[p.pn];
+        r2.p4ims = { item: p4.almItem[p.pn] || 0, bundle: p4.alm[p.pn] || 0 };
+        r2.p4wip = { item: 0, bundle: p4.piso[p.pn] || 0 };
+        r2.enviadoHoy = p4.hoy[p.pn] || 0; r2.enviadoTotal = p4.env[p.pn] || 0;
+      });
+    }
     return res;
   }
   function totalLoc(r, l) { return r[l].item + r[l].bundle; }
@@ -4246,7 +4255,64 @@ window.generarReporteFecha = generarReporteFecha;
   function bloquear(auto) { if (st.ok && auto) audit('BLOQUEO_AUTO'); st.ok = 0; if (wrap()) pintarCandado(); }
 
   /* ---------------- DATOS ---------------- */
+  /* ---- Lectura de IMS P4 + BOM + ShipQR (todo ligado) ---- */
+  async function cargarP4() {
+    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0 };
+    try {
+      var cablePns = PARTES.map(function (x) { return x.pn; });
+      // 1) BOM: qué bundle (GH90) lleva cada cable DLC
+      var bd = await db.collection('bom_simulator_p4').doc('bom_activo').get();
+      var filas = [];
+      if (bd.exists && bd.data().bom) { try { filas = JSON.parse(bd.data().bom); } catch (e) { filas = []; } }
+      var sm = null, padre = null;
+      filas.forEach(function (f) {
+        var pn = String(f.pn || '').trim().toUpperCase();
+        if (f.sm !== sm) { sm = f.sm; padre = null; }
+        var lvl = f.isLevel1 || f.level === 1;
+        if (lvl) { padre = pn.indexOf('GH90') === 0 ? pn : null; return; }
+        if (padre && cablePns.indexOf(pn) >= 0) {
+          p.mapa[padre] = p.mapa[padre] || [];
+          if (p.mapa[padre].indexOf(pn) < 0) p.mapa[padre].push(pn);
+        }
+      });
+      p.nMapa = Object.keys(p.mapa).length;
+      // 2) IMS P4: bundles en almacén (+ cable suelto si lo hubiera)
+      var inv = await db.collection('planta4_inventario').get();
+      var hayBundleDesc = {};
+      inv.forEach(function (d) {
+        var o = d.data(), pn = String(o.pn || '').trim().toUpperCase();
+        if (p.mapa[pn] && /BUNDLE/i.test(o.desc || '')) hayBundleDesc[pn] = true;
+      });
+      inv.forEach(function (d) {
+        var o = d.data(), pn = String(o.pn || '').trim().toUpperCase();
+        var act = parseFloat(o.actual != null ? o.actual : o.Current) || 0;
+        if (cablePns.indexOf(pn) >= 0) { p.almItem[pn] = (p.almItem[pn] || 0) + act; return; }
+        if (p.mapa[pn] && (!hayBundleDesc[pn] || /BUNDLE/i.test(o.desc || ''))) {
+          p.mapa[pn].forEach(function (c) { p.alm[c] = (p.alm[c] || 0) + act; });
+        }
+      });
+      // 3) ShipQR: pallets con etiqueta QR → piso (sin embarcar) o enviados a Dallas
+      var gh = Object.keys(p.mapa), ini = new Date(); ini.setHours(0, 0, 0, 0);
+      for (var i = 0; i < gh.length; i += 30) {
+        var qs = await db.collection('shipqr_pallets').where('part_number', 'in', gh.slice(i, i + 30)).get();
+        qs.forEach(function (d) {
+          var o = d.data(), pn = String(o.part_number || '').trim().toUpperCase(), q = Number(o.quantity) || 0;
+          (p.mapa[pn] || []).forEach(function (c) {
+            if (o.status === 'SHIPPED') {
+              p.env[c] = (p.env[c] || 0) + q;
+              var tx = o.updated_at || o.created_at, ms = tx && tx.seconds ? tx.seconds * 1000 : 0;
+              if (ms >= ini.getTime()) p.hoy[c] = (p.hoy[c] || 0) + q;
+            } else p.piso[c] = (p.piso[c] || 0) + q;
+          });
+        });
+      }
+      p.ok = true;
+    } catch (e) { p.err = e.message || String(e); console.error('DLC P4', e); }
+    st.p4 = p;
+  }
+
   async function cargar() {
+    await cargarP4();
     var q = await db.collection(COL_MOV).orderBy('fecha', 'desc').limit(2000).get();
     st.movs = q.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; });
     try {
@@ -4269,7 +4335,7 @@ window.generarReporteFecha = generarReporteFecha;
       w.innerHTML = '<div class="card" style="text-align:center;padding:30px" class="dlc-mut">' + h(T('cargando')) + '</div>';
       try { await cargar(); } catch (e) { w.innerHTML = '<div class="card" style="color:var(--red)">' + h(T('err') + e.message) + '</div>'; console.error(e); return; }
     }
-    var res = calcular(st.movs, imsStock(), hoyISO());
+    var res = calcular(st.movs, imsStock(), hoyISO(), st.p4);
     var keys = claves();
     var tot = 0, it = 0, bu = 0, hoy = 0, expo = 0, dif = 0, sinPrecio = [];
     keys.forEach(function (pn) {
@@ -4303,6 +4369,9 @@ window.generarReporteFecha = generarReporteFecha;
       if (r.p3wip.bundle > 0 && r.ultEnsamble && (Date.now() - r.ultEnsamble) > PEND_H * 3600000) al.push({ s: 'warn', t: T('aPend', { n: n(r.p3wip.bundle), h: PEND_H, p: pn }) });
     });
     sinPrecio.forEach(function (pn) { al.push({ s: 'warn', t: T('aPrecio', { p: pn }) }); });
+    if (!st.p4.ok) al.unshift({ s: 'crit', t: T('p4Err', { e: st.p4.err || '—' }) });
+    else if (!st.p4.nMapa) al.unshift({ s: 'warn', t: T('p4SinMapa') });
+    html += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + '</div>';
     html += '<div class="sh">' + h(T('alertas')) + '</div>';
     html += al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>';
 
@@ -4339,14 +4408,14 @@ window.generarReporteFecha = generarReporteFecha;
     html += '</tbody></table></div>';
 
     // formulario de movimiento
-    var tipos = ['ISSUE', 'ASSEMBLE', 'SHIP_P4', 'RUN_P4', 'QR', 'LOSS'];
+    var tipos = ['ISSUE', 'ASSEMBLE', 'SHIP_P4', 'LOSS'];
     html += '<div class="sh">' + h(T('movForm')) + '</div><div class="card dlc-form">' +
       '<label>' + h(T('tipo')) + '<select id="dlc-f-tipo" class="dlc-in" onchange="dlc.cambioTipo()">' + tipos.map(function (x) { return '<option value="' + x + '">' + h(T('t_' + x)) + '</option>'; }).join('') + '</select></label>' +
       '<label>' + h(T('parte')) + '<select id="dlc-f-pn" class="dlc-in">' + PARTES.map(function (p) { return '<option value="' + p.pn + '">' + p.pn + ' · ' + h(colorTxt(p.color)) + '</option>'; }).join('') + '</select></label>' +
       '<label>' + h(T('cant')) + '<input id="dlc-f-qty" class="dlc-in" type="number" min="1" inputmode="numeric"></label>' +
       '<label>' + h(T('ref')) + '<input id="dlc-f-ref" class="dlc-in" type="text"></label>' +
       '<div id="dlc-loss" style="display:none;grid-column:1/-1;gap:.6rem;grid-template-columns:1fr 1fr">' +
-      '<label>' + h(T('loc')) + '<select id="dlc-f-loc" class="dlc-in"><option value="p3wip">' + h(T('lWip3')) + '</option><option value="p4ims">' + h(T('lAlm4')) + '</option><option value="p4wip">' + h(T('lWip4')) + '</option></select></label>' +
+      '<label>' + h(T('loc')) + '<select id="dlc-f-loc" class="dlc-in"><option value="p3wip">' + h(T('lWip3')) + '</option></select></label>' +
       '<label>' + h(T('kind')) + '<select id="dlc-f-kind" class="dlc-in"><option value="item">' + h(T('item')) + '</option><option value="bundle">' + h(T('bundle')) + '</option></select></label>' +
       '<label style="grid-column:1/-1">' + h(T('motivo')) + '<input id="dlc-f-nota" class="dlc-in" type="text"></label></div>' +
       '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.registrar()">' + h(T('registrar')) + '</button></div>';
@@ -4410,7 +4479,7 @@ window.generarReporteFecha = generarReporteFecha;
     var tipo = val('dlc-f-tipo'), pn = val('dlc-f-pn'), qty = parseInt(val('dlc-f-qty'), 10) || 0, ref = val('dlc-f-ref').trim();
     var loc = val('dlc-f-loc'), kind = val('dlc-f-kind'), nota = val('dlc-f-nota').trim();
     if (qty <= 0) { say(T('invalida')); return; }
-    var r = calcular(st.movs, imsStock(), hoyISO())[pn];
+    var r = calcular(st.movs, imsStock(), hoyISO(), st.p4)[pn];
     var disp = { ISSUE: r.p3wh.item, ASSEMBLE: r.p3wip.item, SHIP_P4: r.p3wip.bundle, RUN_P4: r.p4ims.bundle, QR: r.p4wip.bundle }[tipo];
     if (tipo === 'LOSS') { disp = r[loc][kind === 'bundle' ? 'bundle' : 'item']; if (!nota) { say(T('sinMotivo')); return; } }
     if (qty > disp) { say(T('sinStock', { n: n(Math.max(0, disp)) })); return; }
@@ -4457,7 +4526,7 @@ window.generarReporteFecha = generarReporteFecha;
 
   async function excel() {
     try {
-      var res = calcular(st.movs, imsStock(), hoyISO());
+      var res = calcular(st.movs, imsStock(), hoyISO(), st.p4);
       var wb = new ExcelJS.Workbook();
       var s1 = wb.addWorksheet('Saldos');
       s1.addRow(['Parte', 'Color', 'Locación', 'Item', 'Bundle', 'Total', 'Precio USD', 'Monto USD']);
