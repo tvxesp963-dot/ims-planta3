@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20261013a";
+var APP_VERSION = "20261015a";
 (function(){
   try{
     var key = 'ims_p3_version';
@@ -4068,7 +4068,7 @@ window.generarReporteFecha = generarReporteFecha;
   // ve la pantalla: admin, o usuario con permiso Cable DLC (campo dlc en ims_usuarios)
   function puedeVer() { return !!user && (user.role === 'admin' || user.dlc === true); }
 
-  var st = { ok: 0, movs: [], samsung: null, audit: [], filtro: 'all', cargado: false, p4: { ok: false, err: '', t: 0, alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0 }, msg: '', msgOk: false, cfgAcceso: null };
+  var st = { ok: 0, movs: [], samsung: null, audit: [], filtro: 'all', cargado: false, p4: { ok: false, err: '', t: 0, alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0, det: {}, detPiso: {} }, msg: '', msgOk: false, cfgAcceso: null };
 
   /* ---------------- IDIOMAS ES / EN / KO ---------------- */
   var I18N = {
@@ -4083,7 +4083,7 @@ window.generarReporteFecha = generarReporteFecha;
       total: 'Total bajo responsabilidad', item: 'Item suelto', bundle: 'Bundle', enviadoHoy: 'Enviado a Dallas hoy', expo: 'Exposición (USD)', dif: 'Dif. vs Samsung',
       flow: 'Recorrido del cable', matrix: 'Control por parte y color', conc: 'Conciliación contra Samsung', alertas: 'Alertas', sinAlertas: 'Sin alertas. Todo cuadra.',
       movForm: 'Registrar movimiento', movList: 'Movimientos recientes', sec: 'Seguridad y bitácora', samsungT: 'Reporte de Samsung (captura)',
-      lAlm3: 'Almacén P3', lWip3: 'WIP P3', lBt3: 'Bundle term. P3', lPk3: 'Pre-Kit P3', lAlm4: 'Almacén P4', lWip4: 'WIP P4', lPk4: 'Pre-Kit P4', lQR: 'QR → Dallas', parte: 'Parte', color: 'Color', black: 'Negro', white: 'Blanco',
+      lAlm3: 'Almacén P3', lWip3: 'WIP P3', lBt3: 'Bundle term. P3', lPk3: 'Pre-Kit P3', lAlm4: 'Almacén P4', lWip4: 'WIP P4', lPk4: 'Pre-Kit P4', detT: 'Detalle de bundles en IMS P4 (para comparar contra el Excel)', detBundle: 'Bundle (GH90)', detDesc: 'Líneas en IMS P4', detStock: 'Stock IMS P4', detLin: 'En línea (WIP P4)', detAlm: 'En almacén', detPk: 'Pre-Kit P4 (ShipQR)', detNo: 'No existe en IMS P4', detNota: 'Cada fila es un bundle GH90 que el BOM relaciona con el cable. Stock IMS P4 = suma de todas sus líneas (BUNDLE, Bundle, MANUAL BUNDLE). Almacén P4 + WIP P4 de la tabla de arriba = suma de la columna Stock IMS P4.', lQR: 'QR → Dallas', parte: 'Parte', color: 'Color', black: 'Negro', white: 'Blanco',
       sistema: 'Sistema', samsung: 'Samsung', estado: 'Estado', cuadra: 'Cuadra', revisar: 'Revisar', tipoSam: 'Tipo Samsung',
       tipo: 'Movimiento', cant: 'Cantidad', ref: 'Documento / referencia', nota: 'Nota', registrar: 'Registrar', loc: 'Locación', kind: 'Tipo de cable', motivo: 'Motivo (obligatorio)',
       t_ISSUE: 'Surtir de Almacén P3 a WIP P3', t_ASSEMBLE: 'Ensamblar bundle en P3', t_RTN_BT: 'Bundle terminado regresa al IMS P3', t_PREKIT_P3: 'Bundle a Pre-Kit P3 (A16 / A17)', t_SHIP_P4: 'Enviar bundle a Almacén P4', t_RUN_P4: 'Corrida: Almacén P4 a línea (WIP P4)', t_QR: 'Etiqueta QR: descuenta y envía a Dallas', t_LOSS: 'Pérdida / merma',
@@ -4108,7 +4108,7 @@ window.generarReporteFecha = generarReporteFecha;
       total: 'Total under responsibility', item: 'Loose Item', bundle: 'Bundle', enviadoHoy: 'Shipped to Dallas today', expo: 'Exposure (USD)', dif: 'Diff. vs Samsung',
       flow: 'Cable path', matrix: 'Control by part and color', conc: 'Reconciliation against Samsung', alertas: 'Alerts', sinAlertas: 'No alerts. Everything matches.',
       movForm: 'Record movement', movList: 'Recent movements', sec: 'Security and audit log', samsungT: 'Samsung report (entry)',
-      lAlm3: 'P3 Warehouse', lWip3: 'WIP P3', lBt3: 'P3 Fin. bundle', lPk3: 'P3 Pre-Kit', lAlm4: 'P4 Warehouse', lWip4: 'WIP P4', lPk4: 'P4 Pre-Kit', lQR: 'QR → Dallas', parte: 'Part', color: 'Color', black: 'Black', white: 'White',
+      lAlm3: 'P3 Warehouse', lWip3: 'WIP P3', lBt3: 'P3 Fin. bundle', lPk3: 'P3 Pre-Kit', lAlm4: 'P4 Warehouse', lWip4: 'WIP P4', lPk4: 'P4 Pre-Kit', detT: 'Bundle detail in IMS P4 (to compare against the Excel)', detBundle: 'Bundle (GH90)', detDesc: 'Lines in IMS P4', detStock: 'IMS P4 stock', detLin: 'On line (WIP P4)', detAlm: 'In warehouse', detPk: 'P4 Pre-Kit (ShipQR)', detNo: 'Not found in IMS P4', detNota: 'Each row is a GH90 bundle that the BOM links to the cable. IMS P4 stock = sum of all its lines (BUNDLE, Bundle, MANUAL BUNDLE). P4 Warehouse + WIP P4 in the table above = sum of the IMS P4 stock column.', lQR: 'QR → Dallas', parte: 'Part', color: 'Color', black: 'Black', white: 'White',
       sistema: 'System', samsung: 'Samsung', estado: 'Status', cuadra: 'Matches', revisar: 'Review', tipoSam: 'Samsung type',
       tipo: 'Movement', cant: 'Quantity', ref: 'Document / reference', nota: 'Note', registrar: 'Record', loc: 'Location', kind: 'Cable type', motivo: 'Reason (required)',
       t_ISSUE: 'Issue from P3 Warehouse to WIP P3', t_ASSEMBLE: 'Assemble bundle in P3', t_RTN_BT: 'Finished bundle returns to IMS P3', t_PREKIT_P3: 'Bundle to P3 Pre-Kit (A16 / A17)', t_SHIP_P4: 'Ship bundle to P4 Warehouse', t_RUN_P4: 'Model run: P4 Warehouse to line (WIP P4)', t_QR: 'QR label: deduct and ship to Dallas', t_LOSS: 'Loss / scrap',
@@ -4133,7 +4133,7 @@ window.generarReporteFecha = generarReporteFecha;
       total: '총 관리 수량', item: '낱개 Item', bundle: '번들', enviadoHoy: '오늘 달라스 출고', expo: '노출 금액 (USD)', dif: '삼성 대비 차이',
       flow: '케이블 이동 경로', matrix: '품번·색상별 관리', conc: '삼성 보고서 대조', alertas: '알림', sinAlertas: '알림 없음. 모두 일치합니다.',
       movForm: '이동 등록', movList: '최근 이동 내역', sec: '보안 및 감사 로그', samsungT: '삼성 보고서 (입력)',
-      lAlm3: 'P3 창고', lWip3: 'P3 WIP', lBt3: 'P3 완성 번들', lPk3: 'P3 프리킷', lAlm4: 'P4 창고', lWip4: 'P4 WIP', lPk4: 'P4 프리킷', lQR: 'QR → 달라스', parte: '품번', color: '색상', black: '검정', white: '흰색',
+      lAlm3: 'P3 창고', lWip3: 'P3 WIP', lBt3: 'P3 완성 번들', lPk3: 'P3 프리킷', lAlm4: 'P4 창고', lWip4: 'P4 WIP', lPk4: 'P4 프리킷', detT: 'IMS P4 번들 상세 (엑셀과 비교용)', detBundle: '번들 (GH90)', detDesc: 'IMS P4 라인', detStock: 'IMS P4 재고', detLin: '라인 (P4 WIP)', detAlm: '창고', detPk: 'P4 프리킷 (ShipQR)', detNo: 'IMS P4에 없음', detNota: '각 행은 BOM이 케이블과 연결한 GH90 번들입니다. IMS P4 재고 = 모든 라인(BUNDLE, Bundle, MANUAL BUNDLE)의 합계. 위 표의 P4 창고 + P4 WIP = IMS P4 재고 열의 합계.', lQR: 'QR → 달라스', parte: '품번', color: '색상', black: '검정', white: '흰색',
       sistema: '시스템', samsung: '삼성', estado: '상태', cuadra: '일치', revisar: '확인', tipoSam: '삼성 구분',
       tipo: '이동', cant: '수량', ref: '문서 / 참조', nota: '메모', registrar: '등록', loc: '위치', kind: '케이블 구분', motivo: '사유 (필수)',
       t_ISSUE: 'P3 창고에서 P3 WIP로 불출', t_ASSEMBLE: 'P3에서 번들 조립', t_RTN_BT: '완성 번들 IMS P3 입고', t_PREKIT_P3: '번들 P3 프리킷으로 이동 (A16 / A17)', t_SHIP_P4: 'P4 창고로 번들 출고', t_RUN_P4: '모델 투입: P4 창고에서 라인(P4 WIP)으로', t_QR: 'QR 라벨: 차감 후 달라스 출고', t_LOSS: '분실 / 손실',
@@ -4354,7 +4354,7 @@ window.generarReporteFecha = generarReporteFecha;
   /* ---------------- DATOS ---------------- */
   /* ---- Lectura de IMS P4 + BOM + ShipQR (todo ligado) ---- */
   async function cargarP4() {
-    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0, precio: {}, lin: {}, linItem: {} };
+    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0, precio: {}, lin: {}, linItem: {}, det: {}, detPiso: {} };
     try {
       var cablePns = PARTES.map(function (x) { return x.pn; });
       // 1) BOM: qué bundle (GH90) lleva cada cable DLC
@@ -4386,6 +4386,8 @@ window.generarReporteFecha = generarReporteFecha;
         if (cablePns.indexOf(pn) >= 0) { var wl = enLinea(o.historial, act); p.almItem[pn] = (p.almItem[pn] || 0) + act - wl; p.linItem[pn] = (p.linItem[pn] || 0) + wl; if (money(o.precio) > 0) p.precio[pn] = money(o.precio); return; }
         if (p.mapa[pn] && (!hayBundleDesc[pn] || /BUNDLE/i.test(o.desc || ''))) {
           var wb2 = enLinea(o.historial, act); p.mapa[pn].forEach(function (c) { p.alm[c] = (p.alm[c] || 0) + act - wb2; p.lin[c] = (p.lin[c] || 0) + wb2; });
+          var d0 = p.det[pn] || (p.det[pn] = { stock: 0, lin: 0, lineas: [] });   // detalle por bundle para comparar contra el Excel del IMS P4
+          d0.stock += act; d0.lin += wb2; d0.lineas.push({ desc: String(o.desc || ''), stock: act });
         }
       });
       // 3) ShipQR: pallets con etiqueta QR → piso (sin embarcar) o enviados a Dallas
@@ -4394,6 +4396,7 @@ window.generarReporteFecha = generarReporteFecha;
         var qs = await db.collection('shipqr_pallets').where('part_number', 'in', gh.slice(i, i + 30)).get();
         qs.forEach(function (d) {
           var o = d.data(), pn = String(o.part_number || '').trim().toUpperCase(), q = Number(o.quantity) || 0;
+          if (o.status !== 'SHIPPED') p.detPiso[pn] = (p.detPiso[pn] || 0) + q;
           (p.mapa[pn] || []).forEach(function (c) {
             if (o.status === 'SHIPPED') {
               p.env[c] = (p.env[c] || 0) + q;
@@ -4502,6 +4505,22 @@ window.generarReporteFecha = generarReporteFecha;
         '<td><b>' + n(totalPn(r)) + '</b></td></tr>';
     });
     html += '</tbody></table></div><div class="dlc-mut">' + h(T('itemBundle')) + '</div>';
+
+    // detalle por bundle GH90 (IMS P4): permite comparar fila por fila contra el Excel del IMS P4
+    if (st.p4.ok) {
+      var detH = '';
+      keys.forEach(function (pn) {
+        var padres = Object.keys(st.p4.mapa).filter(function (g) { return st.p4.mapa[g].indexOf(pn) >= 0; }).sort();
+        var tS = 0, tL = 0, tP = 0;
+        padres.forEach(function (g) {
+          var d1 = st.p4.det[g], pk = st.p4.detPiso[g] || 0, sk = d1 ? d1.stock : 0, ln = d1 ? d1.lin : 0;
+          tS += sk; tL += ln; tP += pk;
+          detH += '<tr><td>' + chip(colorDe(pn)) + h(pn) + '</td><td><b>' + h(g) + '</b></td><td class="dlc-mut">' + (d1 ? d1.lineas.map(function (x) { return h(x.desc) + ' ' + n(x.stock); }).join(' · ') : h(T('detNo'))) + '</td><td>' + n(sk) + '</td><td>' + n(ln) + '</td><td>' + n(sk - ln) + '</td><td>' + n(pk) + '</td></tr>';
+        });
+        detH += '<tr style="font-weight:700"><td>' + chip(colorDe(pn)) + h(pn) + '</td><td>Total (' + padres.length + ')</td><td></td><td>' + n(tS) + '</td><td>' + n(tL) + '</td><td>' + n(tS - tL) + '</td><td>' + n(tP) + '</td></tr>';
+      });
+      html += '<details class="dlc-det" open><summary>📋 ' + h(T('detT')) + '</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('detBundle')) + '</th><th>' + h(T('detDesc')) + '</th><th>' + h(T('detStock')) + '</th><th>' + h(T('detLin')) + '</th><th>' + h(T('detAlm')) + '</th><th>' + h(T('detPk')) + '</th></tr></thead><tbody>' + detH + '</tbody></table></div><div class="dlc-mut">' + h(T('detNota')) + '</div></div></details>';
+    }
 
     // conciliación
     html += '<div class="sh">' + h(T('conc')) + '</div><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('tipoSam')) + '</th><th>' + h(T('sistema')) + '</th><th>' + h(T('samsung')) + '</th><th>Δ</th><th>' + h(T('estado')) + '</th></tr></thead><tbody>';
