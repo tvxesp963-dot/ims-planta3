@@ -405,15 +405,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="mfDW">
         <select class="loc-sel" id="mfDest">
           <option value="Almacén" id="t-optAlmacen">📦 Almacén</option>
-          <option value="Línea S1" id="t-optS1">🏭 Línea S1</option>
-          <option value="Línea S2" id="t-optS2">🏭 Línea S2</option>
-          <option value="Línea S3" id="t-optS3">🏭 Línea S3</option>
-          <option value="Línea S4" id="t-optS4">🏭 Línea S4</option>
-          <option value="Línea ASSY1" id="t-optASSY1">🔧 Línea ASSY1</option>
-          <option value="Línea VC" id="t-optVC">✅ Línea VC</option>
-          <option value="Zhongke" id="t-optZhongke">🔬 Zhongke</option>
+          <option value="Pre-Kit">🏭 Pre-Kit</option>
+          <option value="B2">🏭 B2</option>
+          <option value="B1">🏭 B1</option>
+          <option value="Pre-Folding">🏭 Pre-Folding</option>
+          <option value="Bandita">🏭 Bandita</option>
           <option value="Cuarentena" id="t-optCuarentena">⚠️ Cuarentena</option>
-          <option value="Producción Terminada" id="t-optProdTerm">🎯 Prod. Terminada</option>
         </select>
       </div>
       <input class="ref-in" id="mfRef" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" placeholder="Referencia / OC (opcional)" data-t-ph="ph_referencia">
@@ -592,7 +589,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bni" onclick="goPage('pgTraz',this)"><span class="bni-i">🗺️</span><span id="t-navTraz">Traz.</span></button>
     <button class="bni" onclick="goPage('pgQR',this)"><span class="bni-i">📷</span>QR</button>
     <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span><span id="t-navHist">Hist.</span></button>
-    <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">📋</span><span id="t-navPlan">Plan</span></button>
     <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span><span id="t-navAdmin">Admin</span></button>
     <button class="bni" id="navDLC" onclick="goPage('pgDLC',this)"><span class="bni-i">💾</span><span id="t-navDLC">Cable DLC</span></button>
   </div>
@@ -996,6 +992,11 @@ const MASTER = [
 // ── STATE ──
 let items = JSON.parse(localStorage.getItem('ims3_items')||'null') || MASTER.map(r=>({...r,entradas:0,salidas:0,actual:r.inicial,ubicacion:'Almacén',historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:r.inicial,loc:'Almacén',user:'Sistema',ref:'Inv. inicial'}]}));
 let movs = JSON.parse(localStorage.getItem('ims3_movs')||'[]');
+// (constantes de ubicaciones: deben declararse ANTES de launch(), que corre al cargar)
+// Ubicaciones de IMS Planta 3 (líneas de P3). Las de P4 que quedaron en datos viejos ya no se ofrecen como destino.
+const LINEAS_P3 = ['Pre-Kit','B2','B1','Pre-Folding','Bandita'];
+const UBIC_P3 = ['Almacén', ...LINEAS_P3, 'Cuarentena'];
+const UBIC_P4_VIEJAS = ['Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Producción Terminada'];
 let user = JSON.parse(localStorage.getItem('ims3_user')||'null');
 let _blockSnapshot = false;
 let selIdx = null, movTipo = 'E', invFam = 'TODOS', histFam = 'TODOS', selRole = 'admin';
@@ -1335,6 +1336,7 @@ async function doLogin() {
   // Leer rol desde Firestore colección ims_usuarios
   let role = 'viewer'; // default
   let nombre = e.split('@')[0];
+  let dlc = false;
   if (db) {
     try {
       const snap = await db.collection('ims_usuarios').where('email','==',e).get();
@@ -1346,12 +1348,13 @@ async function doLogin() {
         }
         role = u.role || u.rol || 'viewer';
         nombre = u.nombre || nombre;
+        dlc = u.dlc === true;
       } else {
         err.textContent = 'Usuario no registrado. Contacta al administrador.'; return;
       }
     } catch(ex) { console.error('Error leyendo usuario:', ex); }
   }
-  user = {email:e, name:nombre, role};
+  user = {email:e, name:nombre, role, dlc};
   localStorage.setItem('ims3_user', JSON.stringify(user));
   err.textContent = '';
   launch();
@@ -1911,7 +1914,7 @@ function launch() {
     const btn = document.querySelector(`.bni[onclick*="${id}"]`);
     if(btn) btn.style.display = isViewer ? 'none' : '';
   });
-  const navDLC = document.getElementById('navDLC'); if(navDLC) navDLC.style.display = isViewer?'none':'flex';
+  const navDLC = document.getElementById('navDLC'); if(navDLC) navDLC.style.display = (user.role==='admin'||user.dlc===true)?'flex':'none';
   // Ocultar módulo de movimientos para viewers
   const navMov = document.getElementById('navMov');
   if(navMov) navMov.style.display = isViewer?'none':'flex';
@@ -1958,7 +1961,7 @@ function goBack() {
   pageHistory.pop(); // quitar actual
   const prev = pageHistory[pageHistory.length-1] || 'pgDash';
   const navMap = {
-    pgDash:0, pgInv:1, pgMov:2, pgTraz:3, pgQR:4, pgHist:5, pgPlan:6, pgAdmin:7, pgDLC:8
+    pgDash:0, pgInv:1, pgMov:2, pgTraz:3, pgQR:4, pgHist:5, pgAdmin:6, pgDLC:7
   };
   const bniBtns = document.querySelectorAll('.bni');
   const btn = bniBtns[navMap[prev]] || bniBtns[0];
@@ -2128,17 +2131,17 @@ function updateMfDestOptions() {
   const sel = document.getElementById('mfDest');
   if (!sel) return;
   const current = sel.value;
-  const icons = {'Almacén':'📦','Línea S1':'🏭','Línea S2':'🏭','Línea S3':'🏭','Línea S4':'🏭','Línea ASSY1':'🔧','Línea VC':'✅','Zhongke':'🔬','Cuarentena':'⚠️','Producción Terminada':'🎯'};
+  const icons = {'Almacén':'📦','Pre-Kit':'🏭','B2':'🏭','B1':'🏭','Pre-Folding':'🏭','Bandita':'🏭','Cuarentena':'⚠️'};
   // Ubicaciones estándar de la planta: siempre disponibles como destino, aunque hoy no tengan stock
-  const ESTANDAR = ['Almacén','Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Cuarentena','Producción Terminada'];
+  const ESTANDAR = UBIC_P3;
   const locs = {};
   ESTANDAR.forEach(l => locs[l] = true);
   // Agregar cualquier ubicación nueva que ya exista en el inventario real (Firestore) y no esté en la lista estándar
-  items.forEach(i => { const loc = (i.ubicacion||'').trim(); if (loc) locs[loc] = true; });
+  items.forEach(i => { const loc = (i.ubicacion||'').trim(); if (loc && !UBIC_P4_VIEJAS.includes(loc)) locs[loc] = true; });
   const extra = Object.keys(locs).filter(l => !ESTANDAR.includes(l)).sort((a,b)=>a.localeCompare(b));
   const list = [...ESTANDAR, ...extra];
   sel.innerHTML = list.map(l => {
-    const ic = icons[l] || (l.startsWith('Línea') ? '🏭' : '📍');
+    const ic = icons[l] || '📍';
     return '<option value="'+l+'">'+ic+' '+l+'</option>';
   }).join('');
   if (list.includes(current)) sel.value = current;
@@ -2219,7 +2222,7 @@ function getStep(item) {
   const loc = item.ubicacion||'Almacén';
   if (loc.includes('Terminada')) return 4;
   if (loc==='Cuarentena') return 3;
-  if (loc.startsWith('Línea')||loc==='Zhongke') return 1;
+  if (loc.startsWith('Línea')||loc==='Zhongke'||LINEAS_P3.includes(loc)) return 1;
   if (item.salidas>0&&item.actual===0) return 4;
   if (item.salidas>0) return 2;
   return 0;
@@ -2246,12 +2249,15 @@ function renderTraz() {
   }).join('');
 }
 function renderLocMap() {
-  const zones = ['Almacén','Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Cuarentena','Producción Terminada'];
-  const icons = {'Almacén':'📦','Línea S1':'🏭','Línea S2':'🏭','Línea S3':'🏭','Línea S4':'🏭','Línea ASSY1':'🔧','Línea VC':'✅','Zhongke':'🔬','Cuarentena':'⚠️','Producción Terminada':'🎯'};
+  // Zonas de P3 + cualquier otra ubicación que todavía tenga stock (datos viejos), para no ocultar inventario
+  const extras = [];
+  items.forEach(i=>{ const z=(i.ubicacion||'Almacén'); if(!UBIC_P3.includes(z) && !extras.includes(z) && (parseFloat(i.actual)||0)>0) extras.push(z); });
+  const zones = [...UBIC_P3, ...extras];
+  const icons = {'Almacén':'📦','Pre-Kit':'🏭','B2':'🏭','B1':'🏭','Pre-Folding':'🏭','Bandita':'🏭','Cuarentena':'⚠️'};
   const counts = {};
   zones.forEach(z=>counts[z]=0);
   items.forEach(i=>{ const z=i.ubicacion||'Almacén'; if(counts[z]!==undefined) counts[z]+=i.actual; });
-  document.getElementById('locMap').innerHTML = zones.map(z=>'<div class="lz '+(counts[z]>0?'hs':'')+'"><div class="lz-i">'+icons[z]+'</div><div class="lz-n">'+z+'</div><div class="lz-c">'+(counts[z]>0?fmt(counts[z])+' pzas':'—')+'</div></div>').join('');
+  document.getElementById('locMap').innerHTML = zones.map(z=>'<div class="lz '+(counts[z]>0?'hs':'')+'"><div class="lz-i">'+(icons[z]||'📍')+'</div><div class="lz-n">'+z+'</div><div class="lz-c">'+(counts[z]>0?fmt(counts[z])+' pzas':'—')+'</div></div>').join('');
 }
 
 // ── QR ──
@@ -2854,7 +2860,8 @@ async function loadImsUsers() {
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="font-size:.6rem;background:${rolColor}22;color:${rolColor};padding:2px 8px;border-radius:20px;font-weight:600">${role}</span></td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${activo?'var(--green)':'var(--red)'};margin-right:4px"></span>${activo?'Activo':'Inactivo'}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)">${isMe?'<span style="font-size:.65rem;color:var(--text2)">Tú</span>':
-          `<button onclick="toggleImsUser('${u.docId}',${activo})" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">${activo?'Desactivar':'Activar'}</button>
+          `<button onclick="toggleDlcUser('${u.docId}',${u.dlc===true})" style="border:1px solid ${u.dlc===true?'var(--green)':'var(--border2)'};background:${u.dlc===true?'rgba(46,204,113,.15)':'var(--bg3)'};color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">💾 DLC ${u.dlc===true?'✔':'✖'}</button>
+           <button onclick="toggleImsUser('${u.docId}',${activo})" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">${activo?'Desactivar':'Activar'}</button>
            <button onclick="deleteImsUser('${u.docId}','${u.nombre||u.email}')" style="border:1px solid var(--red);background:transparent;color:var(--red);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer">✕</button>`}</td>`;
       tb.appendChild(tr);
     });
@@ -2884,6 +2891,15 @@ async function toggleImsUser(id,activo) {
   toast('Usuario actualizado','ok'); loadImsUsers();
 }
 window.toggleImsUser = toggleImsUser;
+
+async function toggleDlcUser(id,actual) {
+  if(!user||user.role!=='admin'){toast('Solo admins','err');return;}
+  try {
+    await db.collection('ims_usuarios').doc(id).update({dlc:!actual});
+    toast(!actual?'Acceso a Cable DLC concedido (debe volver a entrar)':'Acceso a Cable DLC quitado','ok'); loadImsUsers();
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+window.toggleDlcUser = toggleDlcUser;
 
 async function deleteImsUser(id,nombre) {
   if(!confirm('¿Eliminar perfil de "'+nombre+'"?'))return;
@@ -4040,7 +4056,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var LOCS = ['p3wh', 'p3wip', 'p4ims', 'p4wip'];
+  var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
   var SAMSUNG_DEF = {
@@ -4049,6 +4065,8 @@ window.generarReporteFecha = generarReporteFecha;
   };
   // quién puede intentar entrar (los demás ni ven la pestaña) y quién administra
   var ROLES_ENTRAR = ['admin', 'operador'];
+  // ve la pantalla: admin, o usuario con permiso Cable DLC (campo dlc en ims_usuarios)
+  function puedeVer() { return !!user && (user.role === 'admin' || user.dlc === true); }
 
   var st = { ok: 0, movs: [], samsung: null, audit: [], filtro: 'all', cargado: false, p4: { ok: false, err: '', t: 0, alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0 }, msg: '', msgOk: false, cfgAcceso: null };
 
@@ -4061,15 +4079,15 @@ window.generarReporteFecha = generarReporteFecha;
       sinPwAdmin: 'Aún no hay contraseña de cable DLC. Créala ahora:', sinPw: 'Aún no hay contraseña de cable DLC. Pide al Administrador que la cree en esta pantalla.',
       pwNew: 'Contraseña nueva', pwRep: 'Repetir contraseña', pwSave: 'Guardar contraseña', pwShort: 'La contraseña debe tener al menos 6 caracteres.', pwDiff: 'Las contraseñas no coinciden.',
       pwWrong: 'Contraseña incorrecta. Intentos restantes: {n}.', pwLocked: 'Demasiados intentos. Bloqueado por {m} min.', pwEmpty: 'Escribe la contraseña.', soloAdmin: 'Solo el Administrador puede hacerlo.',
-      cargando: 'Cargando…', err: 'Error: ', bloquear: 'Bloquear', refrescar: 'Actualizar', excel: 'Excel', todos: 'Todos',
+      cargando: 'Cargando…', err: 'Error: ', bloquear: 'Bloquear', refrescar: 'Actualizar', excel: 'Excel', todos: 'Todos', waDesc: 'Se descargó la imagen del reporte: en WhatsApp elige el contacto y adjúntala', pegaImg: 'Imagen del reporte copiada: en WhatsApp elige el contacto y pega con Ctrl+V', btnEnviar: 'Enviar reporte (correo + WhatsApp)', btnDest: 'Destinatarios', destAsk: 'Correos que reciben el reporte (separados por coma):', sinDest: 'No hay destinatarios. El administrador debe capturarlos con el botón Destinatarios.', destOk: 'Destinatarios guardados', enviando: 'Enviando reporte…', envOk: 'Reporte enviado por correo a {n} destinatario(s). Se abrió WhatsApp.', waAdj: 'En WhatsApp adjunta el Excel descargado.', asuntoMail: 'Reporte de Cable DLC (propiedad de Samsung)', mTitulo: 'Reporte de Cable DLC', mPara: 'Resumen para Dirección', mAdj: 'Se adjunta el Excel completo.', mTotal: 'Total bajo responsabilidad', mUsd: 'Exposición (USD)', mDif: 'Dif. vs Samsung', mHoy: 'Enviado a Dallas hoy', waTit: '*Reporte Cable DLC*',
       total: 'Total bajo responsabilidad', item: 'Item suelto', bundle: 'Bundle', enviadoHoy: 'Enviado a Dallas hoy', expo: 'Exposición (USD)', dif: 'Dif. vs Samsung',
       flow: 'Recorrido del cable', matrix: 'Control por parte y color', conc: 'Conciliación contra Samsung', alertas: 'Alertas', sinAlertas: 'Sin alertas. Todo cuadra.',
       movForm: 'Registrar movimiento', movList: 'Movimientos recientes', sec: 'Seguridad y bitácora', samsungT: 'Reporte de Samsung (captura)',
-      lAlm3: 'Almacén P3', lWip3: 'WIP P3', lAlm4: 'Almacén P4', lWip4: 'WIP P4', lQR: 'QR → Dallas', parte: 'Parte', color: 'Color', black: 'Negro', white: 'Blanco',
+      lAlm3: 'Almacén P3', lWip3: 'WIP P3', lBt3: 'Bundle term. P3', lPk3: 'Pre-Kit P3', lAlm4: 'Almacén P4', lWip4: 'WIP P4', lPk4: 'Pre-Kit P4', lQR: 'QR → Dallas', parte: 'Parte', color: 'Color', black: 'Negro', white: 'Blanco',
       sistema: 'Sistema', samsung: 'Samsung', estado: 'Estado', cuadra: 'Cuadra', revisar: 'Revisar', tipoSam: 'Tipo Samsung',
       tipo: 'Movimiento', cant: 'Cantidad', ref: 'Documento / referencia', nota: 'Nota', registrar: 'Registrar', loc: 'Locación', kind: 'Tipo de cable', motivo: 'Motivo (obligatorio)',
-      t_ISSUE: 'Surtir de Almacén P3 a WIP P3', t_ASSEMBLE: 'Ensamblar bundle en P3', t_SHIP_P4: 'Enviar bundle a Almacén P4', t_RUN_P4: 'Corrida: Almacén P4 a línea (WIP P4)', t_QR: 'Etiqueta QR: descuenta y envía a Dallas', t_LOSS: 'Pérdida / merma',
-      c_ISSUE: 'Surtido P3', c_ASSEMBLE: 'Ensamble', c_SHIP_P4: 'Envío a P4', c_RUN_P4: 'Corrida', c_QR: 'Etiqueta QR', c_LOSS: 'Pérdida',
+      t_ISSUE: 'Surtir de Almacén P3 a WIP P3', t_ASSEMBLE: 'Ensamblar bundle en P3', t_RTN_BT: 'Bundle terminado regresa al IMS P3', t_PREKIT_P3: 'Bundle a Pre-Kit P3 (A16 / A17)', t_SHIP_P4: 'Enviar bundle a Almacén P4', t_RUN_P4: 'Corrida: Almacén P4 a línea (WIP P4)', t_QR: 'Etiqueta QR: descuenta y envía a Dallas', t_LOSS: 'Pérdida / merma',
+      c_OPEN: 'Saldo inicial', c_RTN_BT: 'Bundle a IMS P3', c_PREKIT_P3: 'A Pre-Kit P3', openT: 'Saldo inicial en WIP P3 (solo una vez)', openNota: 'Cable que ya está en WIP P3 antes de usar esta pantalla. No mueve el inventario del IMS P3. Almacén P3, Almacén P4, piso y Dallas se leen solos.', openBtn: 'Registrar saldo inicial', openYa: 'Ya hay un saldo inicial para {p}. Anúlalo primero en Movimientos recientes.', openVacio: 'Captura al menos una cantidad.', openConf: '¿Registrar el saldo inicial en WIP P3? Solo debe hacerse una vez.', openOk: 'Saldo inicial registrado', t_RETURN: 'Devolver cable sobrante a Almacén P3 (Entrada en el IMS)', c_RETURN: 'Devolución a Almacén P3', anularRET: 'Una devolución no se anula aquí: registra una Salida en el IMS P3.', c_ISSUE: 'Surtido P3', c_ASSEMBLE: 'Ensamble', c_SHIP_P4: 'Envío a P4', c_RUN_P4: 'Corrida', c_QR: 'Etiqueta QR', c_LOSS: 'Pérdida',
       hora: 'Fecha', usuario: 'Usuario', rol: 'Rol', accion: 'Acción', anular: 'Anular', anulado: 'Anulado', anularMotivo: 'Motivo de la anulación:', anularISSUE: 'Un surtido no se anula aquí: registra una Entrada en el IMS P3.',
       invalida: 'Cantidad inválida', sinStock: 'No hay suficiente en el origen: disponibles {n}.', sinPN: 'Ese número de parte no está en el inventario del IMS P3.', sinMotivo: 'Escribe el motivo.',
       okReg: 'Movimiento registrado', okAnul: 'Movimiento anulado', sinPermiso: 'Sin permiso',
@@ -4077,7 +4095,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: 'Roles que pueden intentar entrar: Admin y Operador. Viewer ni ve la pestaña. Aun así piden la contraseña.', secPw: 'Contraseña (solo Admin la crea y cambia). Se guarda cifrada con SHA-256 y sal, nunca en texto.',
       secLock: 'Bloqueo: 10 min sin uso. 5 intentos fallidos bloquean 5 min.', cambiarPw: 'Cambiar contraseña', pwCambiada: 'Contraseña actualizada',
       guardarSam: 'Guardar reporte Samsung', samOk: 'Reporte Samsung guardado', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      excelOk: 'Excel generado', p4Ok: 'Conectado a IMS P4 y ShipQR · actualizado {h}', p4Err: 'No se pudo leer IMS P4 / ShipQR: {e}. Lo de P4 no es confiable.', p4SinMapa: 'El BOM no relaciona ningún bundle GH90 con el cable DLC. Carga el BOM en el BOM Simulator.', p4Nota: 'WIP P4 = bundles con etiqueta QR aún sin embarcar (ShipQR). Almacén P4 = bundles en IMS P4.', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
+      imsNota: 'Entradas y Salidas se hacen en el IMS P3 como siempre: la Entrada suma al Almacén P3 y la Salida o el Traslado a una línea/zona pasa el cable a WIP P3 (a partir del saldo inicial). En IMS P4, el Traslado a una línea/zona cuenta como WIP P4.', aSinOpen: 'Falta el saldo inicial de {p}: las salidas del IMS no se cuentan en WIP P3 hasta capturarlo.', excelOk: 'Excel generado', p4Ok: 'Conectado a IMS P4 y ShipQR · actualizado {h}', p4Err: 'No se pudo leer IMS P4 / ShipQR: {e}. Lo de P4 no es confiable.', p4SinMapa: 'El BOM no relaciona ningún bundle GH90 con el cable DLC. Carga el BOM en el BOM Simulator.', p4Nota: 'Almacén P4 = bundles en IMS P4. WIP P4 = trasladados a línea. Pre-Kit P4 = producto terminado enviado por el MES a ShipQR, aún sin embarcar.', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
     },
     en: {
       nav: 'DLC Cable', title: 'DLC Cable · Control', sub: 'Samsung-owned cable. Quantities in pieces. 1 bundle = 1 cable.',
@@ -4086,15 +4104,15 @@ window.generarReporteFecha = generarReporteFecha;
       sinPwAdmin: 'There is no DLC cable password yet. Create it now:', sinPw: 'There is no DLC cable password yet. Ask the Administrator to create it on this screen.',
       pwNew: 'New password', pwRep: 'Repeat password', pwSave: 'Save password', pwShort: 'The password must be at least 6 characters.', pwDiff: 'The passwords do not match.',
       pwWrong: 'Wrong password. Attempts left: {n}.', pwLocked: 'Too many attempts. Locked for {m} min.', pwEmpty: 'Enter the password.', soloAdmin: 'Only the Administrator can do this.',
-      cargando: 'Loading…', err: 'Error: ', bloquear: 'Lock', refrescar: 'Refresh', excel: 'Excel', todos: 'All',
+      cargando: 'Loading…', err: 'Error: ', bloquear: 'Lock', refrescar: 'Refresh', excel: 'Excel', todos: 'All', waDesc: 'The report image was downloaded: in WhatsApp choose the contact and attach it', pegaImg: 'Report image copied: in WhatsApp choose the contact and paste with Ctrl+V', btnEnviar: 'Send report (email + WhatsApp)', btnDest: 'Recipients', destAsk: 'Emails that receive the report (comma separated):', sinDest: 'No recipients. The administrator must enter them with the Recipients button.', destOk: 'Recipients saved', enviando: 'Sending report…', envOk: 'Report emailed to {n} recipient(s). WhatsApp opened.', waAdj: 'In WhatsApp attach the downloaded Excel.', asuntoMail: 'DLC Cable Report (Samsung-owned)', mTitulo: 'DLC Cable Report', mPara: 'Executive summary', mAdj: 'Full Excel attached.', mTotal: 'Total under responsibility', mUsd: 'Exposure (USD)', mDif: 'Diff. vs Samsung', mHoy: 'Shipped to Dallas today', waTit: '*DLC Cable Report*',
       total: 'Total under responsibility', item: 'Loose Item', bundle: 'Bundle', enviadoHoy: 'Shipped to Dallas today', expo: 'Exposure (USD)', dif: 'Diff. vs Samsung',
       flow: 'Cable path', matrix: 'Control by part and color', conc: 'Reconciliation against Samsung', alertas: 'Alerts', sinAlertas: 'No alerts. Everything matches.',
       movForm: 'Record movement', movList: 'Recent movements', sec: 'Security and audit log', samsungT: 'Samsung report (entry)',
-      lAlm3: 'P3 Warehouse', lWip3: 'WIP P3', lAlm4: 'P4 Warehouse', lWip4: 'WIP P4', lQR: 'QR → Dallas', parte: 'Part', color: 'Color', black: 'Black', white: 'White',
+      lAlm3: 'P3 Warehouse', lWip3: 'WIP P3', lBt3: 'P3 Fin. bundle', lPk3: 'P3 Pre-Kit', lAlm4: 'P4 Warehouse', lWip4: 'WIP P4', lPk4: 'P4 Pre-Kit', lQR: 'QR → Dallas', parte: 'Part', color: 'Color', black: 'Black', white: 'White',
       sistema: 'System', samsung: 'Samsung', estado: 'Status', cuadra: 'Matches', revisar: 'Review', tipoSam: 'Samsung type',
       tipo: 'Movement', cant: 'Quantity', ref: 'Document / reference', nota: 'Note', registrar: 'Record', loc: 'Location', kind: 'Cable type', motivo: 'Reason (required)',
-      t_ISSUE: 'Issue from P3 Warehouse to WIP P3', t_ASSEMBLE: 'Assemble bundle in P3', t_SHIP_P4: 'Ship bundle to P4 Warehouse', t_RUN_P4: 'Model run: P4 Warehouse to line (WIP P4)', t_QR: 'QR label: deduct and ship to Dallas', t_LOSS: 'Loss / scrap',
-      c_ISSUE: 'P3 issue', c_ASSEMBLE: 'Assembly', c_SHIP_P4: 'Ship to P4', c_RUN_P4: 'Model run', c_QR: 'QR label', c_LOSS: 'Loss',
+      t_ISSUE: 'Issue from P3 Warehouse to WIP P3', t_ASSEMBLE: 'Assemble bundle in P3', t_RTN_BT: 'Finished bundle returns to IMS P3', t_PREKIT_P3: 'Bundle to P3 Pre-Kit (A16 / A17)', t_SHIP_P4: 'Ship bundle to P4 Warehouse', t_RUN_P4: 'Model run: P4 Warehouse to line (WIP P4)', t_QR: 'QR label: deduct and ship to Dallas', t_LOSS: 'Loss / scrap',
+      c_OPEN: 'Opening balance', c_RTN_BT: 'Bundle to IMS P3', c_PREKIT_P3: 'To P3 Pre-Kit', openT: 'Opening balance in WIP P3 (once only)', openNota: 'Cable already in WIP P3 before using this screen. It does not move IMS P3 inventory. P3 Warehouse, P4 Warehouse, floor and Dallas are read automatically.', openBtn: 'Record opening balance', openYa: 'There is already an opening balance for {p}. Void it first in Recent movements.', openVacio: 'Enter at least one quantity.', openConf: 'Record the opening balance in WIP P3? It should only be done once.', openOk: 'Opening balance recorded', t_RETURN: 'Return leftover cable to P3 Warehouse (IMS Entry)', c_RETURN: 'Return to P3 Warehouse', anularRET: 'A return is not voided here: record an Exit in IMS P3.', c_ISSUE: 'P3 issue', c_ASSEMBLE: 'Assembly', c_SHIP_P4: 'Ship to P4', c_RUN_P4: 'Model run', c_QR: 'QR label', c_LOSS: 'Loss',
       hora: 'Date', usuario: 'User', rol: 'Role', accion: 'Action', anular: 'Void', anulado: 'Voided', anularMotivo: 'Reason for voiding:', anularISSUE: 'An issue is not voided here: record an Entry in IMS P3.',
       invalida: 'Invalid quantity', sinStock: 'Not enough at the source: {n} available.', sinPN: 'That part number is not in the IMS P3 inventory.', sinMotivo: 'Enter the reason.',
       okReg: 'Movement recorded', okAnul: 'Movement voided', sinPermiso: 'No permission',
@@ -4102,7 +4120,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: 'Roles that can try to enter: Admin and Operator. Viewer does not even see the tab. They still need the password.', secPw: 'Password (only Admin creates and changes it). Stored encrypted with SHA-256 and salt, never as plain text.',
       secLock: 'Lock: 10 min without use. 5 failed attempts lock it for 5 min.', cambiarPw: 'Change password', pwCambiada: 'Password updated',
       guardarSam: 'Save Samsung report', samOk: 'Samsung report saved', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      excelOk: 'Excel generated', p4Ok: 'Connected to IMS P4 and ShipQR · updated {h}', p4Err: 'Could not read IMS P4 / ShipQR: {e}. P4 data is not reliable.', p4SinMapa: 'The BOM does not link any GH90 bundle to the DLC cable. Load the BOM in the BOM Simulator.', p4Nota: 'WIP P4 = bundles with QR label not yet shipped (ShipQR). P4 Warehouse = bundles in IMS P4.', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
+      imsNota: 'Entries and Exits are done in IMS P3 as usual: an Entry adds to P3 Warehouse and an Exit or a Transfer to a line/zone moves the cable to WIP P3 (from the opening balance on). In IMS P4, a Transfer to a line/zone counts as WIP P4.', aSinOpen: 'Opening balance missing for {p}: IMS exits are not counted in WIP P3 until it is entered.', excelOk: 'Excel generated', p4Ok: 'Connected to IMS P4 and ShipQR · updated {h}', p4Err: 'Could not read IMS P4 / ShipQR: {e}. P4 data is not reliable.', p4SinMapa: 'The BOM does not link any GH90 bundle to the DLC cable. Load the BOM in the BOM Simulator.', p4Nota: 'P4 Warehouse = bundles in IMS P4. WIP P4 = moved to the line. P4 Pre-Kit = finished product sent by the MES to ShipQR, not yet shipped.', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Item / Bundle'
     },
     ko: {
       nav: 'DLC 케이블', title: 'DLC 케이블 · 관리', sub: '삼성 소유 케이블. 수량 단위: 개. 번들 1개 = 케이블 1개.',
@@ -4111,15 +4129,15 @@ window.generarReporteFecha = generarReporteFecha;
       sinPwAdmin: '아직 DLC 케이블 비밀번호가 없습니다. 지금 만드세요:', sinPw: '아직 DLC 케이블 비밀번호가 없습니다. 관리자에게 이 화면에서 만들어 달라고 요청하세요.',
       pwNew: '새 비밀번호', pwRep: '비밀번호 확인', pwSave: '비밀번호 저장', pwShort: '비밀번호는 6자 이상이어야 합니다.', pwDiff: '비밀번호가 일치하지 않습니다.',
       pwWrong: '비밀번호가 올바르지 않습니다. 남은 시도: {n}회.', pwLocked: '시도 횟수 초과. {m}분 동안 잠금.', pwEmpty: '비밀번호를 입력하세요.', soloAdmin: '관리자만 할 수 있습니다.',
-      cargando: '불러오는 중…', err: '오류: ', bloquear: '잠금', refrescar: '새로고침', excel: 'Excel', todos: '전체',
+      cargando: '불러오는 중…', err: '오류: ', bloquear: '잠금', refrescar: '새로고침', excel: 'Excel', todos: '전체', waDesc: '보고서 이미지를 다운로드했습니다. WhatsApp에서 연락처를 선택하고 첨부하세요', pegaImg: '보고서 이미지가 복사되었습니다. WhatsApp에서 연락처를 선택하고 Ctrl+V로 붙여넣으세요', btnEnviar: '보고서 보내기 (이메일 + WhatsApp)', btnDest: '수신자', destAsk: '보고서를 받을 이메일 (쉼표로 구분):', sinDest: '수신자가 없습니다. 관리자가 수신자 버튼으로 입력해야 합니다.', destOk: '수신자가 저장되었습니다', enviando: '보고서 전송 중…', envOk: '이메일 {n}명에게 전송했습니다. WhatsApp이 열렸습니다.', waAdj: 'WhatsApp에서 다운로드한 Excel을 첨부하세요.', asuntoMail: 'DLC 케이블 보고서 (삼성 소유)', mTitulo: 'DLC 케이블 보고서', mPara: '경영진 요약', mAdj: '전체 Excel을 첨부했습니다.', mTotal: '책임 총수량', mUsd: '노출액 (USD)', mDif: '삼성 대비 차이', mHoy: '오늘 달라스 출하', waTit: '*DLC 케이블 보고서*',
       total: '총 관리 수량', item: '낱개 Item', bundle: '번들', enviadoHoy: '오늘 달라스 출고', expo: '노출 금액 (USD)', dif: '삼성 대비 차이',
       flow: '케이블 이동 경로', matrix: '품번·색상별 관리', conc: '삼성 보고서 대조', alertas: '알림', sinAlertas: '알림 없음. 모두 일치합니다.',
       movForm: '이동 등록', movList: '최근 이동 내역', sec: '보안 및 감사 로그', samsungT: '삼성 보고서 (입력)',
-      lAlm3: 'P3 창고', lWip3: 'P3 WIP', lAlm4: 'P4 창고', lWip4: 'P4 WIP', lQR: 'QR → 달라스', parte: '품번', color: '색상', black: '검정', white: '흰색',
+      lAlm3: 'P3 창고', lWip3: 'P3 WIP', lBt3: 'P3 완성 번들', lPk3: 'P3 프리킷', lAlm4: 'P4 창고', lWip4: 'P4 WIP', lPk4: 'P4 프리킷', lQR: 'QR → 달라스', parte: '품번', color: '색상', black: '검정', white: '흰색',
       sistema: '시스템', samsung: '삼성', estado: '상태', cuadra: '일치', revisar: '확인', tipoSam: '삼성 구분',
       tipo: '이동', cant: '수량', ref: '문서 / 참조', nota: '메모', registrar: '등록', loc: '위치', kind: '케이블 구분', motivo: '사유 (필수)',
-      t_ISSUE: 'P3 창고에서 P3 WIP로 불출', t_ASSEMBLE: 'P3에서 번들 조립', t_SHIP_P4: 'P4 창고로 번들 출고', t_RUN_P4: '모델 투입: P4 창고에서 라인(P4 WIP)으로', t_QR: 'QR 라벨: 차감 후 달라스 출고', t_LOSS: '분실 / 손실',
-      c_ISSUE: 'P3 불출', c_ASSEMBLE: '조립', c_SHIP_P4: 'P4 출고', c_RUN_P4: '모델 투입', c_QR: 'QR 라벨', c_LOSS: '분실',
+      t_ISSUE: 'P3 창고에서 P3 WIP로 불출', t_ASSEMBLE: 'P3에서 번들 조립', t_RTN_BT: '완성 번들 IMS P3 입고', t_PREKIT_P3: '번들 P3 프리킷으로 이동 (A16 / A17)', t_SHIP_P4: 'P4 창고로 번들 출고', t_RUN_P4: '모델 투입: P4 창고에서 라인(P4 WIP)으로', t_QR: 'QR 라벨: 차감 후 달라스 출고', t_LOSS: '분실 / 손실',
+      c_OPEN: '기초 재고', c_RTN_BT: '번들 IMS P3 입고', c_PREKIT_P3: 'P3 프리킷으로', openT: 'P3 WIP 기초 재고 (1회만)', openNota: '이 화면을 사용하기 전부터 P3 WIP에 있던 케이블입니다. IMS P3 재고는 움직이지 않습니다. P3 창고, P4 창고, 현장, 달라스는 자동으로 읽습니다.', openBtn: '기초 재고 등록', openYa: '{p}의 기초 재고가 이미 있습니다. 최근 이동 내역에서 먼저 취소하세요.', openVacio: '수량을 하나 이상 입력하세요.', openConf: 'P3 WIP 기초 재고를 등록할까요? 한 번만 해야 합니다.', openOk: '기초 재고가 등록되었습니다', t_RETURN: '남은 케이블을 P3 창고로 반환 (IMS 입고)', c_RETURN: 'P3 창고 반환', anularRET: '반환은 여기서 취소할 수 없습니다. IMS P3에 출고를 등록하세요.', c_ISSUE: 'P3 불출', c_ASSEMBLE: '조립', c_SHIP_P4: 'P4 출고', c_RUN_P4: '모델 투입', c_QR: 'QR 라벨', c_LOSS: '분실',
       hora: '일시', usuario: '사용자', rol: '권한', accion: '작업', anular: '취소', anulado: '취소됨', anularMotivo: '취소 사유:', anularISSUE: '불출은 여기서 취소할 수 없습니다. IMS P3에 입고를 등록하세요.',
       invalida: '수량이 올바르지 않습니다', sinStock: '출발 위치 수량이 부족합니다: 가용 {n}.', sinPN: '해당 품번이 IMS P3 재고에 없습니다.', sinMotivo: '사유를 입력하세요.',
       okReg: '이동이 등록되었습니다', okAnul: '이동이 취소되었습니다', sinPermiso: '권한 없음',
@@ -4127,7 +4145,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: '접근 시도 가능 권한: 관리자와 작업자. Viewer는 탭이 보이지 않습니다. 그래도 비밀번호가 필요합니다.', secPw: '비밀번호(관리자만 생성·변경). SHA-256과 솔트로 암호화하여 저장하며 평문은 저장하지 않습니다.',
       secLock: '잠금: 10분간 미사용. 5회 실패 시 5분간 잠금.', cambiarPw: '비밀번호 변경', pwCambiada: '비밀번호가 변경되었습니다',
       guardarSam: '삼성 보고서 저장', samOk: '삼성 보고서가 저장되었습니다', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      excelOk: 'Excel이 생성되었습니다', p4Ok: 'IMS P4 및 ShipQR 연결됨 · 업데이트 {h}', p4Err: 'IMS P4 / ShipQR을 읽을 수 없습니다: {e}. P4 데이터는 신뢰할 수 없습니다.', p4SinMapa: 'BOM에 DLC 케이블과 연결된 GH90 번들이 없습니다. BOM Simulator에서 BOM을 불러오세요.', p4Nota: 'P4 WIP = QR 라벨이 있고 아직 출고되지 않은 번들(ShipQR). P4 창고 = IMS P4의 번들.', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: 'Item / 번들'
+      imsNota: '입고와 출고는 평소처럼 IMS P3에서 합니다. 입고는 P3 창고에 더해지고 출고 또는 라인/구역으로의 이동은 케이블을 P3 WIP로 옮깁니다(기초 재고 이후). IMS P4에서는 라인/구역으로의 이동이 P4 WIP입니다.', aSinOpen: '{p}의 기초 재고가 없습니다. 입력하기 전까지 IMS 출고는 P3 WIP에 반영되지 않습니다.', excelOk: 'Excel이 생성되었습니다', p4Ok: 'IMS P4 및 ShipQR 연결됨 · 업데이트 {h}', p4Err: 'IMS P4 / ShipQR을 읽을 수 없습니다: {e}. P4 데이터는 신뢰할 수 없습니다.', p4SinMapa: 'BOM에 DLC 케이블과 연결된 GH90 번들이 없습니다. BOM Simulator에서 BOM을 불러오세요.', p4Nota: 'P4 창고 = IMS P4의 번들. P4 WIP = 라인으로 이동. P4 프리킷 = MES가 ShipQR로 보낸 완제품(아직 출고 전).', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: 'Item / 번들'
     }
   };
   function lang() { return (typeof IMS_LANG !== 'undefined' && I18N[IMS_LANG]) ? IMS_LANG : 'es'; }
@@ -4139,10 +4157,10 @@ window.generarReporteFecha = generarReporteFecha;
 
   /* ---------------- CÁLCULO (puro, probado) ---------------- */
   function vacio() { return { item: 0, bundle: 0 }; }
-  function calcular(movs, imsStock, hoyISO, p4) {
+  function calcular(movs, imsStock, hoyISO, p4, imsSal) {
     var res = {};
     PARTES.forEach(function (p) {
-      res[p.pn] = { p3wh: { item: imsStock[p.pn] || 0, bundle: 0 }, p3wip: vacio(), p4ims: vacio(), p4wip: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0 };
+      res[p.pn] = { p3wh: { item: imsStock[nk(p.pn)] || 0, bundle: 0 }, p3wip: vacio(), p3bt: vacio(), p3pk: vacio(), p4ims: vacio(), p4wip: vacio(), p4pk: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0 };
     });
     // de más antiguo a más nuevo
     movs.slice().sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); }).forEach(function (m) {
@@ -4150,20 +4168,27 @@ window.generarReporteFecha = generarReporteFecha;
       var r = res[m.pn]; if (!r) return;
       var q = Number(m.qty) || 0;
       switch (m.tipo) {
+        case 'OPEN': r.p3wip.item += q; r.p3wip.bundle += Number(m.bundle) || 0; break;
+        case 'RETURN': r.p3wip.item -= q; break;                   // regreso de cable sobrante a Almacén P3
         case 'ISSUE': r.p3wip.item += q; break;                    // el IMS ya descontó Almacén P3
         case 'ASSEMBLE': r.p3wip.item -= q; r.p3wip.bundle += q; r.ultEnsamble = Date.parse(m.fecha) || 0; break;
-        case 'SHIP_P4': r.p3wip.bundle -= q; r.p4ims.bundle += q; break;
+        case 'RTN_BT': r.p3wip.bundle -= q; r.p3bt.bundle += q; break;       // bundle terminado regresa al IMS P3
+        case 'PREKIT_P3': r.p3bt.bundle -= q; r.p3pk.bundle += q; break;   // Pre-Kit P3 (consumo propio A16 / A17)
+        case 'SHIP_P4': r.p3bt.bundle -= q; r.p4ims.bundle += q; break;
         case 'RUN_P4': r.p4ims.bundle -= q; r.p4wip.bundle += q; break;
         case 'QR': r.p4wip.bundle -= q; r.enviadoTotal += q; if (String(m.fecha).slice(0, 10) === hoyISO) r.enviadoHoy += q; break;
         case 'LOSS': if (r[m.loc]) { r[m.loc][m.kind === 'bundle' ? 'bundle' : 'item'] -= q; } r.perdido += q; break;
       }
     });
+    // Salidas del IMS P3 (después del saldo inicial) = cable surtido a WIP P3
+    if (imsSal) PARTES.forEach(function (p) { res[p.pn].p3wip.item += imsSal[p.pn] || 0; });
     // Lado P4: si hay conexión con IMS P4 / ShipQR, la realidad manda sobre lo capturado
     if (p4 && p4.ok) {
       PARTES.forEach(function (p) {
         var r2 = res[p.pn];
         r2.p4ims = { item: p4.almItem[p.pn] || 0, bundle: p4.alm[p.pn] || 0 };
-        r2.p4wip = { item: 0, bundle: p4.piso[p.pn] || 0 };
+        r2.p4wip = { item: p4.linItem[p.pn] || 0, bundle: p4.lin[p.pn] || 0 };
+        r2.p4pk = { item: 0, bundle: p4.piso[p.pn] || 0 };   // Pre-Kit P4: producto terminado del MES en ShipQR, sin embarcar
         r2.enviadoHoy = p4.hoy[p.pn] || 0; r2.enviadoTotal = p4.env[p.pn] || 0;
       });
     }
@@ -4176,8 +4201,8 @@ window.generarReporteFecha = generarReporteFecha;
     var s = samsungDe(pn);
     return [
       { tipo: 'Inventory W/H', locate: 'W/H', sis: totalLoc(r, 'p3wh'), sam: Number(s.inv) || 0, loc: 'lAlm3' },
-      { tipo: 'WIP', locate: 'PLANT 3', sis: totalLoc(r, 'p3wip'), sam: Number(s.wip) || 0, loc: 'lWip3' },
-      { tipo: 'Finished good', locate: 'PLANT 4', sis: totalLoc(r, 'p4ims') + totalLoc(r, 'p4wip'), sam: Number(s.fg) || 0, loc: 'lAlm4' }
+      { tipo: 'WIP', locate: 'PLANT 3', sis: totalLoc(r, 'p3wip') + totalLoc(r, 'p3bt') + totalLoc(r, 'p3pk'), sam: Number(s.wip) || 0, loc: 'lWip3' },
+      { tipo: 'Finished good', locate: 'PLANT 4', sis: totalLoc(r, 'p4ims') + totalLoc(r, 'p4wip') + totalLoc(r, 'p4pk'), sam: Number(s.fg) || 0, loc: 'lAlm4' }
     ];
   }
 
@@ -4193,15 +4218,49 @@ window.generarReporteFecha = generarReporteFecha;
   function wrap() { return el('dlc-wrap'); }
   function say(msg, ok) { if (typeof toast === 'function') toast(msg, ok ? 'ok' : 'err'); }
   function esAdmin() { return typeof user !== 'undefined' && user && user.role === 'admin'; }
+  // clave de número de parte sin espacios, guiones ni mayúsculas (evita fallos por formato)
+  function nk(x) { return String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  // convierte "$0.85", "0,85" o 0.85 en número
+  function money(x) { if (typeof x === 'number') return x > 0 ? x : 0; var v = parseFloat(String(x == null ? '' : x).replace(/[^0-9.,-]/g, '').replace(',', '.')); return v > 0 ? v : 0; }
   function imsStock() {
     var m = {};
-    if (typeof items !== 'undefined' && items) items.forEach(function (i) { var k = String(i.pn || '').trim().toUpperCase(); m[k] = (m[k] || 0) + (parseFloat(i.actual) || 0); });
+    if (typeof items !== 'undefined' && items) items.forEach(function (i) { var k = nk(i.pn); m[k] = (m[k] || 0) + (parseFloat(i.actual) || 0); });
     return m;
   }
+  // precio: 1) IMS P3, 2) IMS P4, 3) lista de precios de ShipQR
   function imsPrecio(pn) {
-    var p = 0;
-    if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (String(i.pn || '').trim().toUpperCase() === pn && parseFloat(i.precio) > 0) p = parseFloat(i.precio); });
+    var p = 0, k = nk(pn);
+    if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (nk(i.pn) === k) { var v = money(i.precio != null ? i.precio : (i.precioUSD != null ? i.precioUSD : i.price)); if (v > 0) p = v; } });
+    if (!p && st.p4 && st.p4.precio && st.p4.precio[pn]) p = st.p4.precio[pn];
     return p;
+  }
+  // Salidas hechas en la pantalla normal del IMS P3 desde la fecha del saldo inicial de cada parte
+  function imsSalidas() {
+    var out = {};
+    PARTES.forEach(function (p) {
+      var ap = st.movs.filter(function (m) { return m.tipo === 'OPEN' && m.pn === p.pn && !m.anulado; });
+      if (!ap.length) { out[p.pn] = 0; return; }
+      var desde = ap.map(function (m) { return m.fecha; }).sort()[0], tot = 0, k = nk(p.pn);
+      if (typeof items !== 'undefined' && items) items.forEach(function (i) {
+        if (nk(i.pn) !== k || !i.historial) return;
+        i.historial.forEach(function (hh) { if ((hh.tipo === 'S' || (hh.tipo === 'T' && !esAlmacen(hh.loc))) && String(hh.fecha) > desde && String(hh.ref || '').indexOf('DLC') !== 0) tot += Number(hh.qty) || 0; });
+      });
+      out[p.pn] = tot;
+    });
+    return out;
+  }
+  // ¿Es la ubicación "Almacén"?
+  function esAlmacen(loc) { return nk(loc) === nk('Almacén') || nk(loc) === ''; }
+  // IMS P4: el Traslado solo cambia la ubicación (no el stock). Se repasa el historial: Traslado a Línea/Zona suma a WIP,
+  // Traslado de regreso a Almacén resta, y la Salida consume primero lo que está en línea.
+  function enLinea(historial, actual) {
+    var w = 0;
+    (historial || []).slice().sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); }).forEach(function (hh) {
+      var q = Number(hh.qty) || 0;
+      if (hh.tipo === 'T') { if (esAlmacen(hh.loc)) w = Math.max(0, w - q); else w += q; }
+      else if (hh.tipo === 'S') w = Math.max(0, w - q);
+    });
+    return Math.max(0, Math.min(w, actual));
   }
   function claves() { return st.filtro === 'all' ? PARTES.map(function (p) { return p.pn; }) : [st.filtro]; }
   function colorDe(pn) { return PARTES.filter(function (p) { return p.pn === pn; })[0].color; }
@@ -4295,7 +4354,7 @@ window.generarReporteFecha = generarReporteFecha;
   /* ---------------- DATOS ---------------- */
   /* ---- Lectura de IMS P4 + BOM + ShipQR (todo ligado) ---- */
   async function cargarP4() {
-    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0 };
+    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0, precio: {}, lin: {}, linItem: {} };
     try {
       var cablePns = PARTES.map(function (x) { return x.pn; });
       // 1) BOM: qué bundle (GH90) lleva cada cable DLC
@@ -4324,9 +4383,9 @@ window.generarReporteFecha = generarReporteFecha;
       inv.forEach(function (d) {
         var o = d.data(), pn = String(o.pn || '').trim().toUpperCase();
         var act = parseFloat(o.actual != null ? o.actual : o.Current) || 0;
-        if (cablePns.indexOf(pn) >= 0) { p.almItem[pn] = (p.almItem[pn] || 0) + act; return; }
+        if (cablePns.indexOf(pn) >= 0) { var wl = enLinea(o.historial, act); p.almItem[pn] = (p.almItem[pn] || 0) + act - wl; p.linItem[pn] = (p.linItem[pn] || 0) + wl; if (money(o.precio) > 0) p.precio[pn] = money(o.precio); return; }
         if (p.mapa[pn] && (!hayBundleDesc[pn] || /BUNDLE/i.test(o.desc || ''))) {
-          p.mapa[pn].forEach(function (c) { p.alm[c] = (p.alm[c] || 0) + act; });
+          var wb2 = enLinea(o.historial, act); p.mapa[pn].forEach(function (c) { p.alm[c] = (p.alm[c] || 0) + act - wb2; p.lin[c] = (p.lin[c] || 0) + wb2; });
         }
       });
       // 3) ShipQR: pallets con etiqueta QR → piso (sin embarcar) o enviados a Dallas
@@ -4344,6 +4403,11 @@ window.generarReporteFecha = generarReporteFecha;
           });
         });
       }
+      // precio de respaldo: lista de precios de ShipQR (documento = número de parte)
+      for (var k2 = 0; k2 < cablePns.length; k2++) {
+        if (p.precio[cablePns[k2]]) continue;
+        try { var pd = await db.collection('shipqr_precios').doc(cablePns[k2]).get(); if (pd.exists && money(pd.data().precio) > 0) p.precio[cablePns[k2]] = money(pd.data().precio); } catch (e2) { }
+      }
       p.ok = true;
     } catch (e) { p.err = e.message || String(e); console.error('DLC P4', e); }
     st.p4 = p;
@@ -4357,6 +4421,7 @@ window.generarReporteFecha = generarReporteFecha;
       var s = await db.collection(COL_CFG).doc('samsung').get();
       st.samsung = s.exists ? (s.data().partes || null) : null;
     } catch (e) { st.samsung = null; }
+    try { var rc = await db.collection(COL_CFG).doc('reporte').get(); st.correos = (rc.exists && Array.isArray(rc.data().correos)) ? rc.data().correos : []; } catch (e) { st.correos = []; }
     if (esAdmin()) {
       try {
         var a = await db.collection(COL_AUD).orderBy('at', 'desc').limit(15).get();
@@ -4373,7 +4438,7 @@ window.generarReporteFecha = generarReporteFecha;
       w.innerHTML = '<div class="card" style="text-align:center;padding:30px" class="dlc-mut">' + h(T('cargando')) + '</div>';
       try { await cargar(); } catch (e) { w.innerHTML = '<div class="card" style="color:var(--red)">' + h(T('err') + e.message) + '</div>'; console.error(e); return; }
     }
-    var res = calcular(st.movs, imsStock(), hoyISO(), st.p4);
+    var res = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas());
     var keys = claves();
     var tot = 0, it = 0, bu = 0, hoy = 0, expo = 0, dif = 0, sinPrecio = [];
     keys.forEach(function (pn) {
@@ -4389,6 +4454,8 @@ window.generarReporteFecha = generarReporteFecha;
     html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + '</div></div>' +
       '<div class="dlc-acts"><button class="dlc-b2" onclick="dlc.refrescar()">↻ ' + h(T('refrescar')) + '</button>' +
       '<button class="dlc-b2" onclick="dlc.excel()">⬇ ' + h(T('excel')) + '</button>' +
+      '<button class="dlc-b" onclick="dlc.enviar()">📤 ' + h(T('btnEnviar')) + '</button>' +
+      (esAdmin() ? '<button class="dlc-b2" onclick="dlc.destinatarios()">👥 ' + h(T('btnDest')) + '</button>' : '') +
       '<button class="dlc-b2" onclick="dlc.bloquear()">🔒 ' + h(T('bloquear')) + '</button></div></div>';
     // filtro
     html += '<div class="dlc-filtro"><button class="dlc-f' + (st.filtro === 'all' ? ' on' : '') + '" onclick="dlc.filtrar(\'all\')">' + h(T('todos')) + '</button>' +
@@ -4404,18 +4471,19 @@ window.generarReporteFecha = generarReporteFecha;
       var r = res[pn];
       LOCS.forEach(function (l) { ['item', 'bundle'].forEach(function (k) { if (r[l][k] < 0) al.push({ s: 'crit', t: T('aNeg', { l: T(locKey(l)), p: pn }) }); }); });
       sistemaVsSamsung(r, pn).forEach(function (x) { if (x.sis !== x.sam) al.push({ s: 'crit', t: T('aDif', { n: sg(x.sis - x.sam), p: pn, l: x.tipo }) }); });
-      if (r.p3wip.bundle > 0 && r.ultEnsamble && (Date.now() - r.ultEnsamble) > PEND_H * 3600000) al.push({ s: 'warn', t: T('aPend', { n: n(r.p3wip.bundle), h: PEND_H, p: pn }) });
+      if ((r.p3wip.bundle + r.p3bt.bundle) > 0 && r.ultEnsamble && (Date.now() - r.ultEnsamble) > PEND_H * 3600000) al.push({ s: 'warn', t: T('aPend', { n: n(r.p3wip.bundle + r.p3bt.bundle), h: PEND_H, p: pn }) });
     });
     sinPrecio.forEach(function (pn) { al.push({ s: 'warn', t: T('aPrecio', { p: pn }) }); });
+    keys.forEach(function (pn) { if (!st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) al.push({ s: 'warn', t: T('aSinOpen', { p: pn }) }); });
     if (!st.p4.ok) al.unshift({ s: 'crit', t: T('p4Err', { e: st.p4.err || '—' }) });
     else if (!st.p4.nMapa) al.unshift({ s: 'warn', t: T('p4SinMapa') });
-    html += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + '</div>';
+    html += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + ' ' + h(T('imsNota')) + '</div>';
     html += '<div class="sh">' + h(T('alertas')) + '</div>';
     html += al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>';
 
     // flujo
     html += '<div class="sh">' + h(T('flow')) + '</div><div class="dlc-flow">';
-    var nodos = [['p3wh', 'lAlm3', 'IMS P3'], ['p3wip', 'lWip3', 'IMS P3'], ['p4ims', 'lAlm4', 'IMS P4'], ['p4wip', 'lWip4', 'IMS P4']];
+    var nodos = LOCS.map(function (l) { return [l, locKey(l), l === 'p4pk' ? 'ShipQR' : (l.indexOf('p3') === 0 ? 'IMS P3' : 'IMS P4')]; });
     nodos.forEach(function (nd) {
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
       var t2 = i2 + b2, pct = t2 > 0 ? Math.max(0, Math.min(100, i2 / t2 * 100)) : 0;
@@ -4426,7 +4494,7 @@ window.generarReporteFecha = generarReporteFecha;
     html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div><div class="dlc-nm"><span>' + h(T('enviadoHoy')) + '</span></div></div></div>';
 
     // matriz parte x color
-    html += '<div class="sh">' + h(T('matrix')) + '</div><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('lAlm3')) + '</th><th>' + h(T('lWip3')) + '</th><th>' + h(T('lAlm4')) + '</th><th>' + h(T('lWip4')) + '</th><th>' + h(T('sumTotal')) + '</th></tr></thead><tbody>';
+    html += '<div class="sh">' + h(T('matrix')) + '</div><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th>' + LOCS.map(function (l) { return '<th>' + h(T(locKey(l))) + '</th>'; }).join('') + '<th>' + h(T('sumTotal')) + '</th></tr></thead><tbody>';
     keys.forEach(function (pn) {
       var r = res[pn];
       html += '<tr><td>' + chip(colorDe(pn)) + '<b>' + pn + '</b><br><span class="dlc-mut">' + h(colorTxt(colorDe(pn))) + '</span></td>' +
@@ -4446,14 +4514,14 @@ window.generarReporteFecha = generarReporteFecha;
     html += '</tbody></table></div>';
 
     // formulario de movimiento
-    var tipos = ['ISSUE', 'ASSEMBLE', 'SHIP_P4', 'LOSS'];
+    var tipos = ['ASSEMBLE', 'RTN_BT', 'PREKIT_P3', 'SHIP_P4', 'RETURN', 'LOSS'];
     html += '<div class="sh">' + h(T('movForm')) + '</div><div class="card dlc-form">' +
       '<label>' + h(T('tipo')) + '<select id="dlc-f-tipo" class="dlc-in" onchange="dlc.cambioTipo()">' + tipos.map(function (x) { return '<option value="' + x + '">' + h(T('t_' + x)) + '</option>'; }).join('') + '</select></label>' +
       '<label>' + h(T('parte')) + '<select id="dlc-f-pn" class="dlc-in">' + PARTES.map(function (p) { return '<option value="' + p.pn + '">' + p.pn + ' · ' + h(colorTxt(p.color)) + '</option>'; }).join('') + '</select></label>' +
       '<label>' + h(T('cant')) + '<input id="dlc-f-qty" class="dlc-in" type="number" min="1" inputmode="numeric"></label>' +
       '<label>' + h(T('ref')) + '<input id="dlc-f-ref" class="dlc-in" type="text"></label>' +
       '<div id="dlc-loss" style="display:none;grid-column:1/-1;gap:.6rem;grid-template-columns:1fr 1fr">' +
-      '<label>' + h(T('loc')) + '<select id="dlc-f-loc" class="dlc-in"><option value="p3wip">' + h(T('lWip3')) + '</option></select></label>' +
+      '<label>' + h(T('loc')) + '<select id="dlc-f-loc" class="dlc-in">' + ['p3wip', 'p3bt', 'p3pk'].map(function (l) { return '<option value="' + l + '">' + h(T(locKey(l))) + '</option>'; }).join('') + '</select></label>' +
       '<label>' + h(T('kind')) + '<select id="dlc-f-kind" class="dlc-in"><option value="item">' + h(T('item')) + '</option><option value="bundle">' + h(T('bundle')) + '</option></select></label>' +
       '<label style="grid-column:1/-1">' + h(T('motivo')) + '<input id="dlc-f-nota" class="dlc-in" type="text"></label></div>' +
       '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.registrar()">' + h(T('registrar')) + '</button></div>';
@@ -4465,7 +4533,7 @@ window.generarReporteFecha = generarReporteFecha;
       lista.map(function (m) {
         var d = new Date(m.fecha);
         var f = isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-        return '<tr' + (m.anulado ? ' style="opacity:.45;text-decoration:line-through"' : '') + '><td>' + h(f) + '</td><td>' + h(T('c_' + m.tipo)) + '</td><td>' + chip(colorDe(m.pn)) + h(m.pn) + '</td><td><b>' + n(m.qty) + '</b></td><td>' + h((m.ref || '') + (m.nota ? ' · ' + m.nota : '')) + '</td><td>' + h(m.usuario || '') + '</td><td>' +
+        return '<tr' + (m.anulado ? ' style="opacity:.45;text-decoration:line-through"' : '') + '><td>' + h(f) + '</td><td>' + h(T('c_' + m.tipo)) + '</td><td>' + chip(colorDe(m.pn)) + h(m.pn) + '</td><td><b>' + (m.tipo === 'OPEN' ? n(m.qty) + ' it / ' + n(m.bundle || 0) + ' bu' : n(m.qty)) + '</b></td><td>' + h((m.ref || '') + (m.nota ? ' · ' + m.nota : '')) + '</td><td>' + h(m.usuario || '') + '</td><td>' +
           (m.anulado ? '<span class="dlc-pill warn">' + h(T('anulado')) + '</span>' : (esAdmin() ? '<button class="dlc-b2" onclick="dlc.anular(\'' + m.id + '\')">' + h(T('anular')) + '</button>' : '')) + '</td></tr>';
       }).join('') + '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('sinMov')) + '</div>';
 
@@ -4479,24 +4547,32 @@ window.generarReporteFecha = generarReporteFecha;
             ['inv', 'wip', 'fg'].map(function (k) { return '<label>' + (k === 'inv' ? 'W/H' : k === 'wip' ? 'WIP P3' : 'FG P4') + '<input id="dlc-s-' + p.pn + '-' + k + '" class="dlc-in" type="number" value="' + (Number(s[k]) || 0) + '"></label>'; }).join('');
         }).join('') +
         '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.guardarSamsung()">' + h(T('guardarSam')) + '</button></div>';
+      html += '<div class="sh">' + h(T('openT')) + '</div><div class="card dlc-form" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' +
+        '<div class="dlc-mut" style="grid-column:1/-1">' + h(T('openNota')) + '</div>' +
+        PARTES.map(function (p) {
+          return '<div style="grid-column:1/-1"><b>' + chip(p.color) + p.pn + '</b></div>' +
+            '<label>' + h(T('item')) + '<input id="dlc-o-' + p.pn + '-item" class="dlc-in" type="number" min="0" value="0"></label>' +
+            '<label>' + h(T('bundle')) + '<input id="dlc-o-' + p.pn + '-bundle" class="dlc-in" type="number" min="0" value="0"></label>';
+        }).join('') +
+        '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.saldoInicial()">' + h(T('openBtn')) + '</button></div>';
 
-      html += '<div class="sh">' + h(T('sec')) + '</div><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secRoles')) + '</div><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secPw')) + '</div><div class="dlc-mut" style="margin-bottom:.7rem">' + h(T('secLock')) + '</div>' +
+      html += '<details class="dlc-det"><summary>🔐 ' + h(T('sec')) + '</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secRoles')) + '</div><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secPw')) + '</div><div class="dlc-mut" style="margin-bottom:.7rem">' + h(T('secLock')) + '</div>' +
         '<div class="dlc-form" style="grid-template-columns:1fr 1fr"><label>' + h(T('pwNew')) + '<input id="dlc-cp1" class="dlc-in" type="password"></label><label>' + h(T('pwRep')) + '<input id="dlc-cp2" class="dlc-in" type="password"></label>' +
         '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.cambiarPw()">' + h(T('cambiarPw')) + '</button></div></div>' +
         '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('hora')) + '</th><th>' + h(T('accion')) + '</th><th>' + h(T('usuario')) + '</th><th>' + h(T('rol')) + '</th></tr></thead><tbody>' +
-        st.audit.map(function (a) { var d = new Date(a.at_iso); return '<tr><td>' + h(isNaN(d) ? '' : d.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</td><td>' + h(a.accion) + (a.detalle ? ' · ' + h(a.detalle) : '') + '</td><td>' + h(a.usuario) + '</td><td>' + h(a.rol) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        st.audit.map(function (a) { var d = new Date(a.at_iso); return '<tr><td>' + h(isNaN(d) ? '' : d.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</td><td>' + h(a.accion) + (a.detalle ? ' · ' + h(a.detalle) : '') + '</td><td>' + h(a.usuario) + '</td><td>' + h(a.rol) + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     }
 
     w.innerHTML = html;
     cambioTipo();
   }
-  function locKey(l) { return { p3wh: 'lAlm3', p3wip: 'lWip3', p4ims: 'lAlm4', p4wip: 'lWip4' }[l]; }
+  function locKey(l) { return { p3wh: 'lAlm3', p3wip: 'lWip3', p3bt: 'lBt3', p3pk: 'lPk3', p4ims: 'lAlm4', p4wip: 'lWip4', p4pk: 'lPk4' }[l]; }
 
   /* ---------------- ACCIONES ---------------- */
   function cambioTipo() { var l = el('dlc-loss'); if (l) l.style.display = val('dlc-f-tipo') === 'LOSS' ? 'grid' : 'none'; }
 
   async function salidaIMS(pn, qty, ref) {
-    var cand = items.filter(function (i) { return String(i.pn || '').trim().toUpperCase() === pn; });
+    var cand = items.filter(function (i) { return nk(i.pn) === nk(pn); });
     if (!cand.length) throw new Error(T('sinPN'));
     var item = cand.filter(function (i) { return (parseFloat(i.actual) || 0) >= qty; })[0];
     if (!item) throw new Error(T('sinStock', { n: n(imsStock()[pn] || 0) }));
@@ -4510,19 +4586,35 @@ window.generarReporteFecha = generarReporteFecha;
     if (typeof updateDash === 'function') { updateDash(); renderInv(); renderHist(); renderLocMap(); }
   }
 
+  // Regreso de cable sobrante: hace una ENTRADA normal en el IMS P3 (sube el Almacén P3) y baja el WIP P3
+  async function entradaIMS(pn, qty, ref) {
+    var cand = items.filter(function (i) { return nk(i.pn) === nk(pn); });
+    if (!cand.length) throw new Error(T('sinPN'));
+    var item = cand.filter(function (i) { return (parseFloat(i.actual) || 0) > 0; })[0] || cand[0];
+    var iso = new Date().toISOString();
+    var refTxt = 'DLC devolución' + (ref ? ' · ' + ref : '');
+    item.entradas = (item.entradas || 0) + qty; item.actual = (parseFloat(item.actual) || 0) + qty; item.ubicacion = 'Almacén';
+    if (!item.historial) item.historial = [];
+    item.historial.push({ tipo: 'E', fecha: iso, qty: qty, loc: 'Almacén', user: user.name, ref: refTxt });
+    var mov = { tipo: 'E', pn: item.pn, desc: item.desc, familia: item.familia, qty: qty, fecha: iso, user: user.name, ref: refTxt, stock: item.actual, loc: 'Almacén' };
+    movs.unshift(mov); saveLocal(); await pushMov(mov);
+    if (typeof updateDash === 'function') { updateDash(); renderInv(); renderHist(); renderLocMap(); }
+  }
+
   async function registrar() {
-    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0) { say(T('sinPermiso')); return; }
+    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
     extender();
     var tipo = val('dlc-f-tipo'), pn = val('dlc-f-pn'), qty = parseInt(val('dlc-f-qty'), 10) || 0, ref = val('dlc-f-ref').trim();
     var loc = val('dlc-f-loc'), kind = val('dlc-f-kind'), nota = val('dlc-f-nota').trim();
     if (qty <= 0) { say(T('invalida')); return; }
-    var r = calcular(st.movs, imsStock(), hoyISO(), st.p4)[pn];
-    var disp = { ISSUE: r.p3wh.item, ASSEMBLE: r.p3wip.item, SHIP_P4: r.p3wip.bundle, RUN_P4: r.p4ims.bundle, QR: r.p4wip.bundle }[tipo];
+    var r = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas())[pn];
+    var disp = { ISSUE: r.p3wh.item, ASSEMBLE: r.p3wip.item, RTN_BT: r.p3wip.bundle, PREKIT_P3: r.p3bt.bundle, SHIP_P4: r.p3bt.bundle, RETURN: r.p3wip.item, RUN_P4: r.p4ims.bundle, QR: r.p4wip.bundle }[tipo];
     if (tipo === 'LOSS') { disp = r[loc][kind === 'bundle' ? 'bundle' : 'item']; if (!nota) { say(T('sinMotivo')); return; } }
     if (qty > disp) { say(T('sinStock', { n: n(Math.max(0, disp)) })); return; }
     try {
       if (tipo === 'ISSUE') await salidaIMS(pn, qty, ref);
+      if (tipo === 'RETURN') await entradaIMS(pn, qty, ref);
       var m = { tipo: tipo, pn: pn, color: colorDe(pn), qty: qty, ref: ref, nota: nota, usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3' };
       if (tipo === 'LOSS') { m.loc = loc; m.kind = kind; }
       var d = await db.collection(COL_MOV).add(m);
@@ -4536,12 +4628,36 @@ window.generarReporteFecha = generarReporteFecha;
     if (!esAdmin()) { say(T('soloAdmin')); return; }
     var m = st.movs.filter(function (x) { return x.id === id; })[0]; if (!m) return;
     if (m.tipo === 'ISSUE') { say(T('anularISSUE')); return; }
+    if (m.tipo === 'RETURN') { say(T('anularRET')); return; }
     var motivo = prompt(T('anularMotivo')); if (!motivo) return;
     try {
       await db.collection(COL_MOV).doc(id).update({ anulado: true, anulado_por: user.name, anulado_motivo: motivo, anulado_at: new Date().toISOString() });
       m.anulado = true; audit('ANULAR_' + m.tipo, m.pn + ' x' + m.qty + ' · ' + motivo);
       say(T('okAnul'), true); pintar();
     } catch (e) { say(T('err') + e.message); }
+  }
+
+  async function saldoInicial() {
+    if (!esAdmin()) { say(T('soloAdmin')); return; }
+    if (Date.now() >= st.ok) { bloquear(); return; }
+    var altas = [];
+    for (var i = 0; i < PARTES.length; i++) {
+      var pn = PARTES[i].pn, it = Math.max(0, parseInt(val('dlc-o-' + pn + '-item'), 10) || 0), bu = Math.max(0, parseInt(val('dlc-o-' + pn + '-bundle'), 10) || 0);
+      if (!it && !bu) continue;
+      if (st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) { say(T('openYa', { p: pn })); return; }
+      altas.push({ pn: pn, it: it, bu: bu });
+    }
+    if (!altas.length) { say(T('openVacio')); return; }
+    if (!confirm(T('openConf'))) return;
+    try {
+      for (var j = 0; j < altas.length; j++) {
+        var a = altas[j];
+        var m = { tipo: 'OPEN', pn: a.pn, color: colorDe(a.pn), qty: a.it, bundle: a.bu, ref: '', nota: '', usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3' };
+        var d = await db.collection(COL_MOV).add(m); m.id = d.id; st.movs.unshift(m);
+        audit('SALDO_INICIAL', a.pn + ' item ' + a.it + ' / bundle ' + a.bu);
+      }
+      say(T('openOk'), true); pintar();
+    } catch (e) { say(T('err') + e.message); console.error(e); }
   }
 
   async function guardarSamsung() {
@@ -4562,29 +4678,340 @@ window.generarReporteFecha = generarReporteFecha;
     } catch (e) { say(T('err') + e.message); }
   }
 
-  async function excel() {
-    try {
-      var res = calcular(st.movs, imsStock(), hoyISO(), st.p4);
-      var wb = new ExcelJS.Workbook();
-      var s1 = wb.addWorksheet('Saldos');
-      s1.addRow(['Parte', 'Color', 'Locación', 'Item', 'Bundle', 'Total', 'Precio USD', 'Monto USD']);
-      PARTES.forEach(function (p) {
-        var r = res[p.pn], pr = imsPrecio(p.pn);
-        LOCS.forEach(function (l) { var t = totalLoc(r, l); s1.addRow([p.pn, p.color, T(locKey(l)), r[l].item, r[l].bundle, t, pr, t * pr]); });
+  var RP = {
+    es: { titulo: 'Cable DLC · Reporte de control para Dirección', sub: 'Cable propiedad de Samsung: toda pérdida o faltante es a cargo de Eunsung. Cantidades en piezas (1 bundle = 1 cable).', fecha: 'Fecha del reporte', prep: 'Preparó', fuente: 'Fuente', fuenteV: 'IMS Planta 3, IMS Planta 4, BOM Simulator y ShipQR', kpis: 'Indicadores clave', k1: 'Piezas bajo responsabilidad', k2: 'Exposición total (USD)', k3: 'Enviado a Dallas hoy', k4: 'Diferencia neta vs Samsung', k5: 'Estado general', ok: 'CUADRA CON SAMSUNG', rev: 'REQUIERE REVISIÓN', sinPrecio: 'Sin precio capturado', pos: 'Posición por locación', conc: 'Conciliación contra el reporte de Samsung', aten: 'Puntos de atención', ninguno: 'Sin puntos de atención.', total: 'TOTAL', usd: 'Valor (USD)', pzas: 'Piezas', det: 'Detalle', mov: 'Movimientos', nota: 'Notas', nota1: 'El valor en USD se calcula con el precio capturado en el IMS Planta 3; si una parte no tiene precio, no suma al valor.', nota2: 'Las cantidades de Planta 4 se leen del IMS P4 (Almacén) y de ShipQR (piso con etiqueta QR sin embarcar).', nota3: 'Las cifras de Samsung son las capturadas por el Administrador en la fecha indicada.', hAten1: 'Diferencia de {n} pzas contra Samsung en {p} ({t}).', hAten2: 'Sin precio en el IMS para {p}: el valor no está incluido.', hAten3: 'No se pudo leer IMS P4 / ShipQR: las cifras de Planta 4 no son confiables.', cConc: ['Parte', 'Color', 'Concepto Samsung', 'Sistema', 'Samsung', 'Diferencia', 'Estado'], cPos: ['Locación', 'Item', 'Bundle', 'Piezas', 'Valor (USD)'], cMov: ['Fecha', 'Movimiento', 'Parte', 'Cantidad', 'Referencia', 'Usuario'] },
+    en: { titulo: 'DLC Cable · Control report for Management', sub: 'Samsung-owned cable: any loss or shortage is charged to Eunsung. Quantities in pieces (1 bundle = 1 cable).', fecha: 'Report date', prep: 'Prepared by', fuente: 'Source', fuenteV: 'IMS Plant 3, IMS Plant 4, BOM Simulator and ShipQR', kpis: 'Key indicators', k1: 'Pieces under responsibility', k2: 'Total exposure (USD)', k3: 'Shipped to Dallas today', k4: 'Net difference vs Samsung', k5: 'Overall status', ok: 'MATCHES SAMSUNG', rev: 'NEEDS REVIEW', sinPrecio: 'No price entered', pos: 'Position by location', conc: 'Reconciliation against the Samsung report', aten: 'Points of attention', ninguno: 'No points of attention.', total: 'TOTAL', usd: 'Value (USD)', pzas: 'Pieces', det: 'Detail', mov: 'Movements', nota: 'Notes', nota1: 'USD value uses the price entered in IMS Plant 3; a part with no price is not included in the value.', nota2: 'Plant 4 quantities are read from IMS P4 (Warehouse) and ShipQR (floor with QR label, not yet shipped).', nota3: 'Samsung figures are those entered by the Administrator on the date shown.', hAten1: '{n} pcs difference against Samsung for {p} ({t}).', hAten2: 'No price in IMS for {p}: value is not included.', hAten3: 'Could not read IMS P4 / ShipQR: Plant 4 figures are not reliable.', cConc: ['Part', 'Color', 'Samsung item', 'System', 'Samsung', 'Difference', 'Status'], cPos: ['Location', 'Item', 'Bundle', 'Pieces', 'Value (USD)'], cMov: ['Date', 'Movement', 'Part', 'Quantity', 'Reference', 'User'] },
+    ko: { titulo: 'DLC 케이블 · 경영진 관리 보고서', sub: '삼성 소유 케이블: 모든 분실 또는 부족분은 Eunsung 부담입니다. 수량 단위: 개 (번들 1개 = 케이블 1개).', fecha: '보고일', prep: '작성자', fuente: '출처', fuenteV: 'IMS 3공장, IMS 4공장, BOM Simulator, ShipQR', kpis: '핵심 지표', k1: '관리 책임 수량', k2: '총 노출 금액 (USD)', k3: '오늘 달라스 출고', k4: '삼성 대비 순차이', k5: '종합 상태', ok: '삼성과 일치', rev: '확인 필요', sinPrecio: '단가 미입력', pos: '위치별 현황', conc: '삼성 보고서 대조', aten: '주의 사항', ninguno: '주의 사항 없음.', total: '합계', usd: '금액 (USD)', pzas: '수량', det: '상세', mov: '이동 내역', nota: '비고', nota1: 'USD 금액은 IMS 3공장에 입력된 단가로 계산하며, 단가가 없는 품번은 금액에 포함되지 않습니다.', nota2: 'P4 수량은 IMS P4(창고)와 ShipQR(QR 라벨 발행 후 미출고 현장 재고)에서 읽습니다.', nota3: '삼성 수치는 표시된 날짜에 관리자가 입력한 값입니다.', hAten1: '{p} ({t}) 삼성 대비 {n}개 차이.', hAten2: '{p} IMS 단가 없음: 금액에 포함되지 않았습니다.', hAten3: 'IMS P4 / ShipQR을 읽을 수 없어 P4 수치를 신뢰할 수 없습니다.', cConc: ['품번', '색상', '삼성 구분', '시스템', '삼성', '차이', '상태'], cPos: ['위치', 'Item', '번들', '수량', '금액 (USD)'], cMov: ['일시', '이동', '품번', '수량', '참조', '사용자'] }
+  };
+  function R(k, o) { var d = RP[lang()] || RP.es, v = d[k]; if (v == null) v = RP.es[k]; if (o && typeof v === 'string') Object.keys(o).forEach(function (x) { v = v.split('{' + x + '}').join(o[x]); }); return v; }
+
+  // textos extra del reporte (formato igual al "Shipment Sales Report" de ShipQR)
+  Object.assign(RP.es, { org: 'EUNSUNG · CONTROL DE INVENTARIO', titulo: 'Reporte de Control de Cable DLC', sub2: 'Cable propiedad de Samsung · Al {d}', emitido: 'Emitido', por: 'Por', no: 'No.', s1: '1. POSICIÓN POR LOCACIÓN', s2: '2. CONCILIACIÓN CONTRA SAMSUNG', s3: '3. DETALLE POR PARTE Y COLOR', s4: '4. PUNTOS DE ATENCIÓN', s5: '5. NOTAS', q1: 'Total de piezas', q2: 'Item suelto', q3: 'Bundle', q4: 'Exposición (USD)', q5: 'Enviado a Dallas hoy', q6: 'Enviado a Dallas (acum.)', q7: 'Dif. vs Samsung', q8: 'Estado', pct: '% del total', pcs: 'pzas', ch1: 'Piezas por locación', ch2: 'Sistema vs Samsung', sist: 'Sistema', sam: 'Samsung', cDet: ['Parte', 'Color', 'Almacén P3', 'WIP P3', 'Almacén P4', 'WIP P4', 'Total'], okC: 'Cuadra', revC: 'Revisar' });
+  Object.assign(RP.en, { org: 'EUNSUNG · INVENTORY CONTROL', titulo: 'DLC Cable Control Report', sub2: 'Samsung-owned cable · As of {d}', emitido: 'Issued', por: 'By', no: 'No.', s1: '1. POSITION BY LOCATION', s2: '2. RECONCILIATION AGAINST SAMSUNG', s3: '3. DETAIL BY PART AND COLOR', s4: '4. POINTS OF ATTENTION', s5: '5. NOTES', q1: 'Total pieces', q2: 'Loose item', q3: 'Bundle', q4: 'Exposure (USD)', q5: 'Shipped to Dallas today', q6: 'Shipped to Dallas (cum.)', q7: 'Diff. vs Samsung', q8: 'Status', pct: '% of total', pcs: 'pcs', ch1: 'Pieces by location', ch2: 'System vs Samsung', sist: 'System', sam: 'Samsung', cDet: ['Part', 'Color', 'P3 Warehouse', 'WIP P3', 'P4 Warehouse', 'WIP P4', 'Total'], okC: 'Matches', revC: 'Review' });
+  Object.assign(RP.ko, { org: 'EUNSUNG · 재고 관리', titulo: 'DLC 케이블 관리 보고서', sub2: '삼성 소유 케이블 · 기준일 {d}', emitido: '발행', por: '작성', no: '번호', s1: '1. 위치별 현황', s2: '2. 삼성 보고서 대조', s3: '3. 품번·색상별 상세', s4: '4. 주의 사항', s5: '5. 비고', q1: '총 수량', q2: '낱개 Item', q3: '번들', q4: '노출 금액 (USD)', q5: '오늘 달라스 출고', q6: '달라스 출고 (누계)', q7: '삼성 대비 차이', q8: '상태', pct: '비중', pcs: '개', ch1: '위치별 수량', ch2: '시스템 vs 삼성', sist: '시스템', sam: '삼성', cDet: ['품번', '색상', 'P3 창고', 'P3 WIP', 'P4 창고', 'P4 WIP', '합계'], okC: '일치', revC: '확인' });
+
+  // gráfica de barras (canvas → PNG) para insertar en el Excel
+  function barras(cats, series, o) {
+    var W = 1600, H = 520, c = document.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+    var L = 120, Rr = 40, Tp = 70, B = 110, pw = W - L - Rr, ph = H - Tp - B;
+    var max = 0; series.forEach(function (s) { s.vals.forEach(function (v) { if (v > max) max = v; }); });
+    var step = Math.pow(10, Math.floor(Math.log10(max || 1))); var top = Math.ceil((max || 1) / step) * step; if (top / step < 2) top = step * 2;
+    g.font = '24px Arial'; g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (var i = 0; i <= 4; i++) { var y = Tp + ph - ph * i / 4; g.strokeStyle = '#E3E7F0'; g.lineWidth = 2; g.beginPath(); g.moveTo(L, y); g.lineTo(W - Rr, y); g.stroke(); g.fillStyle = '#6B7694'; g.fillText(n(top * i / 4), L - 12, y); }
+    var gw = pw / cats.length, bw = Math.min(110, gw * 0.7 / series.length);
+    cats.forEach(function (cat, ci) {
+      var x0 = L + gw * ci + (gw - bw * series.length) / 2;
+      series.forEach(function (s, si) {
+        var v = s.vals[ci] || 0, bh = ph * v / top, x = x0 + bw * si, y = Tp + ph - bh;
+        g.fillStyle = s.color; g.fillRect(x + 4, y, bw - 8, bh);
+        g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillStyle = '#14213D'; g.font = 'bold 24px Arial'; g.fillText(n(v), x + bw / 2, y - (s.sub ? 32 : 6));
+        if (s.sub) { g.fillStyle = '#B7791F'; g.font = 'bold 20px Arial'; g.fillText(s.sub[ci], x + bw / 2, y - 6); }
       });
-      var s2 = wb.addWorksheet('Conciliacion');
-      s2.addRow(['Parte', 'Tipo Samsung', 'Locate', 'Sistema', 'Samsung', 'Dif']);
-      PARTES.forEach(function (p) { sistemaVsSamsung(res[p.pn], p.pn).forEach(function (x) { s2.addRow([p.pn, x.tipo, x.locate, x.sis, x.sam, x.sis - x.sam]); }); });
-      var s3 = wb.addWorksheet('Movimientos');
-      s3.addRow(['Fecha', 'Movimiento', 'Parte', 'Cantidad', 'Referencia', 'Nota', 'Usuario', 'Anulado']);
-      st.movs.forEach(function (m) { s3.addRow([m.fecha, m.tipo, m.pn, m.qty, m.ref || '', m.nota || '', m.usuario || '', m.anulado ? 'SI' : '']); });
-      [s1, s2, s3].forEach(function (s) { s.getRow(1).font = { bold: true }; s.columns.forEach(function (c) { c.width = 18; }); });
+      g.fillStyle = '#4A5576'; g.font = '22px Arial'; g.textAlign = 'center'; g.textBaseline = 'top';
+      String(cat).split('\n').forEach(function (ln, li) { g.fillText(ln, L + gw * ci + gw / 2, Tp + ph + 14 + li * 26); });
+    });
+    g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = 'bold 26px Arial'; g.fillStyle = '#14213D'; g.fillText(o.titulo, L, 28);
+    if (series.length > 1) { var lx = W - Rr - 20; series.slice().reverse().forEach(function (s) { g.font = '22px Arial'; var tw = g.measureText(s.name).width; lx -= tw; g.fillStyle = '#4A5576'; g.textAlign = 'left'; g.fillText(s.name, lx, 28); lx -= 30; g.fillStyle = s.color; g.fillRect(lx, 18, 20, 20); lx -= 24; }); }
+    return c.toDataURL('image/png');
+  }
+
+  async function excel(modo) {
+    try {
+      var res = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas());
+      var NAVY = 'FF14213D', GOLD = 'FFB7791F', GRIS = 'FFF1F3F8', VERDE = 'FFD9F2E3', ROJO = 'FFFBDADA', AMAR = 'FFFFF1CC';
+      var fmtN = '#,##0', fmtD = '$#,##0.00;[Red]-$#,##0.00', fmtDif = '+#,##0;[Red]-#,##0;0';
+      var ahora = new Date();
+      var pad = function (x) { return String(x).padStart(2, '0'); };
+      var fecha = pad(ahora.getDate()) + '/' + pad(ahora.getMonth() + 1) + '/' + ahora.getFullYear();
+      var noRep = 'DLC-' + ahora.getFullYear() + pad(ahora.getMonth() + 1) + pad(ahora.getDate()) + '-' + pad(ahora.getHours()) + pad(ahora.getMinutes());
+      var wb = new ExcelJS.Workbook(); wb.creator = (user && user.name) || 'IMS'; wb.created = ahora;
+      var bd = { style: 'thin', color: { argb: 'FFD0D5E2' } }, borde = { top: bd, bottom: bd, left: bd, right: bd };
+      var fill = function (argb) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: argb } }; };
+      function enc(row, c1, c2) { for (var i = c1; i <= c2; i++) { var c = row.getCell(i); c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 }; c.fill = fill(NAVY); c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }; c.border = borde; } row.height = 28; }
+      function seccion(ws, fila, texto) { ws.mergeCells(fila, 1, fila, 8); var c = ws.getCell(fila, 1); c.value = texto; c.font = { bold: true, size: 13, color: { argb: NAVY } }; c.border = { bottom: { style: 'thin', color: { argb: NAVY } } }; ws.getRow(fila).height = 26; }
+      function filaTab(ws, fila, spans, vals, fmts, bold) {
+        spans.forEach(function (sp, i) {
+          if (sp[1] > sp[0]) ws.mergeCells(fila, sp[0], fila, sp[1]);
+          var c = ws.getCell(fila, sp[0]); c.value = vals[i];
+          for (var k = sp[0]; k <= sp[1]; k++) { var ck = ws.getCell(fila, k); ck.border = borde; if (bold) ck.fill = fill(GRIS); }
+          c.font = { size: 12, bold: !!bold }; c.alignment = { vertical: 'middle', horizontal: fmts[i] ? 'right' : (i === 0 ? 'left' : 'center'), indent: i === 0 ? 1 : 0 };
+          if (fmts[i]) c.numFmt = fmts[i];
+        });
+        ws.getRow(fila).height = 22;
+      }
+
+      // ---- cálculos ----
+      var tot = 0, itT = 0, buT = 0, usdTot = 0, hoy = 0, env = 0, dif = 0, sinPrecio = [], atenc = [];
+      PARTES.forEach(function (p) {
+        var r = res[p.pn], pr = imsPrecio(p.pn); tot += totalPn(r); hoy += r.enviadoHoy; env += r.enviadoTotal;
+        LOCS.forEach(function (l) { itT += r[l].item; buT += r[l].bundle; });
+        if (pr > 0) usdTot += totalPn(r) * pr; else sinPrecio.push(p.pn);
+        sistemaVsSamsung(r, p.pn).forEach(function (x) { var d = x.sis - x.sam; dif += d; if (d !== 0) atenc.push(R('hAten1', { n: (d > 0 ? '+' : '') + n(d), p: p.pn, t: x.tipo })); });
+      });
+      sinPrecio.forEach(function (pn) { atenc.push(R('hAten2', { p: pn })); });
+      if (!st.p4.ok) atenc.push(R('hAten3'));
+      var cuadra = (dif === 0 && atenc.length === 0);
+
+      // ================= HOJA 1 =================
+      var ws = wb.addWorksheet('DLC', { views: [{ showGridLines: false }], pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: .4, right: .4, top: .5, bottom: .5, header: .2, footer: .2 } } });
+      ws.columns = [{ width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }];
+      // encabezado
+      ws.mergeCells('A1:E1'); ws.getCell('A1').value = R('org'); ws.getCell('A1').font = { bold: true, size: 11, color: { argb: 'FF4A5576' } };
+      ws.mergeCells('F1:H1'); ws.getCell('F1').value = R('emitido') + ': ' + ahora.toLocaleDateString('es-MX') + ' ' + pad(ahora.getHours()) + ':' + pad(ahora.getMinutes()); ws.getCell('F1').font = { size: 11, color: { argb: 'FF4A5576' } }; ws.getCell('F1').alignment = { horizontal: 'right' };
+      ws.mergeCells('A2:E2'); ws.getCell('A2').value = R('titulo'); ws.getCell('A2').font = { bold: true, size: 24, color: { argb: NAVY } }; ws.getRow(2).height = 40; ws.getCell('A2').alignment = { vertical: 'middle' };
+      ws.mergeCells('F2:H2'); ws.getCell('F2').value = R('por') + ': ' + ((user && user.name) || ''); ws.getCell('F2').font = { size: 11, color: { argb: 'FF4A5576' } }; ws.getCell('F2').alignment = { horizontal: 'right', vertical: 'middle' };
+      ws.mergeCells('A3:E3'); ws.getCell('A3').value = R('sub2', { d: fecha }); ws.getCell('A3').font = { size: 12, color: { argb: 'FF4A5576' } };
+      ws.mergeCells('F3:H3'); ws.getCell('F3').value = R('no') + ': ' + noRep; ws.getCell('F3').font = { size: 11, color: { argb: 'FF4A5576' } }; ws.getCell('F3').alignment = { horizontal: 'right' };
+      for (var cc = 1; cc <= 8; cc++) ws.getCell(3, cc).border = { bottom: { style: 'medium', color: { argb: NAVY } } };
+      ws.getRow(3).height = 24;
+
+      // tarjetas KPI
+      var kp = [[R('q1'), tot, fmtN, NAVY], [R('q2'), itT, fmtN, NAVY], [R('q3'), buT, fmtN, NAVY], [R('q4'), sinPrecio.length === PARTES.length ? '—' : usdTot, fmtD, NAVY], [R('q5'), hoy, fmtN, GOLD], [R('q6'), env, fmtN, GOLD], [R('q7'), dif, fmtDif, GOLD], [R('q8'), cuadra ? R('okC') : R('revC'), null, GOLD]];
+      ws.getRow(5).height = 36; ws.getRow(6).height = 40;
+      kp.forEach(function (k, i) {
+        var c1 = ws.getCell(5, i + 1), c2 = ws.getCell(6, i + 1);
+        c1.value = k[0]; c1.font = { bold: true, size: 11, color: { argb: 'FF2B3552' } }; c1.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c1.fill = fill(GRIS);
+        c1.border = { top: { style: 'thick', color: { argb: k[3] } }, left: bd, right: bd };
+        c2.value = k[1]; if (k[2]) c2.numFmt = k[2]; c2.font = { bold: true, size: 18, color: { argb: i === 7 ? (cuadra ? 'FF14693A' : 'FF9B1C1C') : NAVY } }; c2.alignment = { horizontal: 'center', vertical: 'middle' }; c2.fill = fill(i === 7 ? (cuadra ? VERDE : ROJO) : GRIS);
+        c2.border = { bottom: bd, left: bd, right: bd };
+      });
+
+      var fila = 8;
+      // ---- 1. posición por locación ----
+      seccion(ws, fila, R('s1')); fila += 1;
+      try {
+        var cats = LOCS.map(function (l) { return T(locKey(l)); });
+        var series = PARTES.map(function (p, i) { return { name: p.pn + ' · ' + colorTxt(p.color), color: i === 0 ? '#1F2A44' : '#8FA3C7', vals: LOCS.map(function (l) { return totalLoc(res[p.pn], l); }), sub: LOCS.map(function (l) { return n(res[p.pn][l].item) + ' it / ' + n(res[p.pn][l].bundle) + ' bu'; }) }; });
+        var img = wb.addImage({ base64: barras(cats, series, { titulo: R('ch1') }), extension: 'png' });
+        ws.addImage(img, { tl: { col: 0, row: fila }, ext: { width: 740, height: 240 } });
+        for (var rr = 0; rr < 9; rr++) ws.getRow(fila + 1 + rr).height = 20;
+        fila += 10;
+      } catch (eg) { console.warn('gráfica', eg); }
+      var h1 = ws.getRow(fila); ['Locación', '', 'Item', 'Bundle', R('pzas'), R('pct'), R('cPos')[4], ''].forEach(function (v, i) { h1.getCell(i + 1).value = v; });
+      h1.getCell(1).value = R('cPos')[0]; h1.getCell(3).value = R('cPos')[1]; h1.getCell(4).value = R('cPos')[2]; h1.getCell(5).value = R('cPos')[3];
+      ws.mergeCells(fila, 1, fila, 2); ws.mergeCells(fila, 7, fila, 8); enc(h1, 1, 8); fila++;
+      var sumU = 0;
+      LOCS.forEach(function (l) {
+        var i2 = 0, b2 = 0, u2 = 0;
+        PARTES.forEach(function (p) { var r = res[p.pn], pr = imsPrecio(p.pn); i2 += r[l].item; b2 += r[l].bundle; if (pr > 0) u2 += totalLoc(r, l) * pr; });
+        sumU += u2;
+        filaTab(ws, fila, [[1, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]], [T(locKey(l)), i2, b2, i2 + b2, tot ? (i2 + b2) / tot : 0, u2], [null, fmtN, fmtN, fmtN, '0.0%', fmtD], false); fila++;
+      });
+      filaTab(ws, fila, [[1, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]], [R('total'), itT, buT, tot, tot ? 1 : 0, sumU], [null, fmtN, fmtN, fmtN, '0.0%', fmtD], true); fila += 2;
+
+      // ---- 2. conciliación ----
+      seccion(ws, fila, R('s2')); fila += 1;
+      try {
+        var cats2 = [], sS = [], sM = [];
+        PARTES.forEach(function (p) { sistemaVsSamsung(res[p.pn], p.pn).forEach(function (x) { cats2.push(p.pn.slice(-6) + '\n' + x.tipo); sS.push(x.sis); sM.push(x.sam); }); });
+        var img2 = wb.addImage({ base64: barras(cats2, [{ name: R('sist'), color: '#1F2A44', vals: sS }, { name: R('sam'), color: '#DDA73F', vals: sM }], { titulo: R('ch2') }), extension: 'png' });
+        ws.addImage(img2, { tl: { col: 0, row: fila }, ext: { width: 740, height: 240 } });
+        for (var r2 = 0; r2 < 9; r2++) ws.getRow(fila + 1 + r2).height = 20;
+        fila += 10;
+      } catch (eg2) { console.warn('gráfica2', eg2); }
+      var h2 = ws.getRow(fila); var hc = R('cConc'); [hc[0], hc[1], hc[2], '', hc[3], hc[4], hc[5], hc[6]].forEach(function (v, i) { h2.getCell(i + 1).value = v; });
+      ws.mergeCells(fila, 3, fila, 4); enc(h2, 1, 8); fila++;
+      PARTES.forEach(function (p) {
+        sistemaVsSamsung(res[p.pn], p.pn).forEach(function (x) {
+          var d = x.sis - x.sam;
+          filaTab(ws, fila, [[1, 1], [2, 2], [3, 4], [5, 5], [6, 6], [7, 7], [8, 8]], [p.pn, colorTxt(p.color), x.tipo + ' · ' + x.locate, x.sis, x.sam, d, d === 0 ? '✔ ' + R('okC') : '✖ ' + R('revC')], [null, null, null, fmtN, fmtN, fmtDif, null], false);
+          var ce = ws.getCell(fila, 8); ce.font = { bold: true, size: 12, color: { argb: d === 0 ? 'FF14693A' : 'FF9B1C1C' } }; ce.fill = fill(d === 0 ? VERDE : ROJO);
+          fila++;
+        });
+      });
+      fila++;
+
+      // ---- 3. detalle por parte y color ----
+      seccion(ws, fila, R('s3')); fila += 1;
+      var h3 = ws.getRow(fila);
+      [R('cPos')[0], ''].concat(PARTES.reduce(function (acc, p) { return acc.concat([p.pn.slice(-6) + ' · ' + colorTxt(p.color) + ' · Item', p.pn.slice(-6) + ' · ' + colorTxt(p.color) + ' · Bundle']); }, []), ['Total', '']).forEach(function (v, i) { h3.getCell(i + 1).value = v; });
+      h3.height = 34; h3.alignment = { wrapText: true, vertical: 'middle' };
+      ws.mergeCells(fila, 1, fila, 2); ws.mergeCells(fila, 7, fila, 8); enc(h3, 1, 8); fila++;
+      LOCS.forEach(function (l) {
+        var vals = [], tl = 0;
+        PARTES.forEach(function (p) { var q = res[p.pn][l]; vals.push(q.item, q.bundle); tl += q.item + q.bundle; });
+        filaTab(ws, fila, [[1, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]], [T(locKey(l))].concat(vals, [tl]), [null, fmtN, fmtN, fmtN, fmtN, fmtN], false); fila++;
+      });
+      fila++;
+
+      // ---- 4. puntos de atención ----
+      seccion(ws, fila, R('s4')); fila += 1;
+      (atenc.length ? atenc : [R('ninguno')]).forEach(function (txt) { ws.mergeCells(fila, 1, fila, 8); var c = ws.getCell(fila, 1); c.value = '•  ' + txt; c.font = { size: 12 }; c.alignment = { wrapText: true, vertical: 'middle', indent: 1 }; if (atenc.length) c.fill = fill(AMAR); ws.getRow(fila).height = 22; fila++; });
+      fila++;
+      seccion(ws, fila, R('s5')); fila += 1;
+      [R('nota1'), R('nota2'), R('nota3')].forEach(function (txt) { ws.mergeCells(fila, 1, fila, 8); var c = ws.getCell(fila, 1); c.value = txt; c.font = { italic: true, size: 11, color: { argb: 'FF4A5576' } }; c.alignment = { wrapText: true, vertical: 'top', indent: 1 }; ws.getRow(fila).height = 32; fila++; });
+
+      // ================= HOJA 2: MOVIMIENTOS =================
+      var w3 = wb.addWorksheet(R('mov'), { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      w3.columns = [{ width: 20 }, { width: 24 }, { width: 16 }, { width: 12 }, { width: 28 }, { width: 18 }];
+      w3.addRow(R('cMov')); enc(w3.getRow(1), 1, 6);
+      st.movs.filter(function (m) { return !m.anulado; }).slice(0, 300).forEach(function (m) {
+        var d = new Date(m.fecha);
+        var row = w3.addRow([isNaN(d) ? '' : d.toLocaleString('es-MX'), T('c_' + m.tipo), m.pn, m.qty, m.ref || '', m.usuario || '']);
+        row.eachCell(function (c, i) { c.border = borde; c.font = { size: 12 }; if (i === 4) { c.numFmt = fmtN; c.alignment = { horizontal: 'right' }; } });
+      });
+
       var buf = await wb.xlsx.writeBuffer();
+      if (modo === 'buf') return buf;
       var a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-      a.download = 'DLC_Cable_' + hoyISO() + '.xlsx';
+      a.download = 'DLC_Cable_Reporte_Direccion_' + hoyISO() + '.xlsx';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       audit('EXCEL'); say(T('excelOk'), true);
+    } catch (e) { say(T('err') + e.message); console.error(e); }
+  }
+
+
+  /* ---------------- ENVÍO: CORREO (Google Apps Script) + WHATSAPP ---------------- */
+  function resumenEnvio() {
+    var res = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas());
+    var tot = 0, usd = 0, dif = 0, hoy = 0, filas = [], txt = [], dat = [];
+    PARTES.forEach(function (p) {
+      var r = res[p.pn], pr = imsPrecio(p.pn), t = totalPn(r); tot += t; hoy += r.enviadoHoy; if (pr > 0) usd += t * pr;
+      sistemaVsSamsung(r, p.pn).forEach(function (x) { dif += x.sis - x.sam; });
+      filas.push('<tr><td style="padding:8px;border:1px solid #d0d5e2">' + p.pn + ' · ' + h(colorTxt(p.color)) + '</td>' +
+        LOCS.map(function (l) { return '<td style="padding:8px;border:1px solid #d0d5e2;text-align:right">' + n(totalLoc(r, l)) + '</td>'; }).join('') +
+        '<td style="padding:8px;border:1px solid #d0d5e2;text-align:right;font-weight:bold">' + n(t) + '</td></tr>');
+      dat.push({ pn: p.pn, color: colorTxt(p.color), v: LOCS.map(function (l) { return totalLoc(r, l); }), t: t });
+      txt.push('• ' + p.pn + ' (' + colorTxt(p.color) + '): ' + LOCS.map(function (l) { return T(locKey(l)) + ' ' + n(totalLoc(r, l)); }).join(' | ') + ' = *' + n(t) + '*');
+    });
+    var fecha = new Date().toLocaleString('es-MX');
+    var kpi = function (l, v) { return '<td style="padding:12px;border:1px solid #d0d5e2;background:#f1f3f8;text-align:center"><div style="font-size:11px;color:#4a5576">' + h(l) + '</div><div style="font-size:20px;font-weight:bold;color:#14213d">' + v + '</div></td>'; };
+    var th = function (x) { return '<th style="padding:8px;background:#14213d;color:#fff;border:1px solid #14213d">' + h(x) + '</th>'; };
+    var html = '<div style="font-family:Arial,sans-serif;max-width:720px;color:#14213d">' +
+      '<div style="font-size:12px;color:#4a5576">' + h(R('org')) + ' · ' + fecha + ' · ' + h((user && user.name) || '') + '</div>' +
+      '<div style="font-size:26px;font-weight:bold;margin:6px 0 14px">' + h(tri3('mTitulo')) + '</div>' +
+      '<div style="font-size:15px;font-weight:bold;border-bottom:2px solid #14213d;padding-bottom:4px;margin-bottom:10px">1. ' + h(tri3('mPara')) + '</div>' +
+      '<table style="border-collapse:collapse;width:100%;margin-bottom:16px"><tr>' + kpi(tri('mTotal').join(' / '), n(tot)) + kpi(tri('mUsd').join(' / '), '$' + n(usd)) + kpi(tri('mDif').join(' / '), (dif > 0 ? '+' : '') + n(dif)) + kpi(tri('mHoy').join(' / '), n(hoy)) + '</tr></table>' +
+      '<div style="font-size:15px;font-weight:bold;border-bottom:2px solid #14213d;padding-bottom:4px;margin-bottom:10px">2. ' + h(tri3('matrix')) + '</div>' +
+      '<table style="border-collapse:collapse;width:100%;font-size:13px"><tr>' + th(T('parte')) + LOCS.map(function (l) { return th(T(locKey(l))); }).join('') + th('Total') + '</tr>' + filas.join('') + '</table>' +
+      '<p style="font-size:12px;color:#4a5576;margin-top:14px">' + h(tri('mAdj').join(' · ')) + '</p></div>';
+    var fc = new Date(), fcorta = fc.getDate() + '/' + (fc.getMonth() + 1) + '/' + fc.getFullYear();
+    var sg = (dif > 0 ? '+' : '') + n(dif);
+    var texto = '📋 Reporte Cable DLC · DLC Cable Report · DLC 케이블 보고서 (' + fcorta + ')\n' +
+      '🇲🇽 Cable DLC bajo responsabilidad: ' + n(tot) + ' pzas (Almacén y WIP P3/P4). Exposición: $' + n(usd) + ' USD. Dif. vs Samsung: ' + sg + '.\n' +
+      '🇺🇸 DLC cable under responsibility: ' + n(tot) + ' pcs (P3/P4 Warehouse and WIP). Exposure: $' + n(usd) + ' USD. Diff. vs Samsung: ' + sg + '.\n' +
+      '🇰🇷 책임 DLC 케이블: ' + n(tot) + '개 (P3/P4 창고 및 WIP). 노출액: $' + n(usd) + ' USD. 삼성 대비 차이: ' + sg + '.';
+    return { html: html, texto: texto, asunto: tri('asuntoMail')[0] + ' · ' + hoyISO(), dat: dat, tot: tot, usd: usd, dif: dif, hoy: hoy, fecha: fecha };
+  }
+
+
+  // Imagen del reporte (formato dirección, 3 idiomas) para pegar en WhatsApp
+  function tri(k) { return [I18N.es[k], I18N.en[k], I18N.ko[k]]; }
+  function tri3(k) { return tri(k).join(' · '); }
+  function imagenResumen(rs) {
+    return new Promise(function (ok) {
+      var W = 1200, rowH = 60, H = 420 + rs.dat.length * rowH + 90, S = 2;
+      var cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S; var c = cv.getContext('2d'); c.scale(S, S);
+      var NAVY = '#14213d', F = 'Arial, "Malgun Gothic", sans-serif';
+      var lines = function (arr, x, y, al, col, fs, sp) { c.textAlign = al; arr.forEach(function (t, i) { c.fillStyle = col; c.font = (i === 0 ? 'bold ' : '') + fs + 'px ' + F; c.fillText(t, x, y + i * sp); }); };
+      c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#4a5576'; c.font = '16px ' + F; c.textAlign = 'left'; c.fillText('Eunsung Mexicana · ' + rs.fecha + ' · ' + ((user && user.name) || ''), 30, 36);
+      c.fillStyle = NAVY; c.font = 'bold 34px ' + F; c.fillText(tri3('mTitulo'), 30, 84);
+      c.font = 'bold 20px ' + F; c.fillText('1. ' + tri3('mPara'), 30, 130); c.fillRect(30, 140, W - 60, 2);
+      var k = [['mTotal', n(rs.tot)], ['mUsd', '$' + n(rs.usd)], ['mDif', (rs.dif > 0 ? '+' : '') + n(rs.dif)], ['mHoy', n(rs.hoy)]], kw = (W - 60 - 3 * 14) / 4;
+      k.forEach(function (x, i) {
+        var X = 30 + i * (kw + 14); c.fillStyle = '#f1f3f8'; c.fillRect(X, 158, kw, 124); c.strokeStyle = '#d0d5e2'; c.strokeRect(X, 158, kw, 124);
+        lines(tri(x[0]), X + kw / 2, 180, 'center', '#4a5576', 13, 17);
+        c.textAlign = 'center'; c.fillStyle = (i === 2 && rs.dif !== 0) ? '#b42318' : NAVY; c.font = 'bold 34px ' + F; c.fillText(x[1], X + kw / 2, 268);
+      });
+      c.textAlign = 'left'; c.fillStyle = NAVY; c.font = 'bold 20px ' + F; c.fillText('2. ' + tri3('matrix'), 30, 328); c.fillRect(30, 338, W - 60, 2);
+      var cx = [30], locR = [320, 438, 556, 674, 792, 910, 1028], totR = 1150, y0 = 354, hh = 72, lk = LOCS.map(locKey);
+      c.fillStyle = NAVY; c.fillRect(30, y0, W - 60, hh);
+      lines(tri('parte'), cx[0] + 12, y0 + 24, 'left', '#fff', 13, 17);
+      lk.forEach(function (key, i) { lines(tri(key), locR[i], y0 + 24, 'right', '#fff', 13, 17); });
+      c.textAlign = 'right'; c.fillStyle = '#fff'; c.font = 'bold 16px ' + F; c.fillText('Total', totR, y0 + 42);
+      rs.dat.forEach(function (r, j) {
+        var y = y0 + hh + j * rowH; c.fillStyle = j % 2 ? '#f1f3f8' : '#fff'; c.fillRect(30, y, W - 60, rowH); c.strokeStyle = '#d0d5e2'; c.strokeRect(30, y, W - 60, rowH);
+        c.fillStyle = NAVY; c.font = 'bold 19px ' + F; c.textAlign = 'left'; c.fillText(r.pn + ' · ' + r.color, cx[0] + 12, y + 37);
+        c.textAlign = 'right'; c.font = '21px ' + F; r.v.forEach(function (v, i) { c.fillText(n(v), locR[i], y + 38); });
+        c.font = 'bold 23px ' + F; c.fillText(n(r.t), totR, y + 38);
+      });
+      lines(tri('mAdj'), 30, H - 56, 'left', '#4a5576', 13, 18);
+      cv.toBlob(function (bl) { ok(bl); }, 'image/png');
+    });
+  }
+
+  async function destinatarios() {
+    if (!esAdmin()) { say(T('soloAdmin')); return; }
+    var L = { es: ['Elige quién recibe el reporte', 'Guardar', 'Cancelar', 'Usuarios del IMS P3 con correo'], en: ['Choose who receives the report', 'Save', 'Cancel', 'IMS P3 users with email'], ko: ['보고서를 받을 사람 선택', '저장', '취소', '이메일이 있는 IMS P3 사용자'] }[lang()] || [];
+    var usuarios = [];
+    try {
+      var q = await db.collection('ims_usuarios').get();
+      q.docs.forEach(function (d) { var u = d.data(); if (u.email && u.activo !== false) usuarios.push({ email: String(u.email).toLowerCase(), nombre: u.nombre || '' }); });
+    } catch (e) { say(T('err') + e.message); return; }
+    var sel = {}; (st.correos || []).forEach(function (e) { sel[e] = 1; });
+    usuarios.forEach(function (u) { delete sel['_' + u.email]; });
+    (st.correos || []).forEach(function (e) { if (!usuarios.some(function (u) { return u.email === e; })) usuarios.push({ email: e, nombre: '' }); });
+    usuarios.sort(function (x, y) { return (x.nombre || x.email).localeCompare(y.nombre || y.email); });
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div style="background:var(--bg2,#fff);color:var(--text,#111);border:1px solid var(--border2,#ccc);border-radius:14px;max-width:460px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:16px">' +
+      '<div style="font-weight:700;font-size:16px;margin-bottom:4px">👥 ' + h(L[0]) + '</div><div class="dlc-mut" style="margin-bottom:8px">' + h(L[3]) + '</div>' +
+      '<div style="overflow:auto;flex:1;border:1px solid var(--border2,#ccc);border-radius:10px">' +
+      usuarios.map(function (u, i) { return '<label style="display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border2,#ddd);cursor:pointer;font-size:14px"><input type="checkbox" data-e="' + h(u.email) + '" style="width:18px;height:18px"' + (sel[u.email] ? ' checked' : '') + '><span><b>' + h(u.nombre || u.email) + '</b><br><span class="dlc-mut">' + h(u.email) + '</span></span></label>'; }).join('') +
+      '</div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="dlc-b2" id="dlc-dest-no">' + h(L[2]) + '</button><button class="dlc-b" id="dlc-dest-si">' + h(L[1]) + '</button></div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#dlc-dest-no').onclick = function () { ov.remove(); };
+    ov.querySelector('#dlc-dest-si').onclick = async function () {
+      var lista = [].slice.call(ov.querySelectorAll('input[type=checkbox]')).filter(function (c) { return c.checked; }).map(function (c) { return c.getAttribute('data-e'); });
+      try {
+        await db.collection(COL_CFG).doc('reporte').set({ correos: lista, at_iso: new Date().toISOString(), por: (user && user.name) || '' });
+        st.correos = lista; audit('DESTINATARIOS', lista.join(',')); ov.remove(); say(T('destOk'), true);
+      } catch (e) { say(T('err') + e.message); }
+    };
+  }
+
+  async function enviar() {
+    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return; }
+    if (Date.now() >= st.ok) { bloquear(); return; }
+    extender();
+    var dest = st.correos || [];
+    if (!dest.length) say(T('sinDest'));   // sin destinatarios: no se manda correo, pero WhatsApp sí
+    if (typeof REPINV_URL === 'undefined') { say(T('err') + 'REPINV_URL'); return; }
+    say(T('enviando'), true);
+    try {
+      var buf = await excel('buf'); if (!buf) return;
+      var u8 = new Uint8Array(buf), bin = '';
+      for (var i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+      var b64 = btoa(bin), nombre = 'DLC_Cable_Reporte_Direccion_' + hoyISO() + '.xlsx', rs = resumenEnvio(), ok = 0;
+      for (var k = 0; k < dest.length; k++) {
+        try {
+          await fetch(REPINV_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ clave: REPINV_CLAVE, to: dest[k], subject: rs.asunto, message: rs.texto, html: rs.html, attachName: nombre, attachB64: b64 }) });
+          ok++; await new Promise(function (r) { setTimeout(r, 1000); });
+        } catch (e1) { console.error('DLC correo', e1); }
+      }
+      if (dest.length) audit('ENVIO_REPORTE', ok + '/' + dest.length + ' ' + dest.join(','));
+      // WhatsApp: el navegador solo deja abrirlo con un clic nuevo del usuario, por eso se muestra una ventana con botón
+      var imgBlob = null; try { imgBlob = await imagenResumen(rs); } catch (e3) { console.error(e3); }
+      var imgFile = imgBlob ? new File([imgBlob], 'DLC_Cable_' + hoyISO() + '.png', { type: 'image/png' }) : null;
+      var file = new File([buf], nombre, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var Lw = { es: ['✅ Correo enviado a {n} destinatario(s)', 'Ahora envía el resumen por WhatsApp:', '💬 Abrir WhatsApp y elegir contacto', '⬇ Descargar Excel (para adjuntar)', 'Cerrar'], en: ['✅ Email sent to {n} recipient(s)', 'Now send the summary by WhatsApp:', '💬 Open WhatsApp and choose contact', '⬇ Download Excel (to attach)', 'Close'], ko: ['✅ 이메일 {n}명에게 전송 완료', '이제 WhatsApp으로 요약을 보내세요:', '💬 WhatsApp 열기 및 연락처 선택', '⬇ Excel 다운로드 (첨부용)', '닫기'] }[lang()];
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+      ov.innerHTML = '<div style="background:var(--bg2,#fff);color:var(--text,#111);border:1px solid var(--border2,#ccc);border-radius:14px;max-width:420px;width:100%;padding:18px;display:flex;flex-direction:column;gap:10px">' +
+        '<div style="font-weight:700;font-size:16px">' + h(dest.length ? Lw[0].replace('{n}', ok) : T('sinDest')) + '</div><div class="dlc-mut">' + h(Lw[1]) + '</div>' +
+        '<button class="dlc-b" id="dlc-wa-go">' + h(Lw[2]) + '</button><button class="dlc-b2" id="dlc-wa-xl">' + h(Lw[3]) + '</button><button class="dlc-b2" id="dlc-wa-x">' + h(Lw[4]) + '</button></div>';
+      document.body.appendChild(ov);
+      var bajar = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = nombre; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+      ov.querySelector('#dlc-wa-x').onclick = function () { ov.remove(); };
+      ov.querySelector('#dlc-wa-xl').onclick = bajar;
+      // Mismo método del Plan de producción (BOM Simulator): si el equipo puede compartir archivos, abre el menú de compartir con la imagen y el texto;
+      // si no (computadora), copia la imagen al portapapeles (o la descarga) y abre WhatsApp con el texto para pegarla.
+      ov.querySelector('#dlc-wa-go').onclick = function () {
+        var abrir = function (m) { window.open('https://wa.me/?text=' + encodeURIComponent(rs.texto), '_blank'); say(m, true); };
+        var descargarImg = function () { var a = document.createElement('a'); a.href = URL.createObjectURL(imgBlob); a.download = imgFile.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+        if (!imgBlob) { abrir(''); return; }
+        if (navigator.canShare && navigator.canShare({ files: [imgFile] })) {
+          navigator.share({ files: [imgFile], text: rs.texto }).catch(function (e) { if (!e || e.name !== 'AbortError') { descargarImg(); abrir(T('waDesc')); } });
+          return;
+        }
+        if (navigator.clipboard && window.ClipboardItem) {
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': imgBlob })]).then(function () { abrir(T('pegaImg')); }, function () { descargarImg(); abrir(T('waDesc')); });
+        } else { descargarImg(); abrir(T('waDesc')); }
+      };
+      if (dest.length) say(T('envOk', { n: ok }).split('.')[0] + '.', true);
     } catch (e) { say(T('err') + e.message); console.error(e); }
   }
 
@@ -4607,7 +5034,8 @@ window.generarReporteFecha = generarReporteFecha;
       '.dlc-scroll{overflow-x:auto;margin-bottom:.4rem}.dlc-t{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}.dlc-t th{font-size:12px;text-align:left;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;padding:8px;border-bottom:1px solid var(--border2)}.dlc-t td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}' +
       '.dlc-pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600}.dlc-pill.ok{background:rgba(0,230,118,.12);color:var(--green)}.dlc-pill.crit{background:rgba(255,68,68,.14);color:var(--red)}.dlc-pill.warn{background:rgba(255,179,0,.14);color:var(--amber)}' +
       '.dlc-al{border-radius:9px;padding:.6rem .8rem;margin-bottom:.4rem;font-size:13px;border:1px solid var(--border)}.dlc-al.crit{background:rgba(255,68,68,.1);border-color:rgba(255,68,68,.35)}.dlc-al.warn{background:rgba(255,179,0,.1);border-color:rgba(255,179,0,.35)}.dlc-al.ok{background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.3);color:var(--green)}' +
-      '.dlc-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem}.dlc-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text2)}';
+      '.dlc-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem}.dlc-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text2)}' +
+      '.dlc-det{margin-top:.9rem;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}.dlc-det>summary{cursor:pointer;padding:.7rem .9rem;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);list-style:none}.dlc-det>summary::-webkit-details-marker{display:none}.dlc-det[open]>summary{border-bottom:1px solid var(--border);color:var(--accent)}.dlc-det>.card,.dlc-det>.dlc-scroll{margin:.7rem}';
     document.head.appendChild(s);
   }
 
@@ -4630,7 +5058,7 @@ window.generarReporteFecha = generarReporteFecha;
   // lo llama goPage(id)
   function alEntrar(id) {
     if (id !== 'pgDLC') { if (st.ok) { st.ok = 0; } return; }
-    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0) return;
+    if (!puedeVer()) return;
     if (Date.now() < st.ok) { extender(); pintar(); } else pintarCandado();
   }
 
@@ -4639,7 +5067,7 @@ window.generarReporteFecha = generarReporteFecha;
   W.dlc = {
     crearPrimera: crearPrimera, desbloquear: desbloquear, bloquear: function () { bloquear(false); },
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
-    registrar: registrar, anular: anular, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, cambioTipo: cambioTipo,
+    registrar: registrar, anular: anular, saldoInicial: saldoInicial, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
     _calcular: calcular
   };
   if (typeof document !== 'undefined' && document.addEventListener) {
