@@ -2193,7 +2193,7 @@ async function doMov() {
   const ref = document.getElementById('mfRef').value.trim();
   if (scanPallet && movTipo==='E' && ref.toUpperCase()===scanPallet.id.toUpperCase()) {
     try { const pd = await db.collection('pallets_medio').doc(scanPallet.id).get();
-      if (pd.exists && (pd.data().status==='RECEIVED' || pd.data().status==='VOID')) { toast('Pallet '+scanPallet.id+(pd.data().status==='VOID'?' anulado':' ya recibido')+' — no se registra de nuevo','err'); return; }
+      if (pd.exists && ((pd.data().status==='RECEIVED' && !(pd.data().recibidoEn && pd.data().recibidoEn!=='P3')) || pd.data().status==='VOID')) { toast('Pallet '+scanPallet.id+(pd.data().status==='VOID'?' anulado':' ya recibido')+' — no se registra de nuevo','err'); return; }
     } catch(e) {}
   }
   if (movTipo==='E') { item.entradas+=qty; item.actual+=qty; }
@@ -2454,7 +2454,8 @@ async function aplicarPallet(parts){
     var d=await db.collection('pallets_medio').doc(id).get();
     if(d.exists){
       var p=d.data();
-      if(p.status==='RECEIVED') toast('⚠️ Pallet '+id+' YA fue recibido ('+(p.recibidoEn||'')+')','err');
+      if(p.status==='RECEIVED' && !(p.recibidoEn && p.recibidoEn!=='P3')) toast('⚠️ Pallet '+id+' YA fue recibido ('+(p.recibidoEn||'')+')','err');
+      else if(p.status==='RECEIVED') toast('📦 Pallet recibido antes en '+p.recibidoEn+': se registrará como entrada a P3','info');
       else if(p.status==='VOID') toast('⚠️ Pallet '+id+' está ANULADO','err');
       else if(p.destino&&p.destino!==PALLET_DEST) toast('⚠️ Este pallet es para '+p.destino,'err');
     }
@@ -2463,7 +2464,9 @@ async function aplicarPallet(parts){
 async function marcarPalletRecibido(ref){
   if(!scanPallet||!ref||ref.toUpperCase()!==scanPallet.id.toUpperCase()) return;
   try{
-    await db.collection('pallets_medio').doc(scanPallet.id).update({status:'RECEIVED',recibidoEn:'P3',recibidoPor:(user&&user.name)||'',recibidoFecha:new Date().toISOString()});
+    const prevD=await db.collection('pallets_medio').doc(scanPallet.id).get(); const pv=prevD.exists?prevD.data():{};
+    const extra=(pv.status==='RECEIVED'&&pv.recibidoEn&&pv.recibidoEn!=='P3')?{recepciones:(pv.recepciones||[]).concat([{planta:pv.recibidoEn,por:pv.recibidoPor||'',fecha:pv.recibidoFecha||''}])}:{};
+    await db.collection('pallets_medio').doc(scanPallet.id).update(Object.assign({status:'RECEIVED',recibidoEn:'P3',recibidoPor:(user&&user.name)||'',recibidoFecha:new Date().toISOString()},extra));
   }catch(e){ toast('Entrada guardada, pero no se marcó el pallet: '+e.message,'err'); }
   scanPallet=null;
 }
