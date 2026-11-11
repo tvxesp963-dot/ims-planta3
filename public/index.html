@@ -4468,9 +4468,10 @@ window.generarReporteFecha = generarReporteFecha;
     html += '<div class="dlc-filtro"><button class="dlc-f' + (st.filtro === 'all' ? ' on' : '') + '" onclick="dlc.filtrar(\'all\')">' + h(T('todos')) + '</button>' +
       PARTES.map(function (p) { return '<button class="dlc-f' + (st.filtro === p.pn ? ' on' : '') + '" onclick="dlc.filtrar(\'' + p.pn + '\')">' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</button>'; }).join('') + '</div>';
     html += planCard(res);   // el plan de producción es el inicio del proceso: requerimiento de cable
+    html += qrCard();        // justo debajo del plan: armar bundle y escanear (flujo natural)
     // KPIs
     var kp = function (l, v, s, c) { return '<div class="sc ' + c + '"><div class="sc-l">' + h(l) + '</div><div class="sc-v">' + v + '</div></div>'; };
-    html += '<div class="dlc-grid">' + kp(T('total'), n(tot), '', 'bl') + kp(T('item'), n(it), '', 'cy') + kp(T('bundle'), n(bu), '', 'gr') + kp(T('enviadoHoy'), n(hoy), '', 'am') +
+    html += '<div class="sh">' + h(T('kpiT')) + '</div><div class="dlc-grid">' + kp(T('total'), n(tot), '', 'bl') + kp(T('item'), n(it), '', 'cy') + kp(T('bundle'), n(bu), '', 'gr') + kp(T('enviadoHoy'), n(hoy), '', 'am') +
       kp(T('expo'), '$' + n(expo), '', 'bl') + kp(T('dif'), '<span style="color:' + (dif === 0 ? 'var(--green)' : 'var(--red)') + '">' + (dif === 0 ? '0' : sg(dif)) + '</span>', '', dif === 0 ? 'gr' : 'am') + '</div>';
 
     // alertas
@@ -4537,7 +4538,6 @@ window.generarReporteFecha = generarReporteFecha;
     });
     html += '</tbody></table></div>';
 
-    html += qrCard();   // QR por lote en cada paso (principal)
     // formulario de movimiento (manual, plegado)
     var tipos = ['ASSEMBLE', 'RTN_BT', 'PREKIT_P3', 'SHIP_P4', 'RETURN', 'LOSS'];
     html += '<details style="margin-top:14px"><summary class="sh" style="cursor:pointer">' + h(T('manDet')) + '</summary><div class="card dlc-form">' +
@@ -5119,7 +5119,7 @@ window.generarReporteFecha = generarReporteFecha;
      =================================================================== */
   Object.assign(I18N.es, {
     qrT: 'QR por lote (bundle) en cada paso', qrNota: 'El lote nace al ensamblar y su etiqueta QR viaja con el material. En cada paso se escanea y el sistema solo deja avanzar al siguiente paso correcto (no se puede saltar ni repetir un paso).',
-    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
+    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
     qrLotes: 'Últimos lotes', qrLote: 'Lote', qrEtapa: 'Etapa actual', qrEtq: 'Etiqueta', qrSinLotes: 'Aún no hay lotes con QR.', qrImprimir: '🏷️ Imprimir',
     qrTitulo: 'Apunta la cámara al QR del lote', qrManual: 'O pistola / escribe el código del lote y Enter', qrCerrar: 'Cerrar', qrConfirmar: 'Confirmar paso', qrCancelar: 'Cancelar', qrNoCam: 'No se pudo abrir la cámara. Usa la pistola o escribe el código del lote.',
     qrNoLote: 'Lote no encontrado en el sistema', qrEtapaMal: 'Este lote está en «{e}» y no puede pasar a «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Registrados en esta sesión', qrPaso: 'Paso', qrAnulado: 'Este lote tiene movimientos anulados; revísalo con el administrador',
@@ -5127,7 +5127,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.en, {
     qrT: 'QR per lot (bundle) at every step', qrNota: 'The lot is born at assembly and its QR label travels with the material. It is scanned at every step and the system only lets it move to the correct next step (no skipping or repeating a step).',
-    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
+    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
     qrLotes: 'Latest lots', qrLote: 'Lot', qrEtapa: 'Current stage', qrEtq: 'Label', qrSinLotes: 'There are no QR lots yet.', qrImprimir: '🏷️ Print',
     qrTitulo: 'Point the camera at the lot QR', qrManual: 'Or scanner gun / type the lot code and Enter', qrCerrar: 'Close', qrConfirmar: 'Confirm step', qrCancelar: 'Cancel', qrNoCam: 'Could not open the camera. Use the scanner gun or type the lot code.',
     qrNoLote: 'Lot not found in the system', qrEtapaMal: 'This lot is at «{e}» and cannot go to «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Recorded in this session', qrPaso: 'Step', qrAnulado: 'This lot has voided movements; check with the administrator',
@@ -5135,7 +5135,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.ko, {
     qrT: '단계별 로트(번들) QR', qrNota: '로트는 조립 시 생성되며 QR 라벨이 자재와 함께 이동합니다. 각 단계에서 스캔하며, 시스템은 올바른 다음 단계로만 진행하도록 허용합니다(단계 건너뛰기·반복 불가).',
-    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
+    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
     qrLotes: '최근 로트', qrLote: '로트', qrEtapa: '현재 단계', qrEtq: '라벨', qrSinLotes: 'QR 로트가 아직 없습니다.', qrImprimir: '🏷️ 인쇄',
     qrTitulo: '카메라를 로트 QR에 맞추세요', qrManual: '또는 스캐너 건 / 로트 코드 입력 후 Enter', qrCerrar: '닫기', qrConfirmar: '단계 확인', qrCancelar: '취소', qrNoCam: '카메라를 열 수 없습니다. 스캐너 건을 사용하거나 로트 코드를 입력하세요.',
     qrNoLote: '시스템에서 로트를 찾을 수 없습니다', qrEtapaMal: '이 로트는 «{e}» 단계이며 «{n}»(으)로 갈 수 없습니다', qrOk: '✅ {l}: {n}', qrHechos: '이번 세션에 기록됨', qrPaso: '단계', qrAnulado: '이 로트에는 취소된 이동이 있습니다. 관리자에게 확인하세요',
@@ -5383,6 +5383,8 @@ window.generarReporteFecha = generarReporteFecha;
     document.head.appendChild(x);
   }
   var QR_ETAPAS = [['ASSEMBLE', '🏭'], ['RTN_BT', '✅'], ['PREKIT_P3', '📦'], ['SHIP_P4', '🚚'], ['RUN_P4', '⚙️'], ['QR', '✈️']];
+  var etapaAb = null;
+  function etapaAbrir(e) { etapaAb = (etapaAb === e) ? null : e; pintar(); }
   function qrAbrir() { var p = el('dlc-q-arm'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
   function qrPartePick(pn) {
     var i = el('dlc-q-pn'); if (!i) return; i.value = pn;
@@ -5403,7 +5405,12 @@ window.generarReporteFecha = generarReporteFecha;
       '<button class="dlc-b" style="grid-column:1/-1;font-size:16px;padding:14px" onclick="dlc.qrEnsamblar()">' + h(T('qrAsBtn')) + '</button></div>' +
       '<div class="sh">' + h(T('qrEtapasT')) + '</div><div class="dq-g">' + QR_ETAPAS.map(function (e) {
         var c = all.filter(function (l) { return l.etapa === e[0]; }), q = c.reduce(function (a, l) { return a + l.qty; }, 0);
-        return '<div class="dq-t"><div class="ic">' + e[1] + '</div><b>' + h(T('c_' + e[0])) + '</b><div class="n">' + c.length + '</div><small>' + n(q) + ' pz</small></div>'; }).join('') + '</div>';
+        return '<button type="button" class="dq-t' + (etapaAb === e[0] ? ' on' : '') + '" onclick="dlc.etapaAbrir(\'' + e[0] + '\')"><div class="ic">' + e[1] + '</div><b>' + h(T('c_' + e[0])) + '</b><div class="n">' + c.length + '</div><small>' + n(q) + ' pz ' + (etapaAb === e[0] ? '▾' : '▸') + '</small></button>'; }).join('') + '</div>';
+    if (etapaAb) {
+      var ce = all.filter(function (l) { return l.etapa === etapaAb; });
+      html += '<div class="card" style="margin-bottom:12px"><b>' + h(T('c_' + etapaAb)) + '</b>' + (ce.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('qrLote')) + '</th><th>' + h(T('parte')) + '</th><th>' + h(T('cant')) + '</th><th>' + h(T('qrEtq')) + '</th></tr></thead><tbody>' +
+        ce.map(function (l) { return '<tr><td><b>' + h(l.lote) + '</b></td><td>' + chip(colorDe(l.pn)) + h(l.pn) + (l.gh90 ? '<div class="dlc-mut">' + h(l.gh90 + (l.modelo ? ' · ' + l.modelo : '')) + '</div>' : '') + '</td><td>' + n(l.qty) + '</td><td><button class="dlc-b2" onclick="dlc.qrEtiqueta(\'' + h(l.lote) + '\')">' + h(T('qrImprimir')) + '</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('qrSinLotes')) + '</div>') + '</div>';
+    }
     html += '<div class="sh">' + h(T('qrLotes')) + '</div>' + (ls.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('qrLote')) + '</th><th>' + h(T('parte')) + '</th><th>' + h(T('cant')) + '</th><th>' + h(T('qrEtapa')) + '</th><th>' + h(T('qrEtq')) + '</th></tr></thead><tbody>' +
       ls.map(function (l) { return '<tr><td><b>' + h(l.lote) + '</b></td><td>' + chip(colorDe(l.pn)) + h(l.pn) + (l.gh90 ? '<div class="dlc-mut">' + h(l.gh90 + (l.modelo ? ' · ' + l.modelo : '')) + '</div>' : '') + '</td><td>' + n(l.qty) + '</td><td><span class="dlc-pill ' + (QR_FINAL[l.etapa] ? 'ok' : 'warn') + '">' + h(T('c_' + l.etapa)) + '</span></td><td><button class="dlc-b2" onclick="dlc.qrEtiqueta(\'' + h(l.lote) + '\')">' + h(T('qrImprimir')) + '</button></td></tr>'; }).join('') +
       '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('qrSinLotes')) + '</div>');
@@ -5416,7 +5423,7 @@ window.generarReporteFecha = generarReporteFecha;
     crearPrimera: crearPrimera, desbloquear: desbloquear, bloquear: function () { bloquear(false); },
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
     registrar: registrar, anular: anular, saldoInicial: saldoInicial, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
-    qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrAbrir: qrAbrir, tipoPick: tipoPick, fPartePick: fPartePick, qrPartePick: qrPartePick, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
+    qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrAbrir: qrAbrir, etapaAbrir: etapaAbrir, tipoPick: tipoPick, fPartePick: fPartePick, qrPartePick: qrPartePick, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
     _calcular: calcular
   };
   if (typeof document !== 'undefined' && document.addEventListener) {
