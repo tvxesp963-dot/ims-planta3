@@ -232,7 +232,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .mrow:last-of-type{border:none}
 .ml{font-size:11px;color:var(--text2)}.mv{font-size:11px;font-weight:600}
 .modal-close{width:100%;margin-top:1rem;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:14px;cursor:pointer}
-.toast{position:fixed;top:62px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:9px;padding:10px 18px;font-size:12px;font-weight:500;z-index:600;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:90vw}
+.toast{position:fixed;top:auto;bottom:76px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:9px;padding:10px 18px;font-size:12px;font-weight:500;z-index:100001;opacity:0;transition:opacity .25s;pointer-events:none;white-space:normal;text-align:center;max-width:90vw}
 .toast.show{opacity:1}
 .toast.ok{border-color:rgba(0,230,118,.4);color:var(--green)}
 .toast.err{border-color:rgba(255,68,68,.4);color:var(--red)}
@@ -4421,6 +4421,7 @@ window.generarReporteFecha = generarReporteFecha;
 
   async function cargar() {
     await cargarP4();
+    await cargarPlanDLC();
     var q = await db.collection(COL_MOV).orderBy('fecha', 'desc').limit(2000).get();
     st.movs = q.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; });
     try {
@@ -4547,6 +4548,9 @@ window.generarReporteFecha = generarReporteFecha;
       '<label>' + h(T('kind')) + '<select id="dlc-f-kind" class="dlc-in"><option value="item">' + h(T('item')) + '</option><option value="bundle">' + h(T('bundle')) + '</option></select></label>' +
       '<label style="grid-column:1/-1">' + h(T('motivo')) + '<input id="dlc-f-nota" class="dlc-in" type="text"></label></div>' +
       '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.registrar()">' + h(T('registrar')) + '</button></div>';
+
+    html += planCard(res);   // requerimiento de cable según el plan
+    html += qrCard();   // QR por lote en cada paso
 
     // movimientos
     html += '<div class="sh">' + h(T('movList')) + '</div>';
@@ -5084,12 +5088,291 @@ window.generarReporteFecha = generarReporteFecha;
     if (Date.now() < st.ok) { extender(); pintar(); } else pintarCandado();
   }
 
+  /* ===================================================================
+     QR POR LOTE (bundle) EN CADA PASO — Cable DLC
+     El lote nace al ENSAMBLAR (se imprime su etiqueta QR) y se ESCANEA en cada paso:
+       ASSEMBLE → RTN_BT → (PREKIT_P3 | SHIP_P4 → RUN_P4 → QR)
+     No usa colecciones nuevas: el lote vive en dlc_cable_mov (campo "lote").
+     QR = DLC|<lote>|<parte>|<piezas>   (también sirve escribir / pistola con solo el código del lote)
+     =================================================================== */
+  Object.assign(I18N.es, {
+    qrT: 'QR por lote (bundle) en cada paso', qrNota: 'El lote nace al ensamblar y su etiqueta QR viaja con el material. En cada paso se escanea y el sistema solo deja avanzar al siguiente paso correcto (no se puede saltar ni repetir un paso).',
+    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', qrScanBtn: '📷 Escanear', qrPiezas: 'Piezas (bundles) del lote',
+    qrLotes: 'Últimos lotes', qrLote: 'Lote', qrEtapa: 'Etapa actual', qrEtq: 'Etiqueta', qrSinLotes: 'Aún no hay lotes con QR.', qrImprimir: '🏷️ Imprimir',
+    qrTitulo: 'Apunta la cámara al QR del lote', qrManual: 'O pistola / escribe el código del lote y Enter', qrCerrar: 'Cerrar', qrConfirmar: 'Confirmar paso', qrCancelar: 'Cancelar', qrNoCam: 'No se pudo abrir la cámara. Usa la pistola o escribe el código del lote.',
+    qrNoLote: 'Lote no encontrado en el sistema', qrEtapaMal: 'Este lote está en «{e}» y no puede pasar a «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Registrados en esta sesión', qrPaso: 'Paso', qrAnulado: 'Este lote tiene movimientos anulados; revísalo con el administrador',
+    qrPopup: 'El navegador bloqueó la ventana de la etiqueta. Permite ventanas emergentes e intenta de nuevo.', qrProp: 'PROPIEDAD DE SAMSUNG', qrFin: 'Este lote ya terminó su recorrido'
+  });
+  Object.assign(I18N.en, {
+    qrT: 'QR per lot (bundle) at every step', qrNota: 'The lot is born at assembly and its QR label travels with the material. It is scanned at every step and the system only lets it move to the correct next step (no skipping or repeating a step).',
+    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', qrScanBtn: '📷 Scan', qrPiezas: 'Pieces (bundles) in the lot',
+    qrLotes: 'Latest lots', qrLote: 'Lot', qrEtapa: 'Current stage', qrEtq: 'Label', qrSinLotes: 'There are no QR lots yet.', qrImprimir: '🏷️ Print',
+    qrTitulo: 'Point the camera at the lot QR', qrManual: 'Or scanner gun / type the lot code and Enter', qrCerrar: 'Close', qrConfirmar: 'Confirm step', qrCancelar: 'Cancel', qrNoCam: 'Could not open the camera. Use the scanner gun or type the lot code.',
+    qrNoLote: 'Lot not found in the system', qrEtapaMal: 'This lot is at «{e}» and cannot go to «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Recorded in this session', qrPaso: 'Step', qrAnulado: 'This lot has voided movements; check with the administrator',
+    qrPopup: 'The browser blocked the label window. Allow pop-ups and try again.', qrProp: 'SAMSUNG PROPERTY', qrFin: 'This lot already finished its route'
+  });
+  Object.assign(I18N.ko, {
+    qrT: '단계별 로트(번들) QR', qrNota: '로트는 조립 시 생성되며 QR 라벨이 자재와 함께 이동합니다. 각 단계에서 스캔하며, 시스템은 올바른 다음 단계로만 진행하도록 허용합니다(단계 건너뛰기·반복 불가).',
+    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', qrScanBtn: '📷 스캔', qrPiezas: '로트 수량(번들)',
+    qrLotes: '최근 로트', qrLote: '로트', qrEtapa: '현재 단계', qrEtq: '라벨', qrSinLotes: 'QR 로트가 아직 없습니다.', qrImprimir: '🏷️ 인쇄',
+    qrTitulo: '카메라를 로트 QR에 맞추세요', qrManual: '또는 스캐너 건 / 로트 코드 입력 후 Enter', qrCerrar: '닫기', qrConfirmar: '단계 확인', qrCancelar: '취소', qrNoCam: '카메라를 열 수 없습니다. 스캐너 건을 사용하거나 로트 코드를 입력하세요.',
+    qrNoLote: '시스템에서 로트를 찾을 수 없습니다', qrEtapaMal: '이 로트는 «{e}» 단계이며 «{n}»(으)로 갈 수 없습니다', qrOk: '✅ {l}: {n}', qrHechos: '이번 세션에 기록됨', qrPaso: '단계', qrAnulado: '이 로트에는 취소된 이동이 있습니다. 관리자에게 확인하세요',
+    qrPopup: '브라우저가 라벨 창을 차단했습니다. 팝업을 허용하고 다시 시도하세요.', qrProp: '삼성 소유', qrFin: '이 로트는 이미 경로를 마쳤습니다'
+  });
+
+  /* ===================================================================
+     PLAN DE PRODUCCIÓN → BUNDLES (GH90) → CABLE DLC (GH39)
+     Lee el plan que publica el BOM Simulator (bom_simulator_p4/plan_piso_bundle, el mismo del "Bundle · Piso P3").
+     Cada bundle lleva 1 cable DLC; el color/parte lo define el BOM (st.p4.mapa: GH90 → GH39).
+     Solo lectura del plan: no modifica nada del plan ni del BOM.
+     =================================================================== */
+  Object.assign(I18N.es, {
+    plT: 'Requerimiento de cable DLC según el plan de producción', plNota: 'Sale del plan de Bundle P3 publicado por el BOM Simulator. Cada bundle (GH90) lleva 1 cable DLC y el BOM define cuál (negro o blanco). «Necesario» = bundles pendientes del plan.',
+    plSin: 'Todavía no hay plan de Bundle publicado en el BOM Simulator.', plSinDlc: 'El plan publicado no tiene bundles con cable DLC (o el BOM aún no relaciona sus GH90 con un GH39).', plErr: 'No se pudo leer el plan: ',
+    plPub: 'Plan publicado', plViejo: '⚠ Más de 12 h sin republicar', plAlDia: 'Al día', plMaq: 'Línea', plBundle: 'Bundle', plModelo: 'Modelo', plEnvio: 'Envío', plPend: 'Pendiente', plCable: 'Cable DLC',
+    plHoy: 'Hoy / atrasado', plNec: 'Necesario', plWip: 'Suelto en WIP P3', plWh: 'Almacén P3', plFalta: 'Falta', plSob: 'Sobra', plSurtir: 'Surtir hoy a WIP', plOk: 'Cubierto', plRes: 'Resumen por cable', plDet: 'Detalle por bundle del plan',
+    plManual: 'Sin plan (captura manual)', plPara: 'Ensamblar para (plan)', plNoCab: 'Ese bundle no tiene cable DLC en el BOM', plLoteMal: 'El cable de este lote ({c}) no corresponde al bundle {g} (le toca {e})', plNota2: 'El cable ya metido en bundles terminados no cuenta como suelto.'
+  });
+  Object.assign(I18N.en, {
+    plT: 'DLC cable requirement from the production plan', plNota: 'Comes from the P3 Bundle plan published by the BOM Simulator. Each bundle (GH90) takes 1 DLC cable and the BOM defines which one (black or white). “Required” = pending bundles in the plan.',
+    plSin: 'There is no Bundle plan published in the BOM Simulator yet.', plSinDlc: 'The published plan has no bundles with DLC cable (or the BOM does not link their GH90 to a GH39 yet).', plErr: 'Could not read the plan: ',
+    plPub: 'Plan published', plViejo: '⚠ More than 12 h without republishing', plAlDia: 'Up to date', plMaq: 'Line', plBundle: 'Bundle', plModelo: 'Model', plEnvio: 'Ship date', plPend: 'Pending', plCable: 'DLC cable',
+    plHoy: 'Today / overdue', plNec: 'Required', plWip: 'Loose in WIP P3', plWh: 'P3 Warehouse', plFalta: 'Short', plSob: 'Surplus', plSurtir: 'Issue today to WIP', plOk: 'Covered', plRes: 'Summary by cable', plDet: 'Plan detail by bundle',
+    plManual: 'No plan (manual entry)', plPara: 'Assemble for (plan)', plNoCab: 'That bundle has no DLC cable in the BOM', plLoteMal: 'This lot’s cable ({c}) does not belong to bundle {g} (it needs {e})', plNota2: 'Cable already inside finished bundles does not count as loose.'
+  });
+  Object.assign(I18N.ko, {
+    plT: '생산 계획 기준 DLC 케이블 소요량', plNota: 'BOM Simulator가 게시한 P3 번들 계획에서 가져옵니다. 번들(GH90) 1개에 DLC 케이블 1개가 들어가며, 어떤 케이블(검정/흰색)인지는 BOM이 정합니다. «필요» = 계획의 잔여 번들.',
+    plSin: 'BOM Simulator에 게시된 번들 계획이 아직 없습니다.', plSinDlc: '게시된 계획에 DLC 케이블이 있는 번들이 없습니다(또는 BOM에서 GH90과 GH39가 아직 연결되지 않았습니다).', plErr: '계획을 읽을 수 없습니다: ',
+    plPub: '계획 게시', plViejo: '⚠ 12시간 이상 재게시 안 됨', plAlDia: '최신', plMaq: '라인', plBundle: '번들', plModelo: '모델', plEnvio: '출하일', plPend: '잔량', plCable: 'DLC 케이블',
+    plHoy: '오늘 / 지연', plNec: '필요', plWip: 'P3 WIP 낱개', plWh: 'P3 창고', plFalta: '부족', plSob: '여유', plSurtir: '오늘 WIP 불출', plOk: '충족', plRes: '케이블별 요약', plDet: '계획 번들별 상세',
+    plManual: '계획 없음 (수동 입력)', plPara: '조립 대상 (계획)', plNoCab: '이 번들은 BOM에 DLC 케이블이 없습니다', plLoteMal: '이 로트의 케이블({c})은 번들 {g}에 맞지 않습니다(필요: {e})', plNota2: '완성된 번들 안에 들어간 케이블은 낱개로 계산하지 않습니다.'
+  });
+
+  async function cargarPlanDLC() {
+    var pl = { ok: false, err: '', vacio: false, pubMs: 0, archivo: '', items: [] };
+    try {
+      var d = await db.collection('bom_simulator_p4').doc('plan_piso_bundle').get();
+      if (!d.exists || !d.data().colas) pl.vacio = true;
+      else {
+        var o = d.data(), colas = o.colas || {}, hi = hoyISO();
+        pl.pubMs = Number(o.publicadoMs) || Date.parse(o.publicadoEn) || 0; pl.archivo = o.planArchivo || '';
+        Object.keys(colas).forEach(function (m) {
+          (colas[m] || []).forEach(function (c) {
+            var gh = String(c.pn || '').trim().toUpperCase(), cab = (st.p4 && st.p4.mapa && st.p4.mapa[gh]) || [];
+            if (!cab.length) return;
+            var hoy = 0; (c.porDia || []).forEach(function (x) { if (x && x.f && x.f <= hi) hoy += Number(x.q) || 0; });
+            pl.items.push({ maq: m, gh: gh, modelo: (c.modelos && c.modelos.length ? c.modelos : [c.sm]).filter(Boolean).join(', '), fecha: c.fecha || '', pend: Math.max(0, Number(c.pendiente) || 0), hoy: hoy, pn: cab[0], multi: cab.length > 1 });
+          });
+        });
+        pl.items.sort(function (a, b) { return String(a.fecha || '9999').localeCompare(String(b.fecha || '9999')) || a.maq.localeCompare(b.maq); });
+        pl.ok = true;
+      }
+    } catch (e) { pl.err = e.message || String(e); console.error('Plan DLC', e); }
+    st.plan = pl;
+  }
+  function fEnv(f) { if (!f) return '—'; var d = new Date(f + 'T00:00:00'); return isNaN(d) ? '—' : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }); }
+
+  function planCard(res) {
+    var pl = st.plan, html = '<div class="sh">' + h(T('plT')) + '</div>';
+    if (!pl) return '';
+    if (pl.err) return html + '<div class="card" style="color:var(--red)">' + h(T('plErr') + pl.err) + '</div>';
+    if (pl.vacio) return html + '<div class="card dlc-mut">' + h(T('plSin')) + '</div>';
+    var edad = pl.pubMs ? (Date.now() - pl.pubMs) / 36e5 : 0, viejo = !pl.pubMs || edad > 12;
+    html += '<div class="dlc-mut" style="margin-bottom:.5rem">' + h(T('plNota')) + '<br>' + h(T('plPub')) + ': <b>' + h(pl.pubMs ? new Date(pl.pubMs).toLocaleString('es-MX', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—') + '</b>' +
+      (pl.archivo ? ' · ' + h(pl.archivo) : '') + ' <span class="dlc-pill ' + (viejo ? 'warn' : 'ok') + '">' + h(viejo ? T('plViejo') : T('plAlDia')) + '</span></div>';
+    if (!pl.items.length) return html + '<div class="card dlc-mut">' + h(T('plSinDlc')) + '</div>';
+    var nec = {}, hoy = {};
+    pl.items.forEach(function (i) { nec[i.pn] = (nec[i.pn] || 0) + i.pend; hoy[i.pn] = (hoy[i.pn] || 0) + i.hoy; });
+    html += '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plCable')) + '</th><th>' + h(T('plNec')) + '</th><th>' + h(T('plHoy')) + '</th><th>' + h(T('plWip')) + '</th><th>' + h(T('plWh')) + '</th><th>' + h(T('plFalta')) + ' / ' + h(T('plSob')) + '</th><th>' + h(T('plSurtir')) + '</th></tr></thead><tbody>' +
+      PARTES.filter(function (p) { return nec[p.pn] != null; }).map(function (p) {
+        var r = res[p.pn], wip = r.p3wip.item, wh = r.p3wh.item, need = nec[p.pn], dif = wip + wh - need, surt = Math.max(0, (hoy[p.pn] || 0) - wip);
+        return '<tr><td>' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</td><td><b>' + n(need) + '</b></td><td>' + n(hoy[p.pn] || 0) + '</td><td>' + n(wip) + '</td><td>' + n(wh) + '</td>' +
+          '<td><span class="dlc-pill ' + (dif >= 0 ? 'ok' : 'crit') + '">' + (dif >= 0 ? h(T('plSob')) + ' ' + n(dif) : h(T('plFalta')) + ' ' + n(-dif)) + '</span></td>' +
+          '<td>' + (surt ? '<span class="dlc-pill ' + (surt > wh ? 'crit' : 'warn') + '">' + n(surt) + '</span>' : '<span class="dlc-pill ok">' + h(T('plOk')) + '</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div><div class="dlc-mut" style="margin:.3rem 0 .6rem">' + h(T('plNota2')) + '</div>';
+    html += '<details class="dlc-det"><summary>📋 ' + h(T('plDet')) + ' (' + pl.items.length + ')</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plEnvio')) + '</th><th>' + h(T('plPend')) + '</th><th>' + h(T('plCable')) + '</th></tr></thead><tbody>' +
+      pl.items.map(function (i) { return '<tr><td>' + h(i.maq) + '</td><td>' + h(i.modelo) + '</td><td><b>' + h(i.gh) + '</b></td><td>' + h(fEnv(i.fecha)) + '</td><td><b>' + n(i.pend) + '</b></td><td>' + chip(colorDe(i.pn)) + h(i.pn) + (i.multi ? ' ⚠' : '') + '</td></tr>'; }).join('') +
+      '</tbody></table></div></div></details>';
+    return html;
+  }
+  function qrPlanSel() {
+    var i = val('dlc-q-plan'), s = el('dlc-q-pn'); if (!s) return;
+    if (i === '') { s.disabled = false; return; }
+    var it = st.plan && st.plan.items[parseInt(i, 10)]; if (!it) return;
+    s.value = it.pn; s.disabled = true;
+    var q = el('dlc-q-qty'); if (q && !q.value) q.value = it.pend || '';
+  }
+
+  // etapa previa obligatoria de cada paso
+  var QR_PREV = { RTN_BT: 'ASSEMBLE', PREKIT_P3: 'RTN_BT', SHIP_P4: 'RTN_BT', RUN_P4: 'SHIP_P4', QR: 'RUN_P4' };
+  var QR_PASOS = ['RTN_BT', 'PREKIT_P3', 'SHIP_P4', 'RUN_P4', 'QR'];
+  var QR_FINAL = { PREKIT_P3: 1, QR: 1 };
+  var qrHechos = [];
+
+  // lotes derivados de los movimientos (sin colección nueva)
+  function lotesDe(movs) {
+    var mp = {}, orden = movs.slice().sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
+    orden.forEach(function (m) {
+      if (!m.lote) return;
+      var l = mp[m.lote] || (mp[m.lote] = { lote: m.lote, pn: m.pn, qty: 0, etapa: null, fecha: m.fecha, anulados: 0, gh90: '', modelo: '', maq: '' });
+      if (m.anulado) { l.anulados++; return; }
+      if (m.tipo === 'ASSEMBLE') { l.qty = Number(m.qty) || 0; l.fecha = m.fecha; l.gh90 = m.gh90 || ''; l.modelo = m.modelo || ''; l.maq = m.maq || ''; }
+      l.etapa = m.tipo; l.pn = m.pn;
+    });
+    return Object.keys(mp).map(function (k) { return mp[k]; }).filter(function (l) { return l.etapa; }).sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
+  }
+  function nuevoLote() {
+    var d = new Date(), r = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return 'DLC-' + String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + r;
+  }
+  function qrTexto(l) { return 'DLC|' + l.lote + '|' + l.pn + '|' + l.qty; }
+
+  // registra un movimiento ligado a un lote (mismos candados y validaciones que registrar())
+  async function regMovLote(tipo, pn, qty, lote, nota, extra) {
+    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return false; }
+    if (Date.now() >= st.ok) { bloquear(); return false; }
+    extender();
+    var r = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas())[pn];
+    var disp = { ASSEMBLE: r.p3wip.item, RTN_BT: r.p3wip.bundle, PREKIT_P3: r.p3bt.bundle, SHIP_P4: r.p3bt.bundle }[tipo];
+    if (disp !== undefined && qty > disp) { say(T('sinStock', { n: n(Math.max(0, disp)) })); return false; }
+    var m = { tipo: tipo, pn: pn, color: colorDe(pn), qty: qty, ref: lote, lote: lote, via: 'QR', nota: nota || '', usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3' };
+    if (extra) Object.keys(extra).forEach(function (k) { if (extra[k]) m[k] = extra[k]; });
+    var d = await db.collection(COL_MOV).add(m); m.id = d.id; st.movs.unshift(m);
+    audit('MOV_' + tipo, pn + ' x' + qty + ' · ' + lote + ' · QR' + (extra && extra.gh90 ? ' · ' + extra.gh90 : ''));
+    return true;
+  }
+
+  function qrDataUrl(texto, px) {
+    var box = document.createElement('div'); box.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(box);
+    try { new QRCode(box, { text: texto, width: px, height: px, correctLevel: QRCode.CorrectLevel.M }); }
+    catch (e) { box.remove(); throw e; }
+    var cv = box.querySelector('canvas'), im = box.querySelector('img'), url = '';
+    if (cv) url = cv.toDataURL('image/png'); else if (im) url = im.src;
+    box.remove(); return url;
+  }
+  function etiquetaLote(lote) {
+    var l = lotesDe(st.movs).filter(function (x) { return x.lote === lote; })[0]; if (!l) { say(T('qrNoLote')); return; }
+    var w = window.open('', '_blank'); if (!w) { say(T('qrPopup')); return; }
+    var url = qrDataUrl(qrTexto(l), 280), d = new Date(l.fecha);
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + h(l.lote) + '</title><style>@page{size:100mm 70mm;margin:3mm}body{font-family:Arial,sans-serif;margin:0;text-align:center}' +
+      '.e{border:2px solid #000;padding:6px;display:flex;gap:10px;align-items:center;justify-content:center}.e img{width:38mm;height:38mm}.t{text-align:left}' +
+      '.b{font-size:15pt;font-weight:700}.s{font-size:10pt}.p{font-size:8pt;margin-top:3px;font-weight:700}</style></head><body><div class="e"><img src="' + url + '"><div class="t">' +
+      '<div class="b">' + h(l.pn) + '</div><div class="s">' + h(colorTxt(colorDe(l.pn))) + ' · DLC</div>' + (l.gh90 ? '<div class="s">' + h(l.gh90) + (l.modelo ? ' · ' + h(l.modelo) : '') + '</div>' : '') + '<div class="b">' + n(l.qty) + ' pcs</div>' +
+      '<div class="s">' + h(l.lote) + '</div><div class="s">' + h(isNaN(d) ? '' : d.toLocaleDateString('es-MX')) + '</div><div class="p">' + h(T('qrProp')) + '</div></div></div>' +
+      '<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+    w.document.close();
+  }
+  async function qrEnsamblar() {
+    var pn = val('dlc-q-pn'), qty = parseInt(val('dlc-q-qty'), 10) || 0, pi = val('dlc-q-plan'), it = (pi !== '' && st.plan) ? st.plan.items[parseInt(pi, 10)] : null;
+    if (qty <= 0) { say(T('invalida')); return; }
+    if (it) pn = it.pn;   // el cable lo define el BOM del bundle del plan
+    try {
+      var lote = nuevoLote();
+      if (!(await regMovLote('ASSEMBLE', pn, qty, lote, '', it ? { gh90: it.gh, modelo: it.modelo, maq: it.maq } : null))) return;
+      say(T('okReg'), true); await pintar(); etiquetaLote(lote);
+    } catch (e) { say(T('err') + e.message); console.error(e); }
+  }
+
+  /* ----- escáner (cámara con jsQR, o pistola/teclado) ----- */
+  var qrS = { stream: null, timer: 0, tipo: null, pend: null, last: '', lastT: 0 };
+  function qrEstilo() {
+    if (el('dlc-qr-style')) return;
+    var s = document.createElement('style'); s.id = 'dlc-qr-style';
+    s.textContent = '#dlc-qr-ov{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;color:#fff}' +
+      '#dlc-qr-ov video{width:min(92vw,400px);height:min(80vw,340px);object-fit:cover;border-radius:14px;border:3px solid var(--accent2);background:#000}' +
+      '#dlc-qr-ov .q-e{color:#ff6b6b;min-height:20px;text-align:center;font-size:13px}#dlc-qr-ov .q-ok{color:#4cd964;font-size:12px;text-align:center;max-height:70px;overflow:auto}' +
+      '#dlc-qr-ov .q-c{background:var(--bg3);border:1px solid var(--accent2);border-radius:12px;padding:12px;width:min(92vw,400px);box-sizing:border-box;text-align:center}' +
+      '.dlc-qb{display:flex;flex-wrap:wrap;gap:8px}.dlc-qb .dlc-b{flex:1;min-width:150px}';
+    document.head.appendChild(s);
+  }
+  function qrParar() { clearInterval(qrS.timer); qrS.timer = 0; }
+  function qrCerrar() { qrParar(); if (qrS.stream) { qrS.stream.getTracks().forEach(function (t) { t.stop(); }); qrS.stream = null; } var o = el('dlc-qr-ov'); if (o) o.remove(); qrS.pend = null; }
+  function qrBuscarLote(txt) {
+    var s = String(txt || '').trim(), cod = s.indexOf('DLC|') === 0 ? s.split('|')[1] : s;
+    cod = String(cod || '').trim().toUpperCase();
+    return lotesDe(st.movs).filter(function (l) { return l.lote.toUpperCase() === cod; })[0] || null;
+  }
+  function qrLeer(txt) {
+    var now = Date.now(); if (txt === qrS.last && now - qrS.lastT < 1800) return; qrS.last = txt; qrS.lastT = now;
+    if (qrS.pend) return;
+    var e = el('dlc-qr-err'), tipo = qrS.tipo, l = qrBuscarLote(txt);
+    if (!l) { if (e) e.textContent = T('qrNoLote'); return; }
+    if (QR_FINAL[l.etapa]) { if (e) e.textContent = T('qrFin') + ' (' + T('c_' + l.etapa) + ')'; return; }
+    var esp = l.gh90 && st.p4 && st.p4.mapa && st.p4.mapa[l.gh90];
+    if (esp && esp.length && esp.indexOf(l.pn) < 0) { if (e) e.textContent = T('plLoteMal', { c: l.pn, g: l.gh90, e: esp.join(' / ') }); return; }
+    if (l.etapa !== QR_PREV[tipo]) { if (e) e.textContent = T('qrEtapaMal', { e: T('c_' + l.etapa), n: T('c_' + tipo) }); return; }
+    if (e) e.textContent = '';
+    qrParar(); qrS.pend = l;
+    var c = el('dlc-qr-conf');
+    c.innerHTML = '<div style="font-weight:700;font-size:15px">' + chip(colorDe(l.pn)) + h(l.pn) + '</div><div>' + h(T('qrLote')) + ': <b>' + h(l.lote) + '</b> · <b>' + n(l.qty) + '</b></div>' +
+      '<div class="dlc-mut" style="margin:6px 0">' + h(T('c_' + l.etapa)) + ' → <b>' + h(T('c_' + tipo)) + '</b></div>' +
+      '<div class="dlc-qb"><button class="dlc-b" onclick="dlc.qrConfirmar()">' + h(T('qrConfirmar')) + '</button><button class="dlc-b2" onclick="dlc.qrCancelar()">' + h(T('qrCancelar')) + '</button></div>';
+    c.style.display = 'block'; try { navigator.vibrate && navigator.vibrate(60); } catch (x) { }
+  }
+  async function qrConfirmar() {
+    var l = qrS.pend, tipo = qrS.tipo; if (!l) return;
+    try {
+      if (!(await regMovLote(tipo, l.pn, l.qty, l.lote, ''))) { qrCancelar(); return; }
+      qrHechos.unshift(T('qrOk', { l: l.lote, n: T('c_' + tipo) }) + ' · ' + n(l.qty));
+      var ok = el('dlc-qr-ok'); if (ok) ok.innerHTML = '<b>' + h(T('qrHechos')) + '</b><br>' + qrHechos.slice(0, 6).map(h).join('<br>');
+      say(T('okReg'), true); pintar(); qrCancelar();
+    } catch (e) { say(T('err') + e.message); console.error(e); }
+  }
+  function qrCancelar() { qrS.pend = null; var c = el('dlc-qr-conf'); if (c) { c.style.display = 'none'; c.innerHTML = ''; } qrS.last = ''; var v = el('dlc-qr-v'); if (v && qrS.stream) qrCiclo(v); }
+  function qrCiclo(video) {
+    qrParar();
+    var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    qrS.timer = setInterval(function () {
+      if (!video.videoWidth || qrS.pend) return;
+      cv.width = video.videoWidth; cv.height = video.videoHeight; cx.drawImage(video, 0, 0);
+      var d = cx.getImageData(0, 0, cv.width, cv.height), c = (typeof jsQR === 'function') ? jsQR(d.data, cv.width, cv.height, { inversionAttempts: 'attemptBoth' }) : null;
+      if (c && c.data) qrLeer(c.data);
+    }, 250);
+  }
+  async function qrEscanear(tipo) {
+    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return; }
+    if (Date.now() >= st.ok) { bloquear(); return; }
+    qrCerrar(); qrEstilo(); qrS.tipo = tipo; qrS.last = ''; qrHechos = [];
+    var o = document.createElement('div'); o.id = 'dlc-qr-ov';
+    o.innerHTML = '<div style="font-weight:700;text-align:center">' + h(T('qrPaso')) + ': ' + h(T('t_' + tipo)) + '</div><div class="dlc-mut" style="color:#ccc">' + h(T('qrTitulo')) + '</div>' +
+      '<video id="dlc-qr-v" playsinline muted></video><div class="q-c" id="dlc-qr-conf" style="display:none"></div><div class="q-ok" id="dlc-qr-ok"></div>' +
+      '<input id="dlc-qr-man" class="dlc-in" style="max-width:400px" placeholder="' + h(T('qrManual')) + '" autocomplete="off" autocapitalize="characters">' +
+      '<button class="dlc-b" onclick="dlc.qrCerrar()">' + h(T('qrCerrar')) + '</button><div class="q-e" id="dlc-qr-err" role="alert"></div>';
+    document.body.appendChild(o);
+    var man = el('dlc-qr-man'); man.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { qrLeer(man.value.trim()); man.value = ''; qrS.last = ''; } });
+    try {
+      qrS.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      var v = el('dlc-qr-v'); v.srcObject = qrS.stream; await v.play(); qrCiclo(v);
+    } catch (e) { el('dlc-qr-err').textContent = T('qrNoCam'); man.focus(); }
+  }
+
+  function qrCard() {
+    var ls = lotesDe(st.movs).slice(0, 10);
+    var html = '<div class="sh">' + h(T('qrT')) + '</div><div class="card dlc-form">' +
+      '<div class="dlc-mut" style="grid-column:1/-1">' + h(T('qrNota')) + '</div>' +
+      '<div style="grid-column:1/-1;font-weight:700">' + h(T('qrAsT')) + '</div>' +
+      '<label style="grid-column:1/-1">' + h(T('plPara')) + '<select id="dlc-q-plan" class="dlc-in" onchange="dlc.qrPlanSel()"><option value="">' + h(T('plManual')) + '</option>' +
+      ((st.plan && st.plan.items) || []).map(function (i, ix) { return '<option value="' + ix + '">' + h(i.maq + ' · ' + i.gh + ' · ' + i.modelo + ' · ' + fEnv(i.fecha) + ' · ' + n(i.pend) + ' → ' + i.pn + ' ' + colorTxt(colorDe(i.pn))) + '</option>'; }).join('') + '</select></label>' +
+      '<label>' + h(T('parte')) + '<select id="dlc-q-pn" class="dlc-in">' + PARTES.map(function (p) { return '<option value="' + p.pn + '">' + p.pn + ' · ' + h(colorTxt(p.color)) + '</option>'; }).join('') + '</select></label>' +
+      '<label>' + h(T('qrPiezas')) + '<input id="dlc-q-qty" class="dlc-in" type="number" min="1" inputmode="numeric"></label>' +
+      '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.qrEnsamblar()">' + h(T('qrAsBtn')) + '</button>' +
+      '<div style="grid-column:1/-1;font-weight:700;margin-top:6px">' + h(T('qrScanT')) + '</div>' +
+      '<div class="dlc-qb" style="grid-column:1/-1">' + QR_PASOS.map(function (t) { return '<button class="dlc-b" onclick="dlc.qrEscanear(\'' + t + '\')">' + h(T('qrScanBtn')) + ' · ' + h(T('t_' + t)) + '</button>'; }).join('') + '</div>' +
+      '</div>';
+    html += '<div class="sh">' + h(T('qrLotes')) + '</div>' + (ls.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('qrLote')) + '</th><th>' + h(T('parte')) + '</th><th>' + h(T('cant')) + '</th><th>' + h(T('qrEtapa')) + '</th><th>' + h(T('qrEtq')) + '</th></tr></thead><tbody>' +
+      ls.map(function (l) { return '<tr><td><b>' + h(l.lote) + '</b></td><td>' + chip(colorDe(l.pn)) + h(l.pn) + (l.gh90 ? '<div class="dlc-mut">' + h(l.gh90 + (l.modelo ? ' · ' + l.modelo : '')) + '</div>' : '') + '</td><td>' + n(l.qty) + '</td><td><span class="dlc-pill ' + (QR_FINAL[l.etapa] ? 'ok' : 'warn') + '">' + h(T('c_' + l.etapa)) + '</span></td><td><button class="dlc-b2" onclick="dlc.qrEtiqueta(\'' + h(l.lote) + '\')">' + h(T('qrImprimir')) + '</button></td></tr>'; }).join('') +
+      '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('qrSinLotes')) + '</div>');
+    return html;
+  }
+
   var W = (typeof window !== "undefined") ? window : {};
   W.dlcOnPage = alEntrar;
   W.dlc = {
     crearPrimera: crearPrimera, desbloquear: desbloquear, bloquear: function () { bloquear(false); },
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
     registrar: registrar, anular: anular, saldoInicial: saldoInicial, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
+    qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
     _calcular: calcular
   };
   if (typeof document !== 'undefined' && document.addEventListener) {
