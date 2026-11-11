@@ -5222,7 +5222,7 @@ window.generarReporteFecha = generarReporteFecha;
     if (i === '') { if (g) g.classList.remove('dis'); return; }
     var it = st.plan && st.plan.items[parseInt(i, 10)]; if (!it) return;
     qrPartePick(it.pn); if (g) g.classList.add('dis');
-    var q = el('dlc-q-qty'); if (q && !q.value) q.value = it.pend || '';
+    var q = el('dlc-q-qty'); if (q) q.value = it.pend || '';
   }
 
   // etapa previa obligatoria de cada paso
@@ -5385,20 +5385,21 @@ window.generarReporteFecha = generarReporteFecha;
   var QR_ETAPAS = [['ASSEMBLE', '🏭'], ['RTN_BT', '✅'], ['PREKIT_P3', '📦'], ['SHIP_P4', '🚚'], ['RUN_P4', '⚙️'], ['QR', '✈️']];
   var etapaAb = null;
   function etapaAbrir(e) { etapaAb = (etapaAb === e) ? null : e; pintar(); }
-  function qrAbrir() { var p = el('dlc-q-arm'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
+  function qrAbrir() { var p = el('dlc-q-arm'); if (p) { p.style.display = p.style.display === 'none' ? 'block' : 'none'; if (p.style.display === 'block') qrPlanSel(); } }
   function qrPartePick(pn) {
     var i = el('dlc-q-pn'); if (!i) return; i.value = pn;
     PARTES.forEach(function (p) { var t = el('dlc-q-t-' + p.color); if (t) t.classList.toggle('on', p.pn === pn); });
   }
   function qrCard() {
     qrTileEstilo();
-    var all = lotesDe(st.movs), ls = all.slice(0, 10);
+    var all = lotesDe(st.movs), ls = all.slice(0, 10), primero = -1;
+    ((st.plan && st.plan.items) || []).some(function (i, ix) { if (i.pend > 0) { primero = ix; return true; } return false; });   // el plan más próximo con pendiente
     var html = '<div class="sh">' + h(T('qrT')) + '</div>' +
       '<div class="dq-g"><button class="dq-t big" onclick="dlc.qrAbrir()"><div class="ic">🏭</div><b>' + h(T('qrAsBtn0')) + '</b><small>' + h(T('qrAsSub')) + '</small></button>' +
       '<button class="dq-t big" onclick="dlc.qrEscanear(\'AUTO\')"><div class="ic">📷</div><b>' + h(T('qrScanBtn0')) + '</b><small>' + h(T('qrScanSub')) + '</small></button></div>' +
       '<div id="dlc-q-arm" class="card dlc-form" style="display:none">' +
       '<label style="grid-column:1/-1">' + h(T('plPara')) + '<select id="dlc-q-plan" class="dlc-in" onchange="dlc.qrPlanSel()"><option value="">' + h(T('plManual')) + '</option>' +
-      ((st.plan && st.plan.items) || []).map(function (i, ix) { return '<option value="' + ix + '">' + h(i.maq + ' · ' + i.gh + ' · ' + i.modelo + ' · ' + fEnv(i.fecha) + ' · ' + n(i.pend) + ' → ' + i.pn + ' ' + colorTxt(colorDe(i.pn))) + '</option>'; }).join('') + '</select></label>' +
+      ((st.plan && st.plan.items) || []).map(function (i, ix) { return '<option value="' + ix + '"' + (ix === primero ? ' selected' : '') + '>' + h(i.maq + ' · ' + i.gh + ' · ' + i.modelo + ' · ' + fEnv(i.fecha) + ' · ' + n(i.pend) + ' → ' + i.pn + ' ' + colorTxt(colorDe(i.pn))) + '</option>'; }).join('') + '</select></label>' +
       '<div class="dq-g" id="dlc-q-parts" style="grid-column:1/-1;margin:0">' + PARTES.map(function (p, ix) { return '<button type="button" id="dlc-q-t-' + p.color + '" class="dq-t' + (ix === 0 ? ' on' : '') + '" onclick="dlc.qrPartePick(\'' + p.pn + '\')"><div class="ic">' + (p.color === 'black' ? '⚫' : '⚪') + '</div><b>' + h(colorTxt(p.color)) + '</b><small>' + p.pn + '</small></button>'; }).join('') + '</div>' +
       '<input type="hidden" id="dlc-q-pn" value="' + PARTES[0].pn + '">' +
       '<label style="grid-column:1/-1">' + h(T('qrPiezas')) + '<input id="dlc-q-qty" class="dlc-in" type="number" min="1" inputmode="numeric" style="font-size:20px"></label>' +
