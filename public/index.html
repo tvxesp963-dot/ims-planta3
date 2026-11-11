@@ -4163,7 +4163,7 @@ window.generarReporteFecha = generarReporteFecha;
   function calcular(movs, imsStock, hoyISO, p4, imsSal) {
     var res = {};
     PARTES.forEach(function (p) {
-      res[p.pn] = { p3wh: { item: imsStock[nk(p.pn)] || 0, bundle: 0 }, p3wip: vacio(), p3bt: vacio(), p3pk: vacio(), p4ims: vacio(), p4wip: vacio(), p4pk: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0 };
+      res[p.pn] = { p3wh: { item: imsStock[nk(p.pn)] || 0, bundle: 0 }, p3wip: vacio(), p3bt: vacio(), p3pk: vacio(), p4ims: vacio(), p4wip: vacio(), p4pk: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0, transito: 0 };
     });
     // de más antiguo a más nuevo
     movs.slice().sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); }).forEach(function (m) {
@@ -4171,6 +4171,8 @@ window.generarReporteFecha = generarReporteFecha;
       var r = res[m.pn]; if (!r) return;
       var q = Number(m.qty) || 0;
       switch (m.tipo) {
+        case 'TRANSIT': r.transito += q; break;                    // embarque recogido, aún no recibido en P3
+        case 'TRANSIT_RCV': r.transito -= q; break;                // recibido: la entrada al Almacén P3 la hace el IMS
         case 'OPEN': r.p3wip.item += q; r.p3wip.bundle += Number(m.bundle) || 0; break;
         case 'RETURN': r.p3wip.item -= q; break;                   // regreso de cable sobrante a Almacén P3
         case 'ISSUE': r.p3wip.item += q; break;                    // el IMS ya descontó Almacén P3
@@ -4484,6 +4486,7 @@ window.generarReporteFecha = generarReporteFecha;
     });
     sinPrecio.forEach(function (pn) { al.push({ s: 'warn', t: T('aPrecio', { p: pn }) }); });
     keys.forEach(function (pn) { if (!st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) al.push({ s: 'warn', t: T('aSinOpen', { p: pn }) }); });
+    embarquesDe(st.movs).forEach(function (e) { if (!e.solicitud && keys.indexOf(e.pn) >= 0) al.push({ s: 'warn', t: T('aGI', { h: e.hawb || e.cont || e.emb }) }); });
     if (!st.p4.ok) al.unshift({ s: 'crit', t: T('p4Err', { e: st.p4.err || '—' }) });
     else if (!st.p4.nMapa) al.unshift({ s: 'warn', t: T('p4SinMapa') });
     html += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + ' ' + h(T('imsNota')) + '</div>';
@@ -4491,7 +4494,10 @@ window.generarReporteFecha = generarReporteFecha;
       (al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>');   // las alertas van al final de la pantalla
 
     // flujo
+    html += embCard(keys);   // material entrante: embarques de Samsung (primer paso real del proceso)
     html += '<div class="sh">' + h(T('flow')) + '</div><div class="dlc-flow">';
+    var trT = 0; keys.forEach(function (pn) { trT += Math.max(0, res[pn].transito); });
+    html += '<div class="dlc-node"><div class="dlc-app">Samsung</div><div class="dlc-nn">' + h(T('lTrN')) + '</div><div class="dlc-nv">' + n(trT) + '</div><div class="dlc-nm"><span>' + h(T('embTrans')) + '</span></div></div>';
     var nodos = LOCS.map(function (l) { return [l, locKey(l), l === 'p4pk' ? 'ShipQR' : (l.indexOf('p3') === 0 ? 'IMS P3' : 'IMS P4')]; });
     nodos.forEach(function (nd) {
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
@@ -4565,6 +4571,7 @@ window.generarReporteFecha = generarReporteFecha;
 
     // seguridad (solo admin)
     if (esAdmin()) {
+      html += '<details class="dlc-det"><summary>⚙️ ' + h(T('cfgIni')) + '</summary>';
       html += '<div class="sh">' + h(T('samsungT')) + '</div><div class="card dlc-form" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' +
         '<div class="dlc-mut" style="grid-column:1/-1">' + h(T('samNota')) + '</div>' +
         PARTES.map(function (p) {
@@ -4580,7 +4587,8 @@ window.generarReporteFecha = generarReporteFecha;
             '<label>' + h(T('item')) + '<input id="dlc-o-' + p.pn + '-item" class="dlc-in" type="number" min="0" value="0"></label>' +
             '<label>' + h(T('bundle')) + '<input id="dlc-o-' + p.pn + '-bundle" class="dlc-in" type="number" min="0" value="0"></label>';
         }).join('') +
-        '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.saldoInicial()">' + h(T('openBtn')) + '</button></div>';
+        '<button class="dlc-b2" style="grid-column:1/-1" onclick="dlc.usarWipSamsung()">' + h(T('openUsarSam')) + '</button>' +
+        '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.saldoInicial()">' + h(T('openBtn')) + '</button></div></details>';
 
       html += '<details class="dlc-det"><summary>🔐 ' + h(T('sec')) + '</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secRoles')) + '</div><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('secPw')) + '</div><div class="dlc-mut" style="margin-bottom:.7rem">' + h(T('secLock')) + '</div>' +
         '<div class="dlc-form" style="grid-template-columns:1fr 1fr"><label>' + h(T('pwNew')) + '<input id="dlc-cp1" class="dlc-in" type="password"></label><label>' + h(T('pwRep')) + '<input id="dlc-cp2" class="dlc-in" type="password"></label>' +
@@ -4634,12 +4642,12 @@ window.generarReporteFecha = generarReporteFecha;
   }
 
   // Regreso de cable sobrante: hace una ENTRADA normal en el IMS P3 (sube el Almacén P3) y baja el WIP P3
-  async function entradaIMS(pn, qty, ref) {
+  async function entradaIMS(pn, qty, ref, pref) {
     var cand = items.filter(function (i) { return nk(i.pn) === nk(pn); });
     if (!cand.length) throw new Error(T('sinPN'));
     var item = cand.filter(function (i) { return (parseFloat(i.actual) || 0) > 0; })[0] || cand[0];
     var iso = new Date().toISOString();
-    var refTxt = 'DLC devolución' + (ref ? ' · ' + ref : '');
+    var refTxt = (pref || 'DLC devolución') + (ref ? ' · ' + ref : '');
     item.entradas = (item.entradas || 0) + qty; item.actual = (parseFloat(item.actual) || 0) + qty; item.ubicacion = 'Almacén';
     if (!item.historial) item.historial = [];
     item.historial.push({ tipo: 'E', fecha: iso, qty: qty, loc: 'Almacén', user: user.name, ref: refTxt });
@@ -4676,6 +4684,7 @@ window.generarReporteFecha = generarReporteFecha;
     var m = st.movs.filter(function (x) { return x.id === id; })[0]; if (!m) return;
     if (m.tipo === 'ISSUE') { say(T('anularISSUE')); return; }
     if (m.tipo === 'RETURN') { say(T('anularRET')); return; }
+    if (m.tipo === 'TRANSIT_RCV' && m.imsEntrada) { say(T('anularRCV')); return; }
     var motivo = prompt(T('anularMotivo')); if (!motivo) return;
     try {
       await db.collection(COL_MOV).doc(id).update({ anulado: true, anulado_por: user.name, anulado_motivo: motivo, anulado_at: new Date().toISOString() });
@@ -4684,6 +4693,11 @@ window.generarReporteFecha = generarReporteFecha;
     } catch (e) { say(T('err') + e.message); }
   }
 
+  // llena el saldo inicial con el WIP P3 del último reporte de Samsung (el usuario lo revisa y confirma)
+  function usarWipSamsung() {
+    PARTES.forEach(function (p) { var i = el('dlc-o-' + p.pn + '-item'), b = el('dlc-o-' + p.pn + '-bundle'); if (i) i.value = Number(samsungDe(p.pn).wip) || 0; if (b) b.value = 0; });
+    say(T('openUsarOk'), true);
+  }
   async function saldoInicial() {
     if (!esAdmin()) { say(T('soloAdmin')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
@@ -5119,7 +5133,7 @@ window.generarReporteFecha = generarReporteFecha;
      =================================================================== */
   Object.assign(I18N.es, {
     qrT: 'QR por lote (bundle) en cada paso', qrNota: 'El lote nace al ensamblar y su etiqueta QR viaja con el material. En cada paso se escanea y el sistema solo deja avanzar al siguiente paso correcto (no se puede saltar ni repetir un paso).',
-    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrBomNota: 'Cable definido por el plan (BOM)', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
+    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrBomNota: 'Cable definido por el plan (BOM)', cfgIni: 'Configuración inicial (Samsung y saldo inicial)', openUsarSam: 'Usar el WIP P3 del reporte de Samsung', openUsarOk: 'Valores cargados: revísalos y confirma con «Registrar saldo inicial»', c_TRANSIT: 'Embarque en tránsito', c_TRANSIT_RCV: 'Recepción de embarque en P3', c_TRANSIT_INFO: 'Datos de embarque', anularRCV: 'Esta recepción ya generó una Entrada en el IMS P3. Corrígela desde el IMS.', embT: '🚢 Embarques de Samsung (material entrante)', embNota: 'Cuando Samsung avisa que el cable fue recogido, regístralo aquí. Queda «en tránsito» hasta que llegue a P3; al recibirlo se da la Entrada en el IMS P3 y pasa a Almacén P3.', embBtn0: 'Registrar embarque', embSub: 'Datos del aviso de Samsung', embTrans: 'En tránsito', embEmb: 'embarques', embTar: 'tarimas', embPeso: 'kg', embProv: 'Proveedor', embHawb: 'HAWB', embCont: 'Contenedor', embPo: 'PO#', embPrecio: 'Precio (USD)', embTarimas: 'Tarimas', embPesoL: 'Peso (kg)', embGI: 'Solicitud GI #', embNotaL: 'Nota', embReg: 'Registrar embarque', embCant: 'Cantidad (piezas)', embEst: 'Estado', embTr: 'En tránsito', embRc: 'Recibido', embRecEnt: 'Recibir y dar Entrada al IMS P3', embRecSolo: 'Recibir (la Entrada ya está hecha)', embGIg: 'Guardar GI', embSin: 'Aún no hay embarques registrados.', embOk: 'Embarque registrado', embDup: 'Ese embarque (HAWB y parte) ya está registrado', embFalta: 'Escribe al menos el HAWB o el contenedor', embRecOk: 'Embarque recibido', embDifP: 'Diferencia', aGI: 'Embarque {h} sin solicitud GI #', lTrN: 'En tránsito a P3', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
     qrLotes: 'Últimos lotes', qrLote: 'Lote', qrEtapa: 'Etapa actual', qrEtq: 'Etiqueta', qrSinLotes: 'Aún no hay lotes con QR.', qrImprimir: '🏷️ Imprimir',
     qrTitulo: 'Apunta la cámara al QR del lote', qrManual: 'O pistola / escribe el código del lote y Enter', qrCerrar: 'Cerrar', qrConfirmar: 'Confirmar paso', qrCancelar: 'Cancelar', qrNoCam: 'No se pudo abrir la cámara. Usa la pistola o escribe el código del lote.',
     qrNoLote: 'Lote no encontrado en el sistema', qrEtapaMal: 'Este lote está en «{e}» y no puede pasar a «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Registrados en esta sesión', qrPaso: 'Paso', qrAnulado: 'Este lote tiene movimientos anulados; revísalo con el administrador',
@@ -5127,7 +5141,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.en, {
     qrT: 'QR per lot (bundle) at every step', qrNota: 'The lot is born at assembly and its QR label travels with the material. It is scanned at every step and the system only lets it move to the correct next step (no skipping or repeating a step).',
-    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrBomNota: 'Cable set by the plan (BOM)', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
+    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrBomNota: 'Cable set by the plan (BOM)', cfgIni: 'Initial setup (Samsung and opening balance)', openUsarSam: 'Use the WIP P3 from the Samsung report', openUsarOk: 'Values loaded: review them and confirm with «Register opening balance»', c_TRANSIT: 'Shipment in transit', c_TRANSIT_RCV: 'Shipment received at P3', c_TRANSIT_INFO: 'Shipment data', anularRCV: 'This receipt already created an Entry in IMS P3. Fix it from IMS.', embT: '🚢 Samsung shipments (incoming material)', embNota: 'When Samsung reports the cargo was picked up, register it here. It stays «in transit» until it reaches P3; on receipt the Entry is made in IMS P3 and it moves to P3 Warehouse.', embBtn0: 'Register shipment', embSub: 'Data from the Samsung notice', embTrans: 'In transit', embEmb: 'shipments', embTar: 'pallets', embPeso: 'kg', embProv: 'Vendor', embHawb: 'HAWB', embCont: 'Container', embPo: 'PO#', embPrecio: 'Price (USD)', embTarimas: 'Pallets', embPesoL: 'Weight (kg)', embGI: 'GI request #', embNotaL: 'Note', embReg: 'Register shipment', embCant: 'Quantity (pcs)', embEst: 'Status', embTr: 'In transit', embRc: 'Received', embRecEnt: 'Receive and make IMS P3 Entry', embRecSolo: 'Receive (Entry already done)', embGIg: 'Save GI', embSin: 'No shipments registered yet.', embOk: 'Shipment registered', embDup: 'That shipment (HAWB and part) is already registered', embFalta: 'Enter at least the HAWB or the container', embRecOk: 'Shipment received', embDifP: 'Difference', aGI: 'Shipment {h} has no GI request #', lTrN: 'In transit to P3', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
     qrLotes: 'Latest lots', qrLote: 'Lot', qrEtapa: 'Current stage', qrEtq: 'Label', qrSinLotes: 'There are no QR lots yet.', qrImprimir: '🏷️ Print',
     qrTitulo: 'Point the camera at the lot QR', qrManual: 'Or scanner gun / type the lot code and Enter', qrCerrar: 'Close', qrConfirmar: 'Confirm step', qrCancelar: 'Cancel', qrNoCam: 'Could not open the camera. Use the scanner gun or type the lot code.',
     qrNoLote: 'Lot not found in the system', qrEtapaMal: 'This lot is at «{e}» and cannot go to «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Recorded in this session', qrPaso: 'Step', qrAnulado: 'This lot has voided movements; check with the administrator',
@@ -5135,7 +5149,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.ko, {
     qrT: '단계별 로트(번들) QR', qrNota: '로트는 조립 시 생성되며 QR 라벨이 자재와 함께 이동합니다. 각 단계에서 스캔하며, 시스템은 올바른 다음 단계로만 진행하도록 허용합니다(단계 건너뛰기·반복 불가).',
-    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrBomNota: '계획(BOM)에 따른 케이블', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
+    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrBomNota: '계획(BOM)에 따른 케이블', cfgIni: '초기 설정 (삼성 및 기초 재고)', openUsarSam: '삼성 보고서의 P3 WIP 사용', openUsarOk: '값이 입력되었습니다. 확인 후 기초 재고를 등록하세요', c_TRANSIT: '운송 중 선적', c_TRANSIT_RCV: 'P3 선적 입고', c_TRANSIT_INFO: '선적 정보', anularRCV: '이 입고는 이미 IMS P3 입고를 생성했습니다. IMS에서 수정하세요.', embT: '🚢 삼성 선적 (입고 예정 자재)', embNota: '삼성이 화물 픽업을 알리면 여기에 등록하세요. P3에 도착할 때까지 «운송 중»이며, 입고 시 IMS P3 입고가 생성되고 P3 창고로 이동합니다.', embBtn0: '선적 등록', embSub: '삼성 통지 내용', embTrans: '운송 중', embEmb: '선적', embTar: '파레트', embPeso: 'kg', embProv: '공급업체', embHawb: 'HAWB', embCont: '컨테이너', embPo: 'PO#', embPrecio: '단가 (USD)', embTarimas: '파레트', embPesoL: '중량 (kg)', embGI: 'GI 요청 번호', embNotaL: '비고', embReg: '선적 등록', embCant: '수량 (개)', embEst: '상태', embTr: '운송 중', embRc: '입고됨', embRecEnt: '입고 및 IMS P3 입고 처리', embRecSolo: '입고 (IMS 입고 완료)', embGIg: 'GI 저장', embSin: '등록된 선적이 없습니다.', embOk: '선적이 등록되었습니다', embDup: '해당 선적(HAWB 및 품번)은 이미 등록되어 있습니다', embFalta: 'HAWB 또는 컨테이너를 입력하세요', embRecOk: '선적이 입고되었습니다', embDifP: '차이', aGI: '선적 {h}에 GI 요청 번호가 없습니다', lTrN: 'P3 운송 중', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
     qrLotes: '최근 로트', qrLote: '로트', qrEtapa: '현재 단계', qrEtq: '라벨', qrSinLotes: 'QR 로트가 아직 없습니다.', qrImprimir: '🏷️ 인쇄',
     qrTitulo: '카메라를 로트 QR에 맞추세요', qrManual: '또는 스캐너 건 / 로트 코드 입력 후 Enter', qrCerrar: '닫기', qrConfirmar: '단계 확인', qrCancelar: '취소', qrNoCam: '카메라를 열 수 없습니다. 스캐너 건을 사용하거나 로트 코드를 입력하세요.',
     qrNoLote: '시스템에서 로트를 찾을 수 없습니다', qrEtapaMal: '이 로트는 «{e}» 단계이며 «{n}»(으)로 갈 수 없습니다', qrOk: '✅ {l}: {n}', qrHechos: '이번 세션에 기록됨', qrPaso: '단계', qrAnulado: '이 로트에는 취소된 이동이 있습니다. 관리자에게 확인하세요',
@@ -5373,6 +5387,84 @@ window.generarReporteFecha = generarReporteFecha;
     } catch (e) { el('dlc-qr-err').textContent = T('qrNoCam'); man.focus(); }
   }
 
+
+  /* ---------------- EMBARQUES DE SAMSUNG (material entrante) ---------------- */
+  // Se derivan de los movimientos TRANSIT (recogido), TRANSIT_INFO (datos nuevos) y TRANSIT_RCV (recibido en P3); id = m.emb
+  function embarquesDe(movs) {
+    var mp = {};
+    movs.slice().sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); }).forEach(function (m) {
+      if (!m.emb || m.anulado) return;
+      var e = mp[m.emb] || (mp[m.emb] = { emb: m.emb, pn: m.pn, qty: 0, hawb: '', cont: '', po: '', precio: 0, tarimas: 0, peso: 0, vendor: '', solicitud: '', nota: '', fecha: m.fecha, rcv: 0, rcvFecha: '', estado: 'TRANSITO', ids: [] });
+      if (m.tipo === 'TRANSIT') { e.qty = Number(m.qty) || 0; e.pn = m.pn; e.fecha = m.fecha; }
+      if (m.tipo === 'TRANSIT_RCV') { e.rcv += Number(m.qty) || 0; e.rcvFecha = m.fecha; e.estado = 'RECIBIDO'; }
+      ['hawb', 'cont', 'po', 'precio', 'tarimas', 'peso', 'vendor', 'solicitud', 'nota'].forEach(function (k) { if (m[k]) e[k] = m[k]; });
+    });
+    return Object.keys(mp).map(function (k) { return mp[k]; }).filter(function (e) { return e.qty > 0; }).sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
+  }
+  async function regEmb(tipo, pn, qty, emb, extra, nota) {
+    if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return false; }
+    if (Date.now() >= st.ok) { bloquear(); return false; }
+    extender();
+    var m = { tipo: tipo, pn: pn, color: colorDe(pn), qty: qty, ref: emb, emb: emb, nota: nota || '', usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3' };
+    if (extra) Object.keys(extra).forEach(function (k) { if (extra[k]) m[k] = extra[k]; });
+    var d = await db.collection(COL_MOV).add(m); m.id = d.id; st.movs.unshift(m);
+    audit('MOV_' + tipo, pn + ' x' + qty + ' · ' + emb);
+    return true;
+  }
+  function embAbrir() { var p = el('dlc-e-form'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
+  function embPick(pn) {
+    var i = el('dlc-e-pn'); if (!i) return; i.value = pn;
+    PARTES.forEach(function (p) { var t = el('dlc-e-t-' + p.color); if (t) t.classList.toggle('on', p.pn === pn); });
+  }
+  async function embRegistrar() {
+    var pn = val('dlc-e-pn'), qty = parseInt(val('dlc-e-qty'), 10) || 0, hawb = val('dlc-e-hawb').trim().toUpperCase(), cont = val('dlc-e-cont').trim().toUpperCase();
+    if (qty <= 0) { say(T('invalida')); return; }
+    if (!hawb && !cont) { say(T('embFalta')); return; }
+    var id = hawb || cont;
+    if (embarquesDe(st.movs).some(function (e) { return e.emb === id && e.pn === pn; })) { say(T('embDup')); return; }
+    try {
+      var ok = await regEmb('TRANSIT', pn, qty, id, { hawb: hawb, cont: cont, po: val('dlc-e-po').trim(), precio: parseFloat(val('dlc-e-precio')) || 0, tarimas: parseInt(val('dlc-e-tar'), 10) || 0, peso: parseFloat(val('dlc-e-peso')) || 0, vendor: val('dlc-e-vend').trim(), solicitud: val('dlc-e-gi').trim() }, val('dlc-e-nota').trim());
+      if (ok) { say(T('embOk'), true); pintar(); }
+    } catch (e) { say(T('err') + e.message); console.error(e); }
+  }
+  async function embGuardarGI(ix) {
+    var e = st.embs && st.embs[ix]; if (!e) return; var v = val('dlc-gi-' + ix).trim(); if (!v) { say(T('invalida')); return; }
+    try { if (await regEmb('TRANSIT_INFO', e.pn, 0, e.emb, { solicitud: v }, '')) { say(T('embOk'), true); pintar(); } } catch (x) { say(T('err') + x.message); console.error(x); }
+  }
+  async function embRecibir(ix, conEntrada) {
+    var e = st.embs && st.embs[ix]; if (!e) return;
+    var q = parseInt(val('dlc-rc-' + ix), 10) || 0; if (q <= 0) { say(T('invalida')); return; }
+    try {
+      if (conEntrada) await entradaIMS(e.pn, q, e.hawb || e.cont || e.emb, 'DLC recepción');
+      var ok = await regEmb('TRANSIT_RCV', e.pn, q, e.emb, conEntrada ? { imsEntrada: true } : null, '');
+      if (ok) { say(T('embRecOk'), true); pintar(); }
+    } catch (x) { say(T('err') + x.message); console.error(x); }
+  }
+  function embCard(keys) {
+    var all = embarquesDe(st.movs).filter(function (e) { return keys.indexOf(e.pn) >= 0; }); st.embs = all;
+    var tr = all.filter(function (e) { return e.estado === 'TRANSITO'; });
+    var tq = 0, tt = 0, tp = 0; tr.forEach(function (e) { tq += e.qty; tt += e.tarimas || 0; tp += e.peso || 0; });
+    var html = '<div class="sh">' + h(T('embT')) + '</div><div class="dlc-mut" style="margin-bottom:.5rem">' + h(T('embNota')) + '</div>' +
+      '<div class="dq-g"><button class="dq-t" onclick="dlc.embAbrir()"><div class="ic">🚢</div><b>' + h(T('embBtn0')) + '</b><small>' + h(T('embSub')) + '</small></button>' +
+      '<div class="dq-t" style="cursor:default"><div class="ic">🚛</div><b>' + h(T('embTrans')) + '</b><div class="n">' + n(tq) + '</div><small>' + tr.length + ' ' + h(T('embEmb')) + ' · ' + n(tt) + ' ' + h(T('embTar')) + ' · ' + n(tp) + ' ' + h(T('embPeso')) + '</small></div></div>' +
+      '<div id="dlc-e-form" class="card dlc-form" style="display:none;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">' +
+      '<div class="dq-g" style="grid-column:1/-1;margin:0">' + PARTES.map(function (p, ix) { return '<button type="button" id="dlc-e-t-' + p.color + '" class="dq-t' + (ix === 0 ? ' on' : '') + '" onclick="dlc.embPick(\'' + p.pn + '\')"><div class="ic">' + (p.color === 'black' ? '⚫' : '⚪') + '</div><b>' + h(colorTxt(p.color)) + '</b><small>' + p.pn + '</small></button>'; }).join('') + '</div>' +
+      '<input type="hidden" id="dlc-e-pn" value="' + PARTES[0].pn + '">' +
+      [['vend', 'embProv', 'text'], ['qty', 'embCant', 'number'], ['hawb', 'embHawb', 'text'], ['cont', 'embCont', 'text'], ['po', 'embPo', 'text'], ['precio', 'embPrecio', 'number'], ['tar', 'embTarimas', 'number'], ['peso', 'embPesoL', 'number'], ['gi', 'embGI', 'text'], ['nota', 'embNotaL', 'text']].map(function (f) {
+        return '<label>' + h(T(f[1])) + '<input id="dlc-e-' + f[0] + '" class="dlc-in" type="' + f[2] + '"' + (f[2] === 'number' ? ' min="0" step="any" inputmode="decimal"' : '') + '></label>'; }).join('') +
+      '<button class="dlc-b" style="grid-column:1/-1;font-size:16px;padding:14px" onclick="dlc.embRegistrar()">' + h(T('embReg')) + '</button></div>';
+    if (!all.length) return html + '<div class="dlc-mut">' + h(T('embSin')) + '</div>';
+    html += '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('embProv')) + '</th><th>' + h(T('embHawb')) + ' / ' + h(T('embCont')) + '</th><th>' + h(T('embPo')) + '</th><th>' + h(T('embCant')) + '</th><th>' + h(T('embTarimas')) + ' · ' + h(T('embPesoL')) + '</th><th>' + h(T('embGI')) + '</th><th>' + h(T('embEst')) + '</th></tr></thead><tbody>' +
+      all.map(function (e, ix) {
+        var gi = e.solicitud ? h(e.solicitud) : '<input id="dlc-gi-' + ix + '" class="dlc-in" style="min-width:110px" placeholder="GI #"><button class="dlc-b2" onclick="dlc.embGuardarGI(' + ix + ')">' + h(T('embGIg')) + '</button>';
+        var est = e.estado === 'TRANSITO'
+          ? '<span class="dlc-pill warn">' + h(T('embTr')) + '</span><div style="margin-top:6px"><input id="dlc-rc-' + ix + '" class="dlc-in" type="number" min="1" style="max-width:110px" value="' + e.qty + '"></div><button class="dlc-b" style="margin-top:6px" onclick="dlc.embRecibir(' + ix + ',true)">' + h(T('embRecEnt')) + '</button><button class="dlc-b2" style="margin-top:6px" onclick="dlc.embRecibir(' + ix + ',false)">' + h(T('embRecSolo')) + '</button>'
+          : '<span class="dlc-pill ok">' + h(T('embRc')) + '</span><div class="dlc-mut">' + n(e.rcv) + ' pz' + (e.rcv !== e.qty ? ' · ' + h(T('embDifP')) + ' ' + sg(e.rcv - e.qty) : '') + '</div>';
+        return '<tr><td>' + chip(colorDe(e.pn)) + h(e.pn) + '</td><td>' + h(e.vendor) + '</td><td><b>' + h(e.hawb || '—') + '</b><div class="dlc-mut">' + h(e.cont) + '</div></td><td>' + h(e.po) + (e.precio ? '<div class="dlc-mut">$' + e.precio + '</div>' : '') + '</td><td><b>' + n(e.qty) + '</b></td><td>' + n(e.tarimas) + ' · ' + n(e.peso) + ' kg</td><td>' + gi + '</td><td>' + est + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    return html;
+  }
+
   function qrTileEstilo() {
     if (el('dlc-tile-style')) return;
     var x = document.createElement('style'); x.id = 'dlc-tile-style';
@@ -5426,7 +5518,7 @@ window.generarReporteFecha = generarReporteFecha;
     crearPrimera: crearPrimera, desbloquear: desbloquear, bloquear: function () { bloquear(false); },
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
     registrar: registrar, anular: anular, saldoInicial: saldoInicial, guardarSamsung: guardarSamsung, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
-    qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrAbrir: qrAbrir, etapaAbrir: etapaAbrir, tipoPick: tipoPick, fPartePick: fPartePick, qrPartePick: qrPartePick, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
+    qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrAbrir: qrAbrir, embAbrir: embAbrir, embPick: embPick, embRegistrar: embRegistrar, embGuardarGI: embGuardarGI, embRecibir: embRecibir, usarWipSamsung: usarWipSamsung, etapaAbrir: etapaAbrir, tipoPick: tipoPick, fPartePick: fPartePick, qrPartePick: qrPartePick, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
     _calcular: calcular
   };
   if (typeof document !== 'undefined' && document.addEventListener) {
