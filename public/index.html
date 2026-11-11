@@ -5119,7 +5119,7 @@ window.generarReporteFecha = generarReporteFecha;
      =================================================================== */
   Object.assign(I18N.es, {
     qrT: 'QR por lote (bundle) en cada paso', qrNota: 'El lote nace al ensamblar y su etiqueta QR viaja con el material. En cada paso se escanea y el sistema solo deja avanzar al siguiente paso correcto (no se puede saltar ni repetir un paso).',
-    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
+    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrBomNota: 'Cable definido por el plan (BOM)', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
     qrLotes: 'Últimos lotes', qrLote: 'Lote', qrEtapa: 'Etapa actual', qrEtq: 'Etiqueta', qrSinLotes: 'Aún no hay lotes con QR.', qrImprimir: '🏷️ Imprimir',
     qrTitulo: 'Apunta la cámara al QR del lote', qrManual: 'O pistola / escribe el código del lote y Enter', qrCerrar: 'Cerrar', qrConfirmar: 'Confirmar paso', qrCancelar: 'Cancelar', qrNoCam: 'No se pudo abrir la cámara. Usa la pistola o escribe el código del lote.',
     qrNoLote: 'Lote no encontrado en el sistema', qrEtapaMal: 'Este lote está en «{e}» y no puede pasar a «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Registrados en esta sesión', qrPaso: 'Paso', qrAnulado: 'Este lote tiene movimientos anulados; revísalo con el administrador',
@@ -5127,7 +5127,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.en, {
     qrT: 'QR per lot (bundle) at every step', qrNota: 'The lot is born at assembly and its QR label travels with the material. It is scanned at every step and the system only lets it move to the correct next step (no skipping or repeating a step).',
-    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
+    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrBomNota: 'Cable set by the plan (BOM)', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
     qrLotes: 'Latest lots', qrLote: 'Lot', qrEtapa: 'Current stage', qrEtq: 'Label', qrSinLotes: 'There are no QR lots yet.', qrImprimir: '🏷️ Print',
     qrTitulo: 'Point the camera at the lot QR', qrManual: 'Or scanner gun / type the lot code and Enter', qrCerrar: 'Close', qrConfirmar: 'Confirm step', qrCancelar: 'Cancel', qrNoCam: 'Could not open the camera. Use the scanner gun or type the lot code.',
     qrNoLote: 'Lot not found in the system', qrEtapaMal: 'This lot is at «{e}» and cannot go to «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Recorded in this session', qrPaso: 'Step', qrAnulado: 'This lot has voided movements; check with the administrator',
@@ -5135,7 +5135,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.ko, {
     qrT: '단계별 로트(번들) QR', qrNota: '로트는 조립 시 생성되며 QR 라벨이 자재와 함께 이동합니다. 각 단계에서 스캔하며, 시스템은 올바른 다음 단계로만 진행하도록 허용합니다(단계 건너뛰기·반복 불가).',
-    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
+    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrBomNota: '계획(BOM)에 따른 케이블', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
     qrLotes: '최근 로트', qrLote: '로트', qrEtapa: '현재 단계', qrEtq: '라벨', qrSinLotes: 'QR 로트가 아직 없습니다.', qrImprimir: '🏷️ 인쇄',
     qrTitulo: '카메라를 로트 QR에 맞추세요', qrManual: '또는 스캐너 건 / 로트 코드 입력 후 Enter', qrCerrar: '닫기', qrConfirmar: '단계 확인', qrCancelar: '취소', qrNoCam: '카메라를 열 수 없습니다. 스캐너 건을 사용하거나 로트 코드를 입력하세요.',
     qrNoLote: '시스템에서 로트를 찾을 수 없습니다', qrEtapaMal: '이 로트는 «{e}» 단계이며 «{n}»(으)로 갈 수 없습니다', qrOk: '✅ {l}: {n}', qrHechos: '이번 세션에 기록됨', qrPaso: '단계', qrAnulado: '이 로트에는 취소된 이동이 있습니다. 관리자에게 확인하세요',
@@ -5219,9 +5219,11 @@ window.generarReporteFecha = generarReporteFecha;
   }
   function qrPlanSel() {
     var i = val('dlc-q-plan'), s = el('dlc-q-pn'), g = el('dlc-q-parts'); if (!s) return;
-    if (i === '') { if (g) g.classList.remove('dis'); return; }
+    var nt = el('dlc-q-bomnote');
+    if (i === '') { if (g) g.classList.remove('dis'); if (nt) nt.textContent = ''; return; }
     var it = st.plan && st.plan.items[parseInt(i, 10)]; if (!it) return;
     qrPartePick(it.pn); if (g) g.classList.add('dis');
+    if (nt) nt.textContent = T('qrBomNota') + ': ' + it.pn + ' · ' + colorTxt(colorDe(it.pn));
     var q = el('dlc-q-qty'); if (q) q.value = it.pend || '';
   }
 
@@ -5379,7 +5381,7 @@ window.generarReporteFecha = generarReporteFecha;
       '.dq-t:hover{transform:translateY(-2px);border-color:var(--accent2)}.dq-t:active{transform:scale(.97)}' +
       '.dq-t .ic{font-size:34px;line-height:1.1}.dq-t b{display:block;font-size:16px;margin-top:4px}.dq-t small{display:block;opacity:.65;font-size:12px;margin-top:2px}' +
       '.dq-t.on{border-color:var(--accent2);background:rgba(30,110,220,.22);box-shadow:0 0 0 2px var(--accent2) inset}.dq-t.big{padding:20px 10px}.dq-t.big .ic{font-size:44px}' +
-      '.dq-t.dis{pointer-events:none;opacity:.55}.dq-t .n{font-size:26px;font-weight:800;margin-top:2px}';
+      '.dq-t.dis,.dq-g.dis{pointer-events:none;opacity:.55}.dq-t .n{font-size:26px;font-weight:800;margin-top:2px}';
     document.head.appendChild(x);
   }
   var QR_ETAPAS = [['ASSEMBLE', '🏭'], ['RTN_BT', '✅'], ['PREKIT_P3', '📦'], ['SHIP_P4', '🚚'], ['RUN_P4', '⚙️'], ['QR', '✈️']];
@@ -5401,7 +5403,7 @@ window.generarReporteFecha = generarReporteFecha;
       '<label style="grid-column:1/-1">' + h(T('plPara')) + '<select id="dlc-q-plan" class="dlc-in" onchange="dlc.qrPlanSel()"><option value="">' + h(T('plManual')) + '</option>' +
       ((st.plan && st.plan.items) || []).map(function (i, ix) { return '<option value="' + ix + '"' + (ix === primero ? ' selected' : '') + '>' + h(i.maq + ' · ' + i.gh + ' · ' + i.modelo + ' · ' + fEnv(i.fecha) + ' · ' + n(i.pend) + ' → ' + i.pn + ' ' + colorTxt(colorDe(i.pn))) + '</option>'; }).join('') + '</select></label>' +
       '<div class="dq-g" id="dlc-q-parts" style="grid-column:1/-1;margin:0">' + PARTES.map(function (p, ix) { return '<button type="button" id="dlc-q-t-' + p.color + '" class="dq-t' + (ix === 0 ? ' on' : '') + '" onclick="dlc.qrPartePick(\'' + p.pn + '\')"><div class="ic">' + (p.color === 'black' ? '⚫' : '⚪') + '</div><b>' + h(colorTxt(p.color)) + '</b><small>' + p.pn + '</small></button>'; }).join('') + '</div>' +
-      '<input type="hidden" id="dlc-q-pn" value="' + PARTES[0].pn + '">' +
+      '<div id="dlc-q-bomnote" class="dlc-mut" style="grid-column:1/-1"></div><input type="hidden" id="dlc-q-pn" value="' + PARTES[0].pn + '">' +
       '<label style="grid-column:1/-1">' + h(T('qrPiezas')) + '<input id="dlc-q-qty" class="dlc-in" type="number" min="1" inputmode="numeric" style="font-size:20px"></label>' +
       '<button class="dlc-b" style="grid-column:1/-1;font-size:16px;padding:14px" onclick="dlc.qrEnsamblar()">' + h(T('qrAsBtn')) + '</button></div>' +
       '<div class="sh">' + h(T('qrEtapasT')) + '</div><div class="dq-g">' + QR_ETAPAS.map(function (e) {
