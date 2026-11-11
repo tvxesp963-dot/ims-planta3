@@ -4467,6 +4467,7 @@ window.generarReporteFecha = generarReporteFecha;
     // filtro
     html += '<div class="dlc-filtro"><button class="dlc-f' + (st.filtro === 'all' ? ' on' : '') + '" onclick="dlc.filtrar(\'all\')">' + h(T('todos')) + '</button>' +
       PARTES.map(function (p) { return '<button class="dlc-f' + (st.filtro === p.pn ? ' on' : '') + '" onclick="dlc.filtrar(\'' + p.pn + '\')">' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</button>'; }).join('') + '</div>';
+    html += planCard(res);   // el plan de producción es el inicio del proceso: requerimiento de cable
     // KPIs
     var kp = function (l, v, s, c) { return '<div class="sc ' + c + '"><div class="sc-l">' + h(l) + '</div><div class="sc-v">' + v + '</div></div>'; };
     html += '<div class="dlc-grid">' + kp(T('total'), n(tot), '', 'bl') + kp(T('item'), n(it), '', 'cy') + kp(T('bundle'), n(bu), '', 'gr') + kp(T('enviadoHoy'), n(hoy), '', 'am') +
@@ -4485,8 +4486,8 @@ window.generarReporteFecha = generarReporteFecha;
     if (!st.p4.ok) al.unshift({ s: 'crit', t: T('p4Err', { e: st.p4.err || '—' }) });
     else if (!st.p4.nMapa) al.unshift({ s: 'warn', t: T('p4SinMapa') });
     html += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + ' ' + h(T('imsNota')) + '</div>';
-    html += '<div class="sh">' + h(T('alertas')) + '</div>';
-    html += al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>';
+    var alHtml = '<div class="sh">' + h(T('alertas')) + '</div>' +
+      (al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>');   // las alertas van al final de la pantalla
 
     // flujo
     html += '<div class="sh">' + h(T('flow')) + '</div><div class="dlc-flow">';
@@ -4549,7 +4550,6 @@ window.generarReporteFecha = generarReporteFecha;
       '<label style="grid-column:1/-1">' + h(T('motivo')) + '<input id="dlc-f-nota" class="dlc-in" type="text"></label></div>' +
       '<button class="dlc-b" style="grid-column:1/-1" onclick="dlc.registrar()">' + h(T('registrar')) + '</button></div>';
 
-    html += planCard(res);   // requerimiento de cable según el plan
     html += qrCard();   // QR por lote en cada paso
 
     // movimientos
@@ -4589,6 +4589,7 @@ window.generarReporteFecha = generarReporteFecha;
         st.audit.map(function (a) { var d = new Date(a.at_iso); return '<tr><td>' + h(isNaN(d) ? '' : d.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</td><td>' + h(a.accion) + (a.detalle ? ' · ' + h(a.detalle) : '') + '</td><td>' + h(a.usuario) + '</td><td>' + h(a.rol) + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
     }
 
+    html += alHtml;
     w.innerHTML = html;
     cambioTipo();
   }
