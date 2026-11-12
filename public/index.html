@@ -4493,6 +4493,7 @@ window.generarReporteFecha = generarReporteFecha;
     // filtro
     html += '<div class="dlc-filtro"><button class="dlc-f' + (st.filtro === 'all' ? ' on' : '') + '" onclick="dlc.filtrar(\'all\')">' + h(T('todos')) + '</button>' +
       PARTES.map(function (p) { return '<button class="dlc-f' + (st.filtro === p.pn ? ' on' : '') + '" onclick="dlc.filtrar(\'' + p.pn + '\')">' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</button>'; }).join('') + '</div>';
+    html += embCard(keys);   // PRIMER paso del proceso: embarques de Samsung (material entrante), al inicio de la pantalla
     html += planCard(res);   // el plan de producción es el inicio del proceso: requerimiento de cable
     html += qrCard();        // justo debajo del plan: armar bundle y escanear (flujo natural)
     // KPIs
@@ -4518,7 +4519,6 @@ window.generarReporteFecha = generarReporteFecha;
       (al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>');   // las alertas van al final de la pantalla
 
     // flujo
-    html += embCard(keys);   // material entrante: embarques de Samsung (primer paso real del proceso)
     html += '<div class="sh">' + h(T('flow')) + '</div><div class="dlc-flow">';
     var trT = 0; keys.forEach(function (pn) { trT += Math.max(0, res[pn].transito); });
     html += '<div class="dlc-node"><div class="dlc-app">Samsung</div><div class="dlc-nn">' + h(T('lTrN')) + '</div><div class="dlc-nv">' + n(trT) + '</div><div class="dlc-nm"><span>' + h(T('embTrans')) + '</span></div></div>';
