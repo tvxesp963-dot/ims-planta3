@@ -4484,7 +4484,7 @@ window.generarReporteFecha = generarReporteFecha;
 
     var html = '';
     // encabezado
-    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1150 GI/GR</div></div>' +
+    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1245 recorrido</div></div>' +
       '<div class="dlc-acts"><button class="dlc-b2" onclick="dlc.plegarTodo(false)">⊟ ' + h(T('plegarT')) + '</button><button class="dlc-b2" onclick="dlc.plegarTodo(true)">⊞ ' + h(T('desplegarT')) + '</button><button class="dlc-b2" onclick="dlc.refrescar()">↻ ' + h(T('refrescar')) + '</button>' +
       '<button class="dlc-b2" onclick="dlc.excel()">⬇ ' + h(T('excel')) + '</button>' +
       '<button class="dlc-b" onclick="dlc.enviar()">📤 ' + h(T('btnEnviar')) + '</button>' +
@@ -4522,15 +4522,21 @@ window.generarReporteFecha = generarReporteFecha;
     html += '<div class="sh">' + h(T('flow')) + '</div><div class="dlc-flow">';
     var trT = 0; keys.forEach(function (pn) { trT += Math.max(0, res[pn].transito); });
     html += '<div class="dlc-node"><div class="dlc-app">Samsung</div><div class="dlc-nn">' + h(T('lTrN')) + '</div><div class="dlc-nv">' + n(trT) + '</div><div class="dlc-nm"><span>' + h(T('embTrans')) + '</span></div></div>';
+    var lotesAll = lotesDe(st.movs), ETAPA_DE = { p3wip: 'ASSEMBLE', p3bt: 'RTN_BT', p3pk: 'PREKIT_P3', p4ims: 'SHIP_P4', p4wip: 'RUN_P4' };
+    var chipLotes = function (et) {
+      var c = lotesAll.filter(function (l) { return l.etapa === et; }), q = c.reduce(function (a, l) { return a + l.qty; }, 0);
+      return '<div class="dlc-nm"><button type="button" class="dlc-b2" style="padding:2px 8px;font-size:11px;margin-top:6px" onclick="dlc.etapaAbrir(\'' + et + '\')">🏷 ' + c.length + ' ' + h(T('qrLotesN')) + ' · ' + n(q) + ' pz ' + (etapaAb === et ? '▾' : '▸') + '</button></div>';
+    };
     var nodos = LOCS.map(function (l) { return [l, locKey(l), l === 'p4pk' ? 'ShipQR' : (l.indexOf('p3') === 0 ? 'IMS P3' : 'IMS P4')]; });
     nodos.forEach(function (nd) {
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
       var t2 = i2 + b2, pct = t2 > 0 ? Math.max(0, Math.min(100, i2 / t2 * 100)) : 0;
       html += '<div class="dlc-node"><div class="dlc-app">' + nd[2] + '</div><div class="dlc-nn">' + h(T(nd[1])) + '</div><div class="dlc-nv">' + n(t2) + '</div>' +
-        '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div></div>';
+        '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' + (ETAPA_DE[nd[0]] ? chipLotes(ETAPA_DE[nd[0]]) : '') + '</div>';
     });
     var sh2 = 0; keys.forEach(function (pn) { sh2 += res[pn].enviadoHoy; });
-    html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div><div class="dlc-nm"><span>' + h(T('enviadoHoy')) + '</span></div></div></div>';
+    html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div><div class="dlc-nm"><span>' + h(T('enviadoHoy')) + '</span></div>' + chipLotes('QR') + '</div></div>';
+    html += etapaLista();
 
     // matriz parte x color
     html += '<div class="sh">' + h(T('matrix')) + '</div><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th>' + LOCS.map(function (l) { return '<th>' + h(T(locKey(l))) + '</th>'; }).join('') + '<th>' + h(T('sumTotal')) + '</th></tr></thead><tbody>';
@@ -4685,7 +4691,8 @@ window.generarReporteFecha = generarReporteFecha;
     if (typeof updateDash === 'function') { updateDash(); renderInv(); renderHist(); renderLocMap(); }
   }
 
-  async function registrar() {
+  function registrar() { return unaVez('rg', function () { return registrar0(); }); }
+  async function registrar0() {
     if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
     extender();
@@ -5186,7 +5193,7 @@ window.generarReporteFecha = generarReporteFecha;
      =================================================================== */
   Object.assign(I18N.es, {
     qrT: 'QR por lote (bundle) en cada paso', qrNota: 'El lote nace al ensamblar y su etiqueta QR viaja con el material. En cada paso se escanea y el sistema solo deja avanzar al siguiente paso correcto (no se puede saltar ni repetir un paso).',
-    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrBomNota: 'Cable definido por el plan (BOM)', cfgIni: 'Configuración inicial (Samsung y saldo inicial)', openUsarSam: 'Usar el WIP P3 del reporte de Samsung', openUsarOk: 'Valores cargados: revísalos y confirma con «Registrar saldo inicial»', c_TRANSIT: 'Embarque en tránsito', c_TRANSIT_RCV: 'Recepción de embarque en P3', c_TRANSIT_INFO: 'Datos de embarque', anularRCV: 'Esta recepción ya generó una Entrada en el IMS P3. Corrígela desde el IMS.', embT: '🚢 Embarques de Samsung (material entrante)', embNota: 'Cuando Samsung avisa que el cable fue recogido, regístralo aquí. Queda «en tránsito» hasta que llegue a P3; al recibirlo se da la Entrada en el IMS P3 y pasa a Almacén P3.', embBtn0: 'Registrar embarque', embSub: 'Datos del aviso de Samsung', embTrans: 'En tránsito', embEmb: 'embarques', embTar: 'tarimas', embPeso: 'kg', embProv: 'Proveedor', embHawb: 'HAWB', embCont: 'Contenedor', embPo: 'PO#', embPrecio: 'Precio (USD)', embTarimas: 'Tarimas', embPesoL: 'Peso (kg)', embGI: 'Solicitud GI #', embNotaL: 'Nota', embReg: 'Registrar embarque', embCant: 'Cantidad (piezas)', embEst: 'Estado', embTr: 'En tránsito', embRc: 'Recibido', embRecEnt: 'Recibir y dar Entrada al IMS P3', embRecSolo: 'Recibir (la Entrada ya está hecha)', embGIg: 'Guardar GI', embSin: 'Aún no hay embarques registrados.', embOk: 'Embarque registrado', embDup: 'Ese embarque (HAWB y parte) ya está registrado', embFalta: 'Escribe al menos el HAWB o el contenedor', embRecOk: 'Embarque recibido', embDifP: 'Diferencia', aGI: 'Embarque {h} sin solicitud GI #', lTrN: 'En tránsito a P3', plegarT: 'Colapsar todo', desplegarT: 'Desplegar todo', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', refAuto: 'Se asigna automáticamente', qrIssBtn0: 'Surtir cable a WIP P3', qrIssSub: 'Del Almacén P3 a la línea', qrRetBtn0: 'Devolver cable sobrante', qrRetSub: 'Regresa a Almacén P3', qrLossBtn0: 'Pérdida / merma', qrLossSub: 'Con motivo obligatorio', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
+    qrAsT: '1) Ensamblar bundle y generar etiqueta QR', qrAsBtn: 'Ensamblar y generar etiqueta', qrScanT: '2) Escanear el QR en cada paso', kpiT: 'Resumen', qrBomNota: 'Cable definido por el plan (BOM)', cfgIni: 'Configuración inicial (Samsung y saldo inicial)', openUsarSam: 'Usar el WIP P3 del reporte de Samsung', openUsarOk: 'Valores cargados: revísalos y confirma con «Registrar saldo inicial»', c_TRANSIT: 'Embarque en tránsito', c_TRANSIT_RCV: 'Recepción de embarque en P3', c_TRANSIT_INFO: 'Datos de embarque', anularRCV: 'Esta recepción ya generó una Entrada en el IMS P3. Corrígela desde el IMS.', embT: '🚢 Embarques de Samsung (material entrante)', embNota: 'Cuando Samsung avisa que el cable fue recogido, regístralo aquí. Queda «en tránsito» hasta que llegue a P3; al recibirlo se da la Entrada en el IMS P3 y pasa a Almacén P3.', embBtn0: 'Registrar embarque', embSub: 'Datos del aviso de Samsung', embTrans: 'En tránsito', embEmb: 'embarques', embTar: 'tarimas', embPeso: 'kg', embProv: 'Proveedor', embHawb: 'HAWB', embCont: 'Contenedor', embPo: 'PO#', embPrecio: 'Precio (USD)', embTarimas: 'Tarimas', embPesoL: 'Peso (kg)', embGI: 'Solicitud GI #', embNotaL: 'Nota', embReg: 'Registrar embarque', embCant: 'Cantidad (piezas)', embEst: 'Estado', embTr: 'En tránsito', embRc: 'Recibido', embRecEnt: 'Recibir y dar Entrada al IMS P3', embRecSolo: 'Recibir (la Entrada ya está hecha)', embGIg: 'Guardar GI', embSin: 'Aún no hay embarques registrados.', embOk: 'Embarque registrado', embDup: 'Ese embarque (HAWB y parte) ya está registrado', embFalta: 'Escribe al menos el HAWB o el contenedor', embRecOk: 'Embarque recibido', embDifP: 'Diferencia', aGI: 'Embarque {h} sin solicitud GI #', lTrN: 'En tránsito a P3', plegarT: 'Colapsar todo', desplegarT: 'Desplegar todo', qrAsBtn0: 'Armar bundle', qrAsSub: 'Crea la etiqueta QR', qrScanBtn0: 'Escanear etiqueta', qrScanSub: 'El sistema elige el paso', qrLotesN: 'lotes QR', refAuto: 'Se asigna automáticamente', qrIssBtn0: 'Surtir cable a WIP P3', qrIssSub: 'Del Almacén P3 a la línea', qrRetBtn0: 'Devolver cable sobrante', qrRetSub: 'Regresa a Almacén P3', qrLossBtn0: 'Pérdida / merma', qrLossSub: 'Con motivo obligatorio', qrEtapasT: 'Lotes por etapa (pz)', qrScanBtn: '📷 Escanear', qrScanAuto: '📷 Escanear etiqueta (el sistema elige el siguiente paso)', manDet: 'Captura manual (solo si no hay etiqueta) · saldo inicial y ajustes', qrSigPaso: 'Siguiente paso', qrPiezas: 'Piezas (bundles) del lote',
     qrLotes: 'Últimos lotes', qrLote: 'Lote', qrEtapa: 'Etapa actual', qrEtq: 'Etiqueta', qrSinLotes: 'Aún no hay lotes con QR.', qrImprimir: '🏷️ Imprimir',
     qrTitulo: 'Apunta la cámara al QR del lote', qrManual: 'O pistola / escribe el código del lote y Enter', qrCerrar: 'Cerrar', qrConfirmar: 'Confirmar paso', qrCancelar: 'Cancelar', qrNoCam: 'No se pudo abrir la cámara. Usa la pistola o escribe el código del lote.',
     qrNoLote: 'Lote no encontrado en el sistema', qrEtapaMal: 'Este lote está en «{e}» y no puede pasar a «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Registrados en esta sesión', qrPaso: 'Paso', qrAnulado: 'Este lote tiene movimientos anulados; revísalo con el administrador',
@@ -5194,7 +5201,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.en, {
     qrT: 'QR per lot (bundle) at every step', qrNota: 'The lot is born at assembly and its QR label travels with the material. It is scanned at every step and the system only lets it move to the correct next step (no skipping or repeating a step).',
-    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrBomNota: 'Cable set by the plan (BOM)', cfgIni: 'Initial setup (Samsung and opening balance)', openUsarSam: 'Use the WIP P3 from the Samsung report', openUsarOk: 'Values loaded: review them and confirm with «Register opening balance»', c_TRANSIT: 'Shipment in transit', c_TRANSIT_RCV: 'Shipment received at P3', c_TRANSIT_INFO: 'Shipment data', anularRCV: 'This receipt already created an Entry in IMS P3. Fix it from IMS.', embT: '🚢 Samsung shipments (incoming material)', embNota: 'When Samsung reports the cargo was picked up, register it here. It stays «in transit» until it reaches P3; on receipt the Entry is made in IMS P3 and it moves to P3 Warehouse.', embBtn0: 'Register shipment', embSub: 'Data from the Samsung notice', embTrans: 'In transit', embEmb: 'shipments', embTar: 'pallets', embPeso: 'kg', embProv: 'Vendor', embHawb: 'HAWB', embCont: 'Container', embPo: 'PO#', embPrecio: 'Price (USD)', embTarimas: 'Pallets', embPesoL: 'Weight (kg)', embGI: 'GI request #', embNotaL: 'Note', embReg: 'Register shipment', embCant: 'Quantity (pcs)', embEst: 'Status', embTr: 'In transit', embRc: 'Received', embRecEnt: 'Receive and make IMS P3 Entry', embRecSolo: 'Receive (Entry already done)', embGIg: 'Save GI', embSin: 'No shipments registered yet.', embOk: 'Shipment registered', embDup: 'That shipment (HAWB and part) is already registered', embFalta: 'Enter at least the HAWB or the container', embRecOk: 'Shipment received', embDifP: 'Difference', aGI: 'Shipment {h} has no GI request #', lTrN: 'In transit to P3', plegarT: 'Collapse all', desplegarT: 'Expand all', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', refAuto: 'Assigned automatically', qrIssBtn0: 'Issue cable to WIP P3', qrIssSub: 'From P3 Warehouse to the line', qrRetBtn0: 'Return leftover cable', qrRetSub: 'Back to P3 Warehouse', qrLossBtn0: 'Loss / scrap', qrLossSub: 'Reason required', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
+    qrAsT: '1) Assemble bundle and create QR label', qrAsBtn: 'Assemble and create label', qrScanT: '2) Scan the QR at each step', kpiT: 'Summary', qrBomNota: 'Cable set by the plan (BOM)', cfgIni: 'Initial setup (Samsung and opening balance)', openUsarSam: 'Use the WIP P3 from the Samsung report', openUsarOk: 'Values loaded: review them and confirm with «Register opening balance»', c_TRANSIT: 'Shipment in transit', c_TRANSIT_RCV: 'Shipment received at P3', c_TRANSIT_INFO: 'Shipment data', anularRCV: 'This receipt already created an Entry in IMS P3. Fix it from IMS.', embT: '🚢 Samsung shipments (incoming material)', embNota: 'When Samsung reports the cargo was picked up, register it here. It stays «in transit» until it reaches P3; on receipt the Entry is made in IMS P3 and it moves to P3 Warehouse.', embBtn0: 'Register shipment', embSub: 'Data from the Samsung notice', embTrans: 'In transit', embEmb: 'shipments', embTar: 'pallets', embPeso: 'kg', embProv: 'Vendor', embHawb: 'HAWB', embCont: 'Container', embPo: 'PO#', embPrecio: 'Price (USD)', embTarimas: 'Pallets', embPesoL: 'Weight (kg)', embGI: 'GI request #', embNotaL: 'Note', embReg: 'Register shipment', embCant: 'Quantity (pcs)', embEst: 'Status', embTr: 'In transit', embRc: 'Received', embRecEnt: 'Receive and make IMS P3 Entry', embRecSolo: 'Receive (Entry already done)', embGIg: 'Save GI', embSin: 'No shipments registered yet.', embOk: 'Shipment registered', embDup: 'That shipment (HAWB and part) is already registered', embFalta: 'Enter at least the HAWB or the container', embRecOk: 'Shipment received', embDifP: 'Difference', aGI: 'Shipment {h} has no GI request #', lTrN: 'In transit to P3', plegarT: 'Collapse all', desplegarT: 'Expand all', qrAsBtn0: 'Assemble bundle', qrAsSub: 'Creates the QR label', qrScanBtn0: 'Scan label', qrScanSub: 'The system picks the step', qrLotesN: 'QR lots', refAuto: 'Assigned automatically', qrIssBtn0: 'Issue cable to WIP P3', qrIssSub: 'From P3 Warehouse to the line', qrRetBtn0: 'Return leftover cable', qrRetSub: 'Back to P3 Warehouse', qrLossBtn0: 'Loss / scrap', qrLossSub: 'Reason required', qrEtapasT: 'Lots by stage (pcs)', qrScanBtn: '📷 Scan', qrScanAuto: '📷 Scan label (the system picks the next step)', manDet: 'Manual entry (only if no label) · opening balance and adjustments', qrSigPaso: 'Next step', qrPiezas: 'Pieces (bundles) in the lot',
     qrLotes: 'Latest lots', qrLote: 'Lot', qrEtapa: 'Current stage', qrEtq: 'Label', qrSinLotes: 'There are no QR lots yet.', qrImprimir: '🏷️ Print',
     qrTitulo: 'Point the camera at the lot QR', qrManual: 'Or scanner gun / type the lot code and Enter', qrCerrar: 'Close', qrConfirmar: 'Confirm step', qrCancelar: 'Cancel', qrNoCam: 'Could not open the camera. Use the scanner gun or type the lot code.',
     qrNoLote: 'Lot not found in the system', qrEtapaMal: 'This lot is at «{e}» and cannot go to «{n}»', qrOk: '✅ {l}: {n}', qrHechos: 'Recorded in this session', qrPaso: 'Step', qrAnulado: 'This lot has voided movements; check with the administrator',
@@ -5202,7 +5209,7 @@ window.generarReporteFecha = generarReporteFecha;
   });
   Object.assign(I18N.ko, {
     qrT: '단계별 로트(번들) QR', qrNota: '로트는 조립 시 생성되며 QR 라벨이 자재와 함께 이동합니다. 각 단계에서 스캔하며, 시스템은 올바른 다음 단계로만 진행하도록 허용합니다(단계 건너뛰기·반복 불가).',
-    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrBomNota: '계획(BOM)에 따른 케이블', cfgIni: '초기 설정 (삼성 및 기초 재고)', openUsarSam: '삼성 보고서의 P3 WIP 사용', openUsarOk: '값이 입력되었습니다. 확인 후 기초 재고를 등록하세요', c_TRANSIT: '운송 중 선적', c_TRANSIT_RCV: 'P3 선적 입고', c_TRANSIT_INFO: '선적 정보', anularRCV: '이 입고는 이미 IMS P3 입고를 생성했습니다. IMS에서 수정하세요.', embT: '🚢 삼성 선적 (입고 예정 자재)', embNota: '삼성이 화물 픽업을 알리면 여기에 등록하세요. P3에 도착할 때까지 «운송 중»이며, 입고 시 IMS P3 입고가 생성되고 P3 창고로 이동합니다.', embBtn0: '선적 등록', embSub: '삼성 통지 내용', embTrans: '운송 중', embEmb: '선적', embTar: '파레트', embPeso: 'kg', embProv: '공급업체', embHawb: 'HAWB', embCont: '컨테이너', embPo: 'PO#', embPrecio: '단가 (USD)', embTarimas: '파레트', embPesoL: '중량 (kg)', embGI: 'GI 요청 번호', embNotaL: '비고', embReg: '선적 등록', embCant: '수량 (개)', embEst: '상태', embTr: '운송 중', embRc: '입고됨', embRecEnt: '입고 및 IMS P3 입고 처리', embRecSolo: '입고 (IMS 입고 완료)', embGIg: 'GI 저장', embSin: '등록된 선적이 없습니다.', embOk: '선적이 등록되었습니다', embDup: '해당 선적(HAWB 및 품번)은 이미 등록되어 있습니다', embFalta: 'HAWB 또는 컨테이너를 입력하세요', embRecOk: '선적이 입고되었습니다', embDifP: '차이', aGI: '선적 {h}에 GI 요청 번호가 없습니다', lTrN: 'P3 운송 중', plegarT: '모두 접기', desplegarT: '모두 펼치기', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', refAuto: '자동으로 배정됩니다', qrIssBtn0: 'P3 WIP로 케이블 불출', qrIssSub: 'P3 창고에서 라인으로', qrRetBtn0: '남은 케이블 반환', qrRetSub: 'P3 창고로 반환', qrLossBtn0: '분실 / 손실', qrLossSub: '사유 필수', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
+    qrAsT: '1) 번들 조립 및 QR 라벨 생성', qrAsBtn: '조립 및 라벨 생성', qrScanT: '2) 각 단계에서 QR 스캔', kpiT: '요약', qrBomNota: '계획(BOM)에 따른 케이블', cfgIni: '초기 설정 (삼성 및 기초 재고)', openUsarSam: '삼성 보고서의 P3 WIP 사용', openUsarOk: '값이 입력되었습니다. 확인 후 기초 재고를 등록하세요', c_TRANSIT: '운송 중 선적', c_TRANSIT_RCV: 'P3 선적 입고', c_TRANSIT_INFO: '선적 정보', anularRCV: '이 입고는 이미 IMS P3 입고를 생성했습니다. IMS에서 수정하세요.', embT: '🚢 삼성 선적 (입고 예정 자재)', embNota: '삼성이 화물 픽업을 알리면 여기에 등록하세요. P3에 도착할 때까지 «운송 중»이며, 입고 시 IMS P3 입고가 생성되고 P3 창고로 이동합니다.', embBtn0: '선적 등록', embSub: '삼성 통지 내용', embTrans: '운송 중', embEmb: '선적', embTar: '파레트', embPeso: 'kg', embProv: '공급업체', embHawb: 'HAWB', embCont: '컨테이너', embPo: 'PO#', embPrecio: '단가 (USD)', embTarimas: '파레트', embPesoL: '중량 (kg)', embGI: 'GI 요청 번호', embNotaL: '비고', embReg: '선적 등록', embCant: '수량 (개)', embEst: '상태', embTr: '운송 중', embRc: '입고됨', embRecEnt: '입고 및 IMS P3 입고 처리', embRecSolo: '입고 (IMS 입고 완료)', embGIg: 'GI 저장', embSin: '등록된 선적이 없습니다.', embOk: '선적이 등록되었습니다', embDup: '해당 선적(HAWB 및 품번)은 이미 등록되어 있습니다', embFalta: 'HAWB 또는 컨테이너를 입력하세요', embRecOk: '선적이 입고되었습니다', embDifP: '차이', aGI: '선적 {h}에 GI 요청 번호가 없습니다', lTrN: 'P3 운송 중', plegarT: '모두 접기', desplegarT: '모두 펼치기', qrAsBtn0: '번들 조립', qrAsSub: 'QR 라벨 생성', qrScanBtn0: '라벨 스캔', qrScanSub: '단계는 시스템이 선택', qrLotesN: 'QR 로트', refAuto: '자동으로 배정됩니다', qrIssBtn0: 'P3 WIP로 케이블 불출', qrIssSub: 'P3 창고에서 라인으로', qrRetBtn0: '남은 케이블 반환', qrRetSub: 'P3 창고로 반환', qrLossBtn0: '분실 / 손실', qrLossSub: '사유 필수', qrEtapasT: '단계별 로트 (수량)', qrScanBtn: '📷 스캔', qrScanAuto: '📷 라벨 스캔 (다음 단계는 시스템이 선택)', manDet: '수동 입력 (라벨이 없을 때만) · 기초 재고 및 조정', qrSigPaso: '다음 단계', qrPiezas: '로트 수량(번들)',
     qrLotes: '최근 로트', qrLote: '로트', qrEtapa: '현재 단계', qrEtq: '라벨', qrSinLotes: 'QR 로트가 아직 없습니다.', qrImprimir: '🏷️ 인쇄',
     qrTitulo: '카메라를 로트 QR에 맞추세요', qrManual: '또는 스캐너 건 / 로트 코드 입력 후 Enter', qrCerrar: '닫기', qrConfirmar: '단계 확인', qrCancelar: '취소', qrNoCam: '카메라를 열 수 없습니다. 스캐너 건을 사용하거나 로트 코드를 입력하세요.',
     qrNoLote: '시스템에서 로트를 찾을 수 없습니다', qrEtapaMal: '이 로트는 «{e}» 단계이며 «{n}»(으)로 갈 수 없습니다', qrOk: '✅ {l}: {n}', qrHechos: '이번 세션에 기록됨', qrPaso: '단계', qrAnulado: '이 로트에는 취소된 이동이 있습니다. 관리자에게 확인하세요',
@@ -5312,6 +5319,8 @@ window.generarReporteFecha = generarReporteFecha;
     });
     return Object.keys(mp).map(function (k) { return mp[k]; }).filter(function (l) { return l.etapa; }).sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); });
   }
+  var ocupado = {};
+  async function unaVez(k, fn) { if (ocupado[k]) return; ocupado[k] = true; try { return await fn(); } finally { ocupado[k] = false; } }
   function ymdLocal() { var d = new Date(); return String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
   // siguiente consecutivo del día para un prefijo (lee los movimientos de hoy; si falla, usa los ya cargados)
   async function siguiente(prefijo, campo) {
@@ -5334,6 +5343,14 @@ window.generarReporteFecha = generarReporteFecha;
     if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return false; }
     if (Date.now() >= st.ok) { bloquear(); return false; }
     extender();
+    if (tipo !== 'ASSEMBLE' && QR_PREV[tipo]) {   // una sola vez por etapa: se revisa el estado real del lote en la base de datos
+      try {
+        var qd = await db.collection(COL_MOV).where('lote', '==', lote).get(), arr = [];
+        qd.forEach(function (d) { arr.push(d.data()); });
+        var lt = lotesDe(arr)[0];
+        if (lt && lt.etapa !== QR_PREV[tipo]) { say(T('qrEtapaMal', { e: T('c_' + lt.etapa), n: T('c_' + tipo) })); return false; }
+      } catch (ex) { console.error('verif. etapa', ex); }
+    }
     var r = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas())[pn];
     var disp = { ASSEMBLE: r.p3wip.item, RTN_BT: r.p3wip.bundle, PREKIT_P3: r.p3bt.bundle, SHIP_P4: r.p3bt.bundle }[tipo];
     if (disp !== undefined && qty > disp) { say(T('sinStock', { n: n(Math.max(0, disp)) })); return false; }
@@ -5365,7 +5382,8 @@ window.generarReporteFecha = generarReporteFecha;
       '<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
     w.document.close();
   }
-  async function qrEnsamblar() {
+  function qrEnsamblar() { return unaVez('qe', function () { return qrEnsamblar0(); }); }
+  async function qrEnsamblar0() {
     var pn = val('dlc-q-pn'), qty = parseInt(val('dlc-q-qty'), 10) || 0, pi = val('dlc-q-plan'), it = (pi !== '' && st.plan) ? st.plan.items[parseInt(pi, 10)] : null;
     if (qty <= 0) { say(T('invalida')); return; }
     if (it) pn = it.pn;   // el cable lo define el BOM del bundle del plan
@@ -5414,7 +5432,8 @@ window.generarReporteFecha = generarReporteFecha;
       '<div class="dlc-qb">' + (opts ? opts.map(function (t) { return '<button class="dlc-b" onclick="dlc.qrConfirmar(\'' + t + '\')">→ ' + h(T('c_' + t)) + '</button>'; }).join('') : '<button class="dlc-b" onclick="dlc.qrConfirmar()">' + h(T('qrConfirmar')) + '</button>') + '<button class="dlc-b2" onclick="dlc.qrCancelar()">' + h(T('qrCancelar')) + '</button></div>';
     c.style.display = 'block'; try { navigator.vibrate && navigator.vibrate(60); } catch (x) { }
   }
-  async function qrConfirmar(t) {
+  function qrConfirmar(t) { return unaVez('qc', function () { return qrConfirmar0(t); }); }
+  async function qrConfirmar0(t) {
     var l = qrS.pend, tipo = t || qrS.tipo; if (!l) return;
     try {
       if (!(await regMovLote(tipo, l.pn, l.qty, l.lote, ''))) { qrCancelar(); return; }
@@ -5558,6 +5577,15 @@ window.generarReporteFecha = generarReporteFecha;
     var i = el('dlc-q-pn'); if (!i) return; i.value = pn;
     PARTES.forEach(function (p) { var t = el('dlc-q-t-' + p.color); if (t) t.classList.toggle('on', p.pn === pn); });
   }
+  function etapaLista() {
+    if (etapaAb) {
+      var all = lotesDe(st.movs), html = '';
+      var ce = all.filter(function (l) { return l.etapa === etapaAb; });
+      return '<div class="card" style="margin-bottom:12px"><b>' + h(T('c_' + etapaAb)) + '</b>' + (ce.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('qrLote')) + '</th><th>' + h(T('parte')) + '</th><th>' + h(T('cant')) + '</th><th>' + h(T('qrEtq')) + '</th></tr></thead><tbody>' +
+        ce.map(function (l) { return '<tr><td><b>' + h(l.lote) + '</b></td><td>' + chip(colorDe(l.pn)) + h(l.pn) + (l.gh90 ? '<div class="dlc-mut">' + h(l.gh90 + (l.modelo ? ' · ' + l.modelo : '')) + '</div>' : '') + '</td><td>' + n(l.qty) + '</td><td><button class="dlc-b2" onclick="dlc.qrEtiqueta(\'' + h(l.lote) + '\')">' + h(T('qrImprimir')) + '</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('qrSinLotes')) + '</div>') + '</div>';
+    }
+    return '';
+  }
   function qrCard() {
     qrTileEstilo();
     var all = lotesDe(st.movs), ls = all.slice(0, 10), primero = -1;
@@ -5585,14 +5613,7 @@ window.generarReporteFecha = generarReporteFecha;
       '<div id="dlc-q-bomnote" class="dlc-mut" style="grid-column:1/-1"></div><input type="hidden" id="dlc-q-pn" value="' + PARTES[0].pn + '">' +
       '<label style="grid-column:1/-1">' + h(T('qrPiezas')) + '<input id="dlc-q-qty" class="dlc-in" type="number" min="1" inputmode="numeric" style="font-size:20px"></label>' +
       '<button class="dlc-b" style="grid-column:1/-1;font-size:16px;padding:14px" onclick="dlc.qrEnsamblar()">' + h(T('qrAsBtn')) + '</button></div>' +
-      '<div class="sh">' + h(T('qrEtapasT')) + '</div><div class="dq-g">' + QR_ETAPAS.map(function (e) {
-        var c = all.filter(function (l) { return l.etapa === e[0]; }), q = c.reduce(function (a, l) { return a + l.qty; }, 0);
-        return '<button type="button" class="dq-t' + (etapaAb === e[0] ? ' on' : '') + '" onclick="dlc.etapaAbrir(\'' + e[0] + '\')"><div class="ic">' + e[1] + '</div><b>' + h(T('c_' + e[0])) + '</b><div class="n">' + c.length + '</div><small>' + n(q) + ' pz ' + (etapaAb === e[0] ? '▾' : '▸') + '</small></button>'; }).join('') + '</div>';
-    if (etapaAb) {
-      var ce = all.filter(function (l) { return l.etapa === etapaAb; });
-      html += '<div class="card" style="margin-bottom:12px"><b>' + h(T('c_' + etapaAb)) + '</b>' + (ce.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('qrLote')) + '</th><th>' + h(T('parte')) + '</th><th>' + h(T('cant')) + '</th><th>' + h(T('qrEtq')) + '</th></tr></thead><tbody>' +
-        ce.map(function (l) { return '<tr><td><b>' + h(l.lote) + '</b></td><td>' + chip(colorDe(l.pn)) + h(l.pn) + (l.gh90 ? '<div class="dlc-mut">' + h(l.gh90 + (l.modelo ? ' · ' + l.modelo : '')) + '</div>' : '') + '</td><td>' + n(l.qty) + '</td><td><button class="dlc-b2" onclick="dlc.qrEtiqueta(\'' + h(l.lote) + '\')">' + h(T('qrImprimir')) + '</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('qrSinLotes')) + '</div>') + '</div>';
-    }
+      '';
     html += '<div class="sh">' + h(T('qrLotes')) + '</div>' + (ls.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('qrLote')) + '</th><th>' + h(T('parte')) + '</th><th>' + h(T('cant')) + '</th><th>' + h(T('qrEtapa')) + '</th><th>' + h(T('qrEtq')) + '</th></tr></thead><tbody>' +
       ls.map(function (l) { return '<tr><td><b>' + h(l.lote) + '</b></td><td>' + chip(colorDe(l.pn)) + h(l.pn) + (l.gh90 ? '<div class="dlc-mut">' + h(l.gh90 + (l.modelo ? ' · ' + l.modelo : '')) + '</div>' : '') + '</td><td>' + n(l.qty) + '</td><td><span class="dlc-pill ' + (QR_FINAL[l.etapa] ? 'ok' : 'warn') + '">' + h(T('c_' + l.etapa)) + '</span></td><td><button class="dlc-b2" onclick="dlc.qrEtiqueta(\'' + h(l.lote) + '\')">' + h(T('qrImprimir')) + '</button></td></tr>'; }).join('') +
       '</tbody></table></div>' : '<div class="dlc-mut">' + h(T('qrSinLotes')) + '</div>');
