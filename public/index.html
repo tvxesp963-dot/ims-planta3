@@ -5324,8 +5324,8 @@ window.generarReporteFecha = generarReporteFecha;
   }
   // lote QR: DLC-AAMMDD-C-NNN (C = N negro / B blanco)
   async function nuevoLoteAuto(pn) { return siguiente('DLC-' + ymdLocal() + '-' + (colorDe(pn) === 'black' ? 'N' : 'B') + '-', 'lote'); }
-  // referencia de movimiento: TIPO-AAMMDD-NNN (SUR surtir, DEV devolución, MER merma)
-  var REF_PREF = { ISSUE: 'SUR', RETURN: 'DEV', LOSS: 'MER' };
+  // referencia de movimiento: TIPO-AAMMDD-NNN (GI salida de almacén a WIP, GR entrada de cable devuelto, MER merma)
+  var REF_PREF = { ISSUE: 'GI', RETURN: 'GR', LOSS: 'MER' };
   async function refAuto(tipo) { return siguiente((REF_PREF[tipo] || tipo) + '-' + ymdLocal() + '-', 'ref'); }
   function qrTexto(l) { return 'DLC|' + l.lote + '|' + l.pn + '|' + l.qty; }
 
