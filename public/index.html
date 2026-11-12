@@ -4098,7 +4098,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: 'Roles que pueden intentar entrar: Admin y Operador. Viewer ni ve la pestaña. Aun así piden la contraseña.', secPw: 'Contraseña (solo Admin la crea y cambia). Se guarda cifrada con SHA-256 y sal, nunca en texto.',
       secLock: 'Bloqueo: 10 min sin uso. 5 intentos fallidos bloquean 5 min.', cambiarPw: 'Cambiar contraseña', pwCambiada: 'Contraseña actualizada',
       guardarSam: 'Guardar reporte Samsung', samOk: 'Reporte Samsung guardado', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      imsNota: 'Entradas y Salidas se hacen en el IMS P3 como siempre: la Entrada suma al Almacén P3 y la Salida o el Traslado a una línea/zona pasa el cable a WIP P3 (a partir del saldo inicial). En IMS P4, el Traslado a una línea/zona cuenta como WIP P4.', aSinOpen: 'Falta el saldo inicial de {p}: las salidas del IMS no se cuentan en WIP P3 hasta capturarlo.', excelOk: 'Excel generado', p4Ok: 'Conectado a IMS P4 y ShipQR · actualizado {h}', p4Err: 'No se pudo leer IMS P4 / ShipQR: {e}. Lo de P4 no es confiable.', p4SinMapa: 'El BOM no relaciona ningún bundle GH90 con el cable DLC. Carga el BOM en el BOM Simulator.', p4Nota: 'Almacén P4 = bundles en IMS P4. WIP P4 = trasladados a línea. Pre-Kit P4 = producto terminado enviado por el MES a ShipQR, aún sin embarcar.', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'Item / Bundle', mapT: 'Relación ShipQR → Bundle (pallets sin bundle asignado)', mapNota: 'ShipQR no sabe de bundles. Aquí tú relacionas cada número de parte de ShipQR con su bundle GH90 una sola vez; queda guardado y desde ese momento sus pallets suman al Pre-Kit P4 de ese bundle.', mapPart: 'Parte en ShipQR', mapQty: 'Cantidad en piso', mapElige: '— Elige bundle —', mapGuardar: 'Guardar', mapQuitar: 'Quitar', mapOk: 'Relación guardada', mapSin: 'Todos los pallets de ShipQR sin embarcar ya están relacionados con un bundle.', mapManual: 'Relaciones guardadas', mapElegir: 'Elige el bundle GH90', mapSoloAdmin: 'Solo el administrador puede relacionar.'
+      imsNota: 'Entradas y Salidas se hacen en el IMS P3 como siempre: la Entrada suma al Almacén P3 y la Salida o el Traslado a una línea/zona pasa el cable a WIP P3 (a partir del saldo inicial). En IMS P4, el Traslado a una línea/zona cuenta como WIP P4.', aSinOpen: 'Falta el saldo inicial de {p}: las salidas del IMS no se cuentan en WIP P3 hasta capturarlo.', excelOk: 'Excel generado', p4Ok: 'Conectado a IMS P4 y ShipQR · actualizado {h}', p4Err: 'No se pudo leer IMS P4 / ShipQR: {e}. Lo de P4 no es confiable.', p4SinMapa: 'El BOM no relaciona ningún bundle GH90 con el cable DLC. Carga el BOM en el BOM Simulator.', p4Nota: 'Almacén P4 = bundles en IMS P4. WIP P4 = trasladados a línea. Pre-Kit P4 = producto terminado enviado por el MES a ShipQR, aún sin embarcar.', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'Item / Bundle', mapT: 'Relación ShipQR → Bundle (solo partes que no están en el BOM)', mapNota: 'Normalmente es automático: el BOM ya dice qué bundle lleva cada pieza. Aquí solo aparecen partes de ShipQR que no existen en el BOM; relaciónalas una sola vez con su bundle GH90 y quedan guardadas.', mapPart: 'Parte en ShipQR', mapQty: 'Cantidad en piso', mapElige: '— Elige bundle —', mapGuardar: 'Guardar', mapQuitar: 'Quitar', mapOk: 'Relación guardada', mapSin: 'Todos los pallets de ShipQR sin embarcar ya están relacionados con un bundle.', mapManual: 'Relaciones guardadas', mapElegir: 'Elige el bundle GH90', mapSoloAdmin: 'Solo el administrador puede relacionar.'
     },
     en: {
       nav: 'DLC Cable', title: 'DLC Cable · Control', sub: 'Samsung-owned cable. Quantities in pieces. 1 bundle = 1 cable.',
@@ -4123,7 +4123,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: 'Roles that can try to enter: Admin and Operator. Viewer does not even see the tab. They still need the password.', secPw: 'Password (only Admin creates and changes it). Stored encrypted with SHA-256 and salt, never as plain text.',
       secLock: 'Lock: 10 min without use. 5 failed attempts lock it for 5 min.', cambiarPw: 'Change password', pwCambiada: 'Password updated',
       guardarSam: 'Save Samsung report', samOk: 'Samsung report saved', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      imsNota: 'Entries and Exits are done in IMS P3 as usual: an Entry adds to P3 Warehouse and an Exit or a Transfer to a line/zone moves the cable to WIP P3 (from the opening balance on). In IMS P4, a Transfer to a line/zone counts as WIP P4.', aSinOpen: 'Opening balance missing for {p}: IMS exits are not counted in WIP P3 until it is entered.', excelOk: 'Excel generated', p4Ok: 'Connected to IMS P4 and ShipQR · updated {h}', p4Err: 'Could not read IMS P4 / ShipQR: {e}. P4 data is not reliable.', p4SinMapa: 'The BOM does not link any GH90 bundle to the DLC cable. Load the BOM in the BOM Simulator.', p4Nota: 'P4 Warehouse = bundles in IMS P4. WIP P4 = moved to the line. P4 Pre-Kit = finished product sent by the MES to ShipQR, not yet shipped.', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Item / Bundle', mapT: 'ShipQR → Bundle link (pallets with no bundle assigned)', mapNota: 'ShipQR knows nothing about bundles. Here you link each ShipQR part number to its GH90 bundle once; it is saved and from then on its pallets add to that bundle\'s P4 Pre-Kit.', mapPart: 'Part in ShipQR', mapQty: 'Qty on floor', mapElige: '— Choose bundle —', mapGuardar: 'Save', mapQuitar: 'Remove', mapOk: 'Link saved', mapSin: 'All unshipped ShipQR pallets are already linked to a bundle.', mapManual: 'Saved links', mapElegir: 'Choose the GH90 bundle', mapSoloAdmin: 'Only the administrator can link.'
+      imsNota: 'Entries and Exits are done in IMS P3 as usual: an Entry adds to P3 Warehouse and an Exit or a Transfer to a line/zone moves the cable to WIP P3 (from the opening balance on). In IMS P4, a Transfer to a line/zone counts as WIP P4.', aSinOpen: 'Opening balance missing for {p}: IMS exits are not counted in WIP P3 until it is entered.', excelOk: 'Excel generated', p4Ok: 'Connected to IMS P4 and ShipQR · updated {h}', p4Err: 'Could not read IMS P4 / ShipQR: {e}. P4 data is not reliable.', p4SinMapa: 'The BOM does not link any GH90 bundle to the DLC cable. Load the BOM in the BOM Simulator.', p4Nota: 'P4 Warehouse = bundles in IMS P4. WIP P4 = moved to the line. P4 Pre-Kit = finished product sent by the MES to ShipQR, not yet shipped.', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Item / Bundle', mapT: 'ShipQR → Bundle link (only parts not in the BOM)', mapNota: 'Normally this is automatic: the BOM already says which bundle carries each part. Only ShipQR parts that do not exist in the BOM appear here; link them once to their GH90 bundle and they are saved.', mapPart: 'Part in ShipQR', mapQty: 'Qty on floor', mapElige: '— Choose bundle —', mapGuardar: 'Save', mapQuitar: 'Remove', mapOk: 'Link saved', mapSin: 'All unshipped ShipQR pallets are already linked to a bundle.', mapManual: 'Saved links', mapElegir: 'Choose the GH90 bundle', mapSoloAdmin: 'Only the administrator can link.'
     },
     ko: {
       nav: 'DLC 케이블', title: 'DLC 케이블 · 관리', sub: '삼성 소유 케이블. 수량 단위: 개. 번들 1개 = 케이블 1개.',
@@ -4148,7 +4148,7 @@ window.generarReporteFecha = generarReporteFecha;
       secRoles: '접근 시도 가능 권한: 관리자와 작업자. Viewer는 탭이 보이지 않습니다. 그래도 비밀번호가 필요합니다.', secPw: '비밀번호(관리자만 생성·변경). SHA-256과 솔트로 암호화하여 저장하며 평문은 저장하지 않습니다.',
       secLock: '잠금: 10분간 미사용. 5회 실패 시 5분간 잠금.', cambiarPw: '비밀번호 변경', pwCambiada: '비밀번호가 변경되었습니다',
       guardarSam: '삼성 보고서 저장', samOk: '삼성 보고서가 저장되었습니다', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
-      imsNota: '입고와 출고는 평소처럼 IMS P3에서 합니다. 입고는 P3 창고에 더해지고 출고 또는 라인/구역으로의 이동은 케이블을 P3 WIP로 옮깁니다(기초 재고 이후). IMS P4에서는 라인/구역으로의 이동이 P4 WIP입니다.', aSinOpen: '{p}의 기초 재고가 없습니다. 입력하기 전까지 IMS 출고는 P3 WIP에 반영되지 않습니다.', excelOk: 'Excel이 생성되었습니다', p4Ok: 'IMS P4 및 ShipQR 연결됨 · 업데이트 {h}', p4Err: 'IMS P4 / ShipQR을 읽을 수 없습니다: {e}. P4 데이터는 신뢰할 수 없습니다.', p4SinMapa: 'BOM에 DLC 케이블과 연결된 GH90 번들이 없습니다. BOM Simulator에서 BOM을 불러오세요.', p4Nota: 'P4 창고 = IMS P4의 번들. P4 WIP = 라인으로 이동. P4 프리킷 = MES가 ShipQR로 보낸 완제품(아직 출고 전).', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: 'Item / 번들', mapT: 'ShipQR → 번들 연결 (번들 미지정 팔레트)', mapNota: 'ShipQR은 번들을 모릅니다. 여기서 ShipQR 품번을 GH90 번들과 한 번만 연결하면 저장되고, 이후 해당 팔레트는 그 번들의 P4 프리킷에 합산됩니다.', mapPart: 'ShipQR 품번', mapQty: '현장 수량', mapElige: '— 번들 선택 —', mapGuardar: '저장', mapQuitar: '삭제', mapOk: '연결이 저장되었습니다', mapSin: '출하 전 ShipQR 팔레트가 모두 번들과 연결되어 있습니다.', mapManual: '저장된 연결', mapElegir: 'GH90 번들을 선택하세요', mapSoloAdmin: '관리자만 연결할 수 있습니다.'
+      imsNota: '입고와 출고는 평소처럼 IMS P3에서 합니다. 입고는 P3 창고에 더해지고 출고 또는 라인/구역으로의 이동은 케이블을 P3 WIP로 옮깁니다(기초 재고 이후). IMS P4에서는 라인/구역으로의 이동이 P4 WIP입니다.', aSinOpen: '{p}의 기초 재고가 없습니다. 입력하기 전까지 IMS 출고는 P3 WIP에 반영되지 않습니다.', excelOk: 'Excel이 생성되었습니다', p4Ok: 'IMS P4 및 ShipQR 연결됨 · 업데이트 {h}', p4Err: 'IMS P4 / ShipQR을 읽을 수 없습니다: {e}. P4 데이터는 신뢰할 수 없습니다.', p4SinMapa: 'BOM에 DLC 케이블과 연결된 GH90 번들이 없습니다. BOM Simulator에서 BOM을 불러오세요.', p4Nota: 'P4 창고 = IMS P4의 번들. P4 WIP = 라인으로 이동. P4 프리킷 = MES가 ShipQR로 보낸 완제품(아직 출고 전).', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: 'Item / 번들', mapT: 'ShipQR → 번들 연결 (BOM에 없는 품번만)', mapNota: '보통은 자동입니다. BOM이 어떤 번들에 어떤 품목이 들어가는지 이미 알려줍니다. BOM에 없는 ShipQR 품번만 여기에 표시되며, GH90 번들과 한 번 연결하면 저장됩니다.', mapPart: 'ShipQR 품번', mapQty: '현장 수량', mapElige: '— 번들 선택 —', mapGuardar: '저장', mapQuitar: '삭제', mapOk: '연결이 저장되었습니다', mapSin: '출하 전 ShipQR 팔레트가 모두 번들과 연결되어 있습니다.', mapManual: '저장된 연결', mapElegir: 'GH90 번들을 선택하세요', mapSoloAdmin: '관리자만 연결할 수 있습니다.'
     }
   };
   function lang() { return (typeof IMS_LANG !== 'undefined' && I18N[IMS_LANG]) ? IMS_LANG : 'es'; }
@@ -4366,21 +4366,23 @@ window.generarReporteFecha = generarReporteFecha;
       var bd = await db.collection('bom_simulator_p4').doc('bom_activo').get();
       var filas = [];
       if (bd.exists && bd.data().bom) { try { filas = JSON.parse(bd.data().bom); } catch (e) { filas = []; } }
-      var sm = null, padre = null, grp = null, grupos = [];
-      p.tope = {};   // producto terminado (o modelo) -> bundles GH90 con cable DLC; ShipQR registra pallets con el producto terminado
-      filas.forEach(function (f, ix) {
+      var sm = null, padre = null, hijosTmp = {};
+      p.tope = {};     // relaciones manuales ShipQR -> bundle (solo para partes que no están en el BOM)
+      p.hijo = {};     // GH90 anidado dentro de un bundle GH90 que lleva cable -> ese bundle (relación automática del BOM)
+      p.bomPn = {};    // todos los números de parte que existen en el BOM
+      filas.forEach(function (f) {
         var pn = String(f.pn || '').trim().toUpperCase();
-        if (f.sm !== sm || ix === 0) { sm = f.sm; padre = null; grp = { keys: [], padres: [] }; grupos.push(grp); var smk = String(f.sm || '').trim().toUpperCase(); if (smk) grp.keys.push(smk); }
+        if (pn) p.bomPn[pn] = true;
+        if (f.sm !== sm) { sm = f.sm; padre = null; }
         var lvl = f.isLevel1 || f.level === 1;
         if (lvl) { padre = pn.indexOf('GH90') === 0 ? pn : null; return; }
-        if ((f.level === 0 || f.level === '0' || f.isLevel0) && pn && grp.keys.indexOf(pn) < 0) grp.keys.push(pn);
+        if (padre && pn.indexOf('GH90') === 0) { var hh = hijosTmp[pn] = hijosTmp[pn] || []; if (hh.indexOf(padre) < 0) hh.push(padre); }
         if (padre && cablePns.indexOf(pn) >= 0) {
           p.mapa[padre] = p.mapa[padre] || [];
           if (p.mapa[padre].indexOf(pn) < 0) p.mapa[padre].push(pn);
-          if (grp.padres.indexOf(padre) < 0) grp.padres.push(padre);
         }
       });
-      grupos.forEach(function (g) { g.keys.forEach(function (k) { if (!g.padres.length) return; var a = p.tope[k] = p.tope[k] || []; g.padres.forEach(function (x) { if (a.indexOf(x) < 0) a.push(x); }); }); });
+      Object.keys(hijosTmp).forEach(function (k) { if (p.mapa[k]) return; var a2 = hijosTmp[k].filter(function (g) { return p.mapa[g]; }); if (a2.length) p.hijo[k] = a2; });
       p.nMapa = Object.keys(p.mapa).length;
       // relaciones propias ShipQR -> bundle (guardadas por el usuario, no dependen de ShipQR)
       try { var md = await db.collection(COL_CFG).doc('mapa_prekit').get(); p.manual = (md.exists && md.data().mapa) ? md.data().mapa : {}; } catch (em) { p.manual = {}; }
@@ -4403,12 +4405,12 @@ window.generarReporteFecha = generarReporteFecha;
         }
       });
       // 3) ShipQR: pallets con etiqueta QR → piso (sin embarcar) o enviados a Dallas
-      var gh = Object.keys(p.mapa).concat(Object.keys(p.tope)).filter(function (x, i, a) { return a.indexOf(x) === i; }), ini = new Date(); ini.setHours(0, 0, 0, 0);
+      var gh = Object.keys(p.mapa).concat(Object.keys(p.hijo), Object.keys(p.tope)).filter(function (x, i, a) { return a.indexOf(x) === i; }), ini = new Date(); ini.setHours(0, 0, 0, 0);
       for (var i = 0; i < gh.length; i += 30) {
         var qs = await db.collection('shipqr_pallets').where('part_number', 'in', gh.slice(i, i + 30)).get();
         qs.forEach(function (d) {
           var o = d.data(), pn = String(o.part_number || '').trim().toUpperCase(), q = Number(o.quantity) || 0;
-          var ghs = p.mapa[pn] ? [pn] : (p.tope[pn] || []);   // el pallet puede venir como GH90 o como producto terminado
+          var ghs = p.mapa[pn] ? [pn] : (p.tope[pn] || p.hijo[pn] || []);   // bundle directo, relación manual, o bundle anidado del BOM
           var cabs = [];
           ghs.forEach(function (g) {
             if (o.status !== 'SHIPPED') p.detPiso[g] = (p.detPiso[g] || 0) + q;
@@ -4429,7 +4431,7 @@ window.generarReporteFecha = generarReporteFecha;
         var qn = await db.collection('shipqr_pallets').where('status', '!=', 'SHIPPED').get();
         qn.forEach(function (d) {
           var o = d.data(), pn = String(o.part_number || '').trim().toUpperCase();
-          if (!pn || p.mapa[pn] || p.tope[pn]) return;
+          if (!pn || pn.indexOf('GH90') !== 0 || p.bomPn[pn] || p.mapa[pn] || p.tope[pn] || p.hijo[pn]) return;
           p.sinMapa[pn] = (p.sinMapa[pn] || 0) + (Number(o.quantity) || 0);
         });
       } catch (en2) { console.error('DLC sin mapa', en2); }
