@@ -4521,7 +4521,7 @@ window.generarReporteFecha = generarReporteFecha;
 
     var html = '';
     // encabezado
-    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1640 bundle por QR</div></div>' +
+    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1650 limpio</div></div>' +
       '<div class="dlc-acts"><button class="dlc-b2" onclick="dlc.plegarTodo(false)">⊟ ' + h(T('plegarT')) + '</button><button class="dlc-b2" onclick="dlc.plegarTodo(true)">⊞ ' + h(T('desplegarT')) + '</button><button class="dlc-b2" onclick="dlc.refrescar()">↻ ' + h(T('refrescar')) + '</button>' +
       '<button class="dlc-b2" onclick="dlc.excel()">⬇ ' + h(T('excel')) + '</button>' +
       '<button class="dlc-b" onclick="dlc.enviar()">📤 ' + h(T('btnEnviar')) + '</button>' +
@@ -4569,10 +4569,10 @@ window.generarReporteFecha = generarReporteFecha;
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
       var t2 = i2 + b2, pct = t2 > 0 ? Math.max(0, Math.min(100, i2 / t2 * 100)) : 0;
       html += '<div class="dlc-node"><div class="dlc-app">' + nd[2] + '</div><div class="dlc-nn">' + h(T(nd[1])) + '</div><div class="dlc-nv">' + n(t2) + '</div>' +
-        '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' + (ETAPA_DE[nd[0]] ? chipLotes(ETAPA_DE[nd[0]]) : '') + '</div>';
+        ((nd[0] === 'p3wh' || nd[0] === 'p3wip') ? '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' : '') + '</div>';
     });
     var sh2 = 0; keys.forEach(function (pn) { sh2 += res[pn].enviadoHoy; });
-    html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div><div class="dlc-nm"><span>' + h(T('enviadoHoy')) + '</span></div>' + '</div></div>';
+    html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div>' + '</div></div>';
     html += etapaLista();
 
     // matriz parte x color
