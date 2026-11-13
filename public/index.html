@@ -4521,7 +4521,7 @@ window.generarReporteFecha = generarReporteFecha;
 
     var html = '';
     // encabezado
-    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1820 detalle con P3</div></div>' +
+    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1830 detalle simple</div></div>' +
       '<div class="dlc-acts"><button class="dlc-b2" onclick="dlc.plegarTodo(false)">⊟ ' + h(T('plegarT')) + '</button><button class="dlc-b2" onclick="dlc.plegarTodo(true)">⊞ ' + h(T('desplegarT')) + '</button><button class="dlc-b2" onclick="dlc.refrescar()">↻ ' + h(T('refrescar')) + '</button>' +
       '<button class="dlc-b2" onclick="dlc.excel()">⬇ ' + h(T('excel')) + '</button>' +
       '<button class="dlc-b" onclick="dlc.enviar()">📤 ' + h(T('btnEnviar')) + '</button>' +
@@ -4595,11 +4595,11 @@ window.generarReporteFecha = generarReporteFecha;
         padres.forEach(function (g) {
           var d1 = st.p4.det[g], pk = st.p4.detPiso[g] || 0, sk = d1 ? d1.stock : 0, ln = d1 ? d1.lin : 0;
           var s3 = st3[nk(g)] || 0; tS += sk; tL += ln; tP += pk; t3 += s3;
-          detH += '<tr><td>' + chip(colorDe(pn)) + h(pn) + '</td><td><b>' + h(g) + '</b></td><td class="dlc-mut">' + (d1 ? d1.lineas.map(function (x) { return h(x.desc) + ' ' + n(x.stock); }).join(' · ') : h(T('detNo'))) + '</td><td>' + n(s3) + '</td><td>' + n(sk) + '</td><td>' + n(ln) + '</td><td>' + n(sk - ln) + '</td><td>' + n(pk) + '</td></tr>';
+          detH += '<tr><td>' + chip(colorDe(pn)) + h(pn) + '</td><td><b>' + h(g) + '</b></td><td>' + n(s3) + '</td><td>' + n(sk) + '</td><td>' + n(ln) + '</td><td>' + n(sk - ln) + '</td><td>' + n(pk) + '</td></tr>';
         });
-        detH += '<tr style="font-weight:700"><td>' + chip(colorDe(pn)) + h(pn) + '</td><td>Total (' + padres.length + ')</td><td></td><td>' + n(t3) + '</td><td>' + n(tS) + '</td><td>' + n(tL) + '</td><td>' + n(tS - tL) + '</td><td>' + n(tP) + '</td></tr>';
+        detH += '<tr style="font-weight:700"><td>' + chip(colorDe(pn)) + h(pn) + '</td><td>Total (' + padres.length + ')</td><td>' + n(t3) + '</td><td>' + n(tS) + '</td><td>' + n(tL) + '</td><td>' + n(tS - tL) + '</td><td>' + n(tP) + '</td></tr>';
       });
-      html += '<details class="dlc-det" open><summary>📋 ' + h(T('detT')) + '</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('detBundle')) + '</th><th>' + h(T('detDesc')) + '</th><th>' + h(T('detP3')) + '</th><th>' + h(T('detStock')) + '</th><th>' + h(T('detLin')) + '</th><th>' + h(T('detAlm')) + '</th><th>' + h(T('detPk')) + '</th></tr></thead><tbody>' + detH + '</tbody></table></div><div class="dlc-mut">' + h(T('detNota')) + '</div></div></details>';
+      html += '<details class="dlc-det" open><summary>📋 ' + h(T('detT')) + '</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('detBundle')) + '</th><th>' + h(T('detP3')) + '</th><th>' + h(T('detStock')) + '</th><th>' + h(T('detLin')) + '</th><th>' + h(T('detAlm')) + '</th><th>' + h(T('detPk')) + '</th></tr></thead><tbody>' + detH + '</tbody></table></div><div class="dlc-mut">' + h(T('detNota')) + '</div></div></details>';
       // relación propia ShipQR -> bundle
       var sinL = Object.keys(st.p4.sinMapa || {}).sort(), manL = Object.keys(st.p4.manual || {}).sort(), ghL = Object.keys(st.p4.mapa).sort();
       st.p4.sinList = sinL;
