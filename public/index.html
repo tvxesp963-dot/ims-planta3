@@ -4092,7 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v24nov-1550';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v24nov-1610';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4283,12 +4283,13 @@ window.generarReporteFecha = generarReporteFecha;
     return '';
   }
   // P4 solo cuenta lo recibido DESDE que arrancó el control (Saldo inicial del cable): lo que P4 ya tenía antes es previo al sistema y no cuenta.
+  function fMs(f) { var t = Date.parse(String(f || '').replace(' ', 'T')); if (isNaN(t)) t = Date.parse(f); return isNaN(t) ? 0 : t; }   // compara fechas reales, sin importar el formato de texto
   function desdeCable(movs, cb) { var a = (movs || []).filter(function (m) { return m.tipo === 'OPEN' && m.pn === cb && !m.anulado; }).map(function (m) { return String(m.fecha); }).sort(); return a[0] || ''; }
   function p4Ef(g, cb, p4, movs) {
     var d = p4 && p4.det && p4.det[g]; if (!d) return { alm: 0, lin: 0, prev: 0, recS: 0, eff: 0 };
     var desde = desdeCable(movs || st.movs, cb), ln = d.lin || 0, al = d.stock - ln;
     if (!desde) return { alm: al, lin: ln, prev: 0, recS: d.rec || 0, eff: d.stock };
-    var recS = 0; (d.recL || []).forEach(function (e) { if (e.f > desde) recS += e.q; });
+    var recS = 0, dMs = fMs(desde); (d.recL || []).forEach(function (e) { if (fMs(e.f) > dMs) recS += e.q; });
     var eff = Math.min(d.stock, recS), fac = d.stock > 0 ? eff / d.stock : 0;
     return { alm: Math.round(al * fac), lin: Math.round(ln * fac), prev: Math.max(0, d.stock - eff), recS: recS, eff: eff };
   }
@@ -4301,10 +4302,10 @@ window.generarReporteFecha = generarReporteFecha;
     items.forEach(function (i) {
       var k = String(i.pn || '').trim().toUpperCase(); if (!dg[k]) return;
       s3[k] = (s3[k] || 0) + (parseFloat(i.actual) || 0);
-      (i.historial || []).forEach(function (hh) { if (hh.tipo === 'S' && String(hh.fecha) > dg[k]) o3[k] = (o3[k] || 0) + (Number(hh.qty) || 0); });
+      (i.historial || []).forEach(function (hh) { if (hh.tipo === 'S' && fMs(hh.fecha) > fMs(dg[k])) o3[k] = (o3[k] || 0) + (Number(hh.qty) || 0); });
     });
     Object.keys(s3).forEach(function (k) {
-      var d = st.p4.det[k], recS = 0; (d.recL || []).forEach(function (e) { if (e.f > dg[k]) recS += e.q; });
+      var d = st.p4.det[k], recS = 0; (d.recL || []).forEach(function (e) { if (fMs(e.f) > fMs(dg[k])) recS += e.q; });
       var t = Math.min(s3[k], d.stock, recS, Math.max(0, recS - (o3[k] || 0)));
       if (t > 0) out[k] = t;
     });
