@@ -4244,13 +4244,13 @@ window.generarReporteFecha = generarReporteFecha;
     return res;
   }
   function totalLoc(r, l) { return r[l].item + r[l].bundle; }
-  function totalPn(r) { return LOCS.reduce(function (s, l) { return s + totalLoc(r, l); }, 0); }
+  function totalPn(r) { return LOCS.reduce(function (s, l) { return s + totalLoc(r, l); }, 0) + (r.enRuta || 0); }   // incluye el cable surtido aún sin escanear en WIP P3
   function samsungDe(pn) { var s = (st.samsung && st.samsung[pn]) || SAMSUNG_DEF[pn] || { inv: 0, wip: 0, fg: 0 }; return s; }
   function sistemaVsSamsung(r, pn) {
     var s = samsungDe(pn);
     return [
       { tipo: 'Inventory W/H', locate: 'W/H', sis: totalLoc(r, 'p3wh'), sam: Number(s.inv) || 0, loc: 'lAlm3' },
-      { tipo: 'WIP', locate: 'PLANT 3', sis: totalLoc(r, 'p3wip') + totalLoc(r, 'p3bt') + totalLoc(r, 'p3pk'), sam: Number(s.wip) || 0, loc: 'lWip3' },
+      { tipo: 'WIP', locate: 'PLANT 3', sis: totalLoc(r, 'p3wip') + (r.enRuta || 0) + totalLoc(r, 'p3bt') + totalLoc(r, 'p3pk'), sam: Number(s.wip) || 0, loc: 'lWip3' },
       { tipo: 'Finished good', locate: 'PLANT 4', sis: totalLoc(r, 'p4ims') + totalLoc(r, 'p4wip') + totalLoc(r, 'p4pk'), sam: Number(s.fg) || 0, loc: 'lAlm4' }
     ];
   }
@@ -4625,7 +4625,8 @@ window.generarReporteFecha = generarReporteFecha;
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
       var t2 = i2 + b2, pct = t2 > 0 ? Math.max(0, Math.min(100, i2 / t2 * 100)) : 0;
       html += '<div class="dlc-node"><div class="dlc-app">' + nd[2] + '</div><div class="dlc-nn">' + h(T(nd[1])) + '</div><div class="dlc-nv">' + n(t2) + '</div>' +
-        ((nd[0] === 'p3wh' || nd[0] === 'p3wip') ? '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' : '') + '</div>';
+        ((nd[0] === 'p3wh' || nd[0] === 'p3wip') ? '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' : '') +
+        (nd[0] === 'p3wip' ? (function () { var tq = 0; keys.forEach(function (pn) { tq += res[pn].enRuta || 0; }); return tq > 0 ? '<div class="dlc-nm"><span>+ ' + n(tq) + ' ' + h(T('plTrans')) + '</span></div>' : ''; })() : '') + '</div>';
     });
     var sh2 = 0; keys.forEach(function (pn) { sh2 += res[pn].enviadoHoy; });
     html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div>' + '</div></div>';
@@ -5670,7 +5671,7 @@ window.generarReporteFecha = generarReporteFecha;
     pl.items.forEach(function (i) { nec[i.pn] = (nec[i.pn] || 0) + i.pend; hoy[i.pn] = (hoy[i.pn] || 0) + i.hoy; });
     html += '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plCable')) + '</th><th>' + h(T('plNec')) + '</th><th>' + h(T('plHoy')) + '</th><th>' + h(T('plWip')) + '</th><th>' + h(T('plWh')) + '</th><th>' + h(T('plFalta')) + ' / ' + h(T('plSob')) + '</th><th>' + h(T('plSurtir')) + '</th></tr></thead><tbody>' +
       PARTES.filter(function (p) { return nec[p.pn] != null; }).map(function (p) {
-        var r = res[p.pn], wip = r.p3wip.item, wh = r.p3wh.item, need = nec[p.pn], dif = wip + wh - need, surt = pickTot[p.pn] || 0;
+        var r = res[p.pn], wip = r.p3wip.item, wh = r.p3wh.item, need = nec[p.pn], dif = wip + (r.enRuta || 0) + wh - need, surt = pickTot[p.pn] || 0;
         return '<tr><td>' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</td><td><b>' + n(need) + '</b></td><td>' + n(hoy[p.pn] || 0) + '</td><td>' + n(wip) + '</td><td>' + n(wh) + '</td>' +
           '<td><span class="dlc-pill ' + (dif >= 0 ? 'ok' : 'crit') + '">' + (dif >= 0 ? h(T('plSob')) + ' ' + n(dif) : h(T('plFalta')) + ' ' + n(-dif)) + '</span></td>' +
           '<td>' + (surt ? '<span class="dlc-pill ' + (surt > wh ? 'crit' : 'warn') + '">' + n(surt) + '</span>' : '<span class="dlc-pill ok">' + h(T('plOk')) + '</span>') + '</td></tr>';
