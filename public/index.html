@@ -4092,6 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
+  var APP_VER = 'v24nov-1050';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4555,7 +4556,7 @@ window.generarReporteFecha = generarReporteFecha;
 
     var html = '';
     // encabezado
-    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · v12nov-1930 cuadre del sistema</div></div>' +
+    html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · <b>' + APP_VER + '</b></div></div>' +
       '<div class="dlc-acts"><button class="dlc-b2" onclick="dlc.plegarTodo(false)">⊟ ' + h(T('plegarT')) + '</button><button class="dlc-b2" onclick="dlc.plegarTodo(true)">⊞ ' + h(T('desplegarT')) + '</button><button class="dlc-b2" onclick="dlc.refrescar()">↻ ' + h(T('refrescar')) + '</button>' +
       '<button class="dlc-b2" onclick="dlc.excel()">⬇ ' + h(T('excel')) + '</button>' +
       '<button class="dlc-b" onclick="dlc.enviar()">📤 ' + h(T('btnEnviar')) + '</button>' +
@@ -5511,7 +5512,7 @@ window.generarReporteFecha = generarReporteFecha;
   function dLocal(f) { var d = new Date(f); return isNaN(d) ? '' : d.toLocaleDateString('en-CA'); }
   function fHora(f) { var d = new Date(f); return isNaN(d) ? '—' : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }
   function fDur(a, b) { var m = Math.round((new Date(b) - new Date(a)) / 60000); if (isNaN(m) || m < 0) return '—'; return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; }
-  function recData() {
+  function recData(todo) {
     var mp = {}, ms = (st.movs || []).filter(function (m) { return !m.anulado && m.lote; }).sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
     ms.forEach(function (m) {
       if (m.tipo === 'ISSUE' && m.recibir) mp[m.lote] = { lote: m.lote, folio: m.ref || '', pn: m.pn, qty: Number(m.qty) || 0, gh: m.gh90 || '', maq: m.maq || '', modelo: m.modelo || '', req: m.req || '', dev: 0, tS: m.fecha, uS: m.usuario || '', e: 'tr' };
@@ -5527,6 +5528,7 @@ window.generarReporteFecha = generarReporteFecha;
       });
     });
     return Object.keys(mp).map(function (k) { return mp[k]; }).filter(function (r) {
+      if (todo) return true;
       if (recEst !== 'all' && r.e !== recEst) return false;
       if (r.e === 'tr' || !recDia) return true;
       return dLocal(r.tR || r.tC || r.tS) === recDia;
@@ -5990,7 +5992,8 @@ window.generarReporteFecha = generarReporteFecha;
   }
   function qrCard() {
     qrTileEstilo();
-    var all = lotesDe(st.movs), ls = all.slice(0, 10), primero = -1;
+    var cerr = {}; recData(true).forEach(function (r) { if (r.e === 'dev' || r.e === 'can') cerr[r.lote] = 1; });   // lotes de cable devueltos o cancelados ya no se listan
+    var all = lotesDe(st.movs).filter(function (l) { return !cerr[l.lote]; }), ls = all.slice(0, 10), primero = -1;
     var rr = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas());   // existencias actuales por color para mostrarlas en los iconos
     ((st.plan && st.plan.items) || []).some(function (i, ix) { if (i.pend > 0) { primero = ix; return true; } return false; });   // el plan más próximo con pendiente
     var html = '<div class="sh">' + h(T('qrT')) + '</div>' +
