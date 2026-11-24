@@ -1337,6 +1337,7 @@ async function doLogin() {
   let role = 'viewer'; // default
   let nombre = e.split('@')[0];
   let dlc = false;
+  let dlcAlm = false;
   if (db) {
     try {
       const snap = await db.collection('ims_usuarios').where('email','==',e).get();
@@ -1349,12 +1350,13 @@ async function doLogin() {
         role = u.role || u.rol || 'viewer';
         nombre = u.nombre || nombre;
         dlc = u.dlc === true;
+        dlcAlm = u.dlcAlm === true;
       } else {
         err.textContent = 'Usuario no registrado. Contacta al administrador.'; return;
       }
     } catch(ex) { console.error('Error leyendo usuario:', ex); }
   }
-  user = {email:e, name:nombre, role, dlc};
+  user = {email:e, name:nombre, role, dlc, dlcAlm};
   localStorage.setItem('ims3_user', JSON.stringify(user));
   err.textContent = '';
   launch();
@@ -2864,6 +2866,7 @@ async function loadImsUsers() {
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${activo?'var(--green)':'var(--red)'};margin-right:4px"></span>${activo?'Activo':'Inactivo'}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)">${isMe?'<span style="font-size:.65rem;color:var(--text2)">Tú</span>':
           `<button onclick="toggleDlcUser('${u.docId}',${u.dlc===true})" style="border:1px solid ${u.dlc===true?'var(--green)':'var(--border2)'};background:${u.dlc===true?'rgba(46,204,113,.15)':'var(--bg3)'};color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">💾 DLC ${u.dlc===true?'✔':'✖'}</button>
+           <button onclick="toggleAlmUser('${u.docId}',${u.dlcAlm===true})" style="border:1px solid ${u.dlcAlm===true?'var(--green)':'var(--border2)'};background:${u.dlcAlm===true?'rgba(46,204,113,.15)':'var(--bg3)'};color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">📦 Almacén ${u.dlcAlm===true?'✔':'✖'}</button>
            <button onclick="toggleImsUser('${u.docId}',${activo})" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">${activo?'Desactivar':'Activar'}</button>
            <button onclick="deleteImsUser('${u.docId}','${u.nombre||u.email}')" style="border:1px solid var(--red);background:transparent;color:var(--red);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer">✕</button>`}</td>`;
       tb.appendChild(tr);
@@ -2903,6 +2906,15 @@ async function toggleDlcUser(id,actual) {
   } catch(e){toast('Error: '+e.message,'err');}
 }
 window.toggleDlcUser = toggleDlcUser;
+
+async function toggleAlmUser(id,actual) {
+  if(!user||user.role!=='admin'){toast('Solo admins','err');return;}
+  try {
+    await db.collection('ims_usuarios').doc(id).update({dlcAlm:!actual});
+    toast(!actual?'Permiso de Almacén (surtir cable DLC) concedido (debe volver a entrar)':'Permiso de Almacén quitado','ok'); loadImsUsers();
+  } catch(e){toast('Error: '+e.message,'err');}
+}
+window.toggleAlmUser = toggleAlmUser;
 
 async function deleteImsUser(id,nombre) {
   if(!confirm('¿Eliminar perfil de "'+nombre+'"?'))return;
@@ -5353,27 +5365,27 @@ window.generarReporteFecha = generarReporteFecha;
      Solo lectura del plan: no modifica nada del plan ni del BOM.
      =================================================================== */
   Object.assign(I18N.es, {
-    plPick: 'Lista de surtido para Almacén (según el plan)', plPickNota: 'Sale sola del plan: todo lo pendiente desde que se requiere hasta que queda surtido, por fecha de envío. El cable suelto en WIP P3 cubre las primeras líneas; lo demás está por surtir. Al hacer la Salida o Traslado en el IMS P3, la lista se actualiza sola.', plYaWip: 'Ya en WIP', plPickOk: 'Todo el plan ya está surtido en WIP P3.', plPorSurtir: 'Por surtir', plSinAlm: '⚠ Almacén P3 no alcanza', plImprimir: 'Imprimir lista', plPickTot: 'Total a surtir',
+    plPick: 'Requisiciones de cable por bundle (según el plan)', plPickNota: 'Una requisición por bundle (GH90) y línea, generada sola desde el plan. Almacén la surte con su botón: hace la Salida del cable en el IMS P3 con un folio GI y el cable queda ligado a ese bundle. Se descuenta cuando entra el bundle terminado de ese mismo GH90 al IMS P3. Las Salidas manuales sin folio no cuentan como surtido.', plFolio: 'Folio', plSurtirBtn: 'Surtir', plParcial: 'Parcial', plSoloAlm: 'Solo Almacén puede surtir requisiciones.', plSinReq: 'pzas en WIP sin requisición (Salida manual): revisar.', plYaWip: 'Ya en WIP', plPickOk: 'Todo el plan ya está surtido en WIP P3.', plPorSurtir: 'Por surtir', plSinAlm: '⚠ Almacén P3 no alcanza', plImprimir: 'Imprimir lista', plPickTot: 'Total a surtir',
     plT: 'Requerimiento de cable DLC según el plan de producción', plNota: 'Sale del plan de Bundle P3 publicado por el BOM Simulator. Cada bundle (GH90) lleva 1 cable DLC y el BOM define cuál (negro o blanco). «Necesario» = bundles pendientes del plan.',
     plSin: 'Todavía no hay plan de Bundle publicado en el BOM Simulator.', plSinDlc: 'El plan publicado no tiene bundles con cable DLC (o el BOM aún no relaciona sus GH90 con un GH39).', plErr: 'No se pudo leer el plan: ',
     plPub: 'Plan publicado', plViejo: '⚠ Más de 12 h sin republicar', plAlDia: 'Al día', plMaq: 'Línea', plBundle: 'Bundle', plModelo: 'Modelo', plEnvio: 'Envío', plPend: 'Pendiente', plCable: 'Cable DLC',
-    plHoy: 'Hoy / atrasado', plNec: 'Necesario', plWip: 'Suelto en WIP P3', plWh: 'Almacén P3', plFalta: 'Falta', plSob: 'Sobra', plSurtir: 'Surtir hoy a WIP', plOk: 'Cubierto', plRes: 'Resumen por cable', plDet: 'Detalle por bundle del plan',
+    plHoy: 'Hoy / atrasado', plNec: 'Necesario', plWip: 'Suelto en WIP P3', plWh: 'Almacén P3', plFalta: 'Falta', plSob: 'Sobra', plSurtir: 'Por surtir', plOk: 'Cubierto', plRes: 'Resumen por cable', plDet: 'Detalle por bundle del plan',
     plManual: 'Sin plan (captura manual)', plPara: 'Ensamblar para (plan)', plNoCab: 'Ese bundle no tiene cable DLC en el BOM', plLoteMal: 'El cable de este lote ({c}) no corresponde al bundle {g} (le toca {e})', plNota2: 'El cable ya metido en bundles terminados no cuenta como a granel.'
   });
   Object.assign(I18N.en, {
-    plPick: 'Pick list for Warehouse (per plan)', plPickNota: 'It comes from the plan: everything pending from the moment it is required until it is issued, by ship date. Loose cable already in WIP P3 covers the first lines; the rest is still to issue. When the Issue or Transfer is done in IMS P3, the list updates by itself.', plYaWip: 'Already in WIP', plPickOk: 'The whole plan is already issued to WIP P3.', plPorSurtir: 'To issue', plSinAlm: '⚠ P3 Warehouse is short', plImprimir: 'Print list', plPickTot: 'Total to issue',
+    plPick: 'Cable requisitions by bundle (per plan)', plPickNota: 'One requisition per bundle (GH90) and line, generated automatically from the plan. Warehouse issues it with its button: it makes the cable Issue in IMS P3 with a GI number and the cable stays linked to that bundle. It is consumed when the finished bundle of that same GH90 enters IMS P3. Manual Issues without a number do not count as issued.', plFolio: 'Doc. no.', plSurtirBtn: 'Issue', plParcial: 'Partial', plSoloAlm: 'Only Warehouse can issue requisitions.', plSinReq: 'pcs in WIP without requisition (manual Issue): review.', plYaWip: 'Already in WIP', plPickOk: 'The whole plan is already issued to WIP P3.', plPorSurtir: 'To issue', plSinAlm: '⚠ P3 Warehouse is short', plImprimir: 'Print list', plPickTot: 'Total to issue',
     plT: 'DLC cable requirement from the production plan', plNota: 'Comes from the P3 Bundle plan published by the BOM Simulator. Each bundle (GH90) takes 1 DLC cable and the BOM defines which one (black or white). “Required” = pending bundles in the plan.',
     plSin: 'There is no Bundle plan published in the BOM Simulator yet.', plSinDlc: 'The published plan has no bundles with DLC cable (or the BOM does not link their GH90 to a GH39 yet).', plErr: 'Could not read the plan: ',
     plPub: 'Plan published', plViejo: '⚠ More than 12 h without republishing', plAlDia: 'Up to date', plMaq: 'Line', plBundle: 'Bundle', plModelo: 'Model', plEnvio: 'Ship date', plPend: 'Pending', plCable: 'DLC cable',
-    plHoy: 'Today / overdue', plNec: 'Required', plWip: 'Loose in WIP P3', plWh: 'P3 Warehouse', plFalta: 'Short', plSob: 'Surplus', plSurtir: 'Issue today to WIP', plOk: 'Covered', plRes: 'Summary by cable', plDet: 'Plan detail by bundle',
+    plHoy: 'Today / overdue', plNec: 'Required', plWip: 'Loose in WIP P3', plWh: 'P3 Warehouse', plFalta: 'Short', plSob: 'Surplus', plSurtir: 'To issue', plOk: 'Covered', plRes: 'Summary by cable', plDet: 'Plan detail by bundle',
     plManual: 'No plan (manual entry)', plPara: 'Assemble for (plan)', plNoCab: 'That bundle has no DLC cable in the BOM', plLoteMal: 'This lot’s cable ({c}) does not belong to bundle {g} (it needs {e})', plNota2: 'Cable already inside finished bundles does not count as bulk.'
   });
   Object.assign(I18N.ko, {
-    plPick: '창고 불출 목록 (계획 기준)', plPickNota: '계획에서 자동 생성: 필요 시점부터 불출 완료까지의 모든 잔량을 출하일 순으로 표시합니다. P3 WIP에 이미 있는 벌크 케이블이 앞 라인부터 충당하고 나머지는 불출 대상입니다. IMS P3에서 출고 또는 이동을 하면 목록이 자동 갱신됩니다.', plYaWip: 'WIP 보유', plPickOk: '계획 전체가 P3 WIP에 불출되었습니다.', plPorSurtir: '불출 대상', plSinAlm: '⚠ P3 창고 재고 부족', plImprimir: '목록 인쇄', plPickTot: '총 불출량',
+    plPick: '번들별 케이블 요청서 (계획 기준)', plPickNota: '번들(GH90)과 라인별로 요청서 1건이 계획에서 자동 생성됩니다. 창고가 버튼으로 불출하면 IMS P3에서 GI 번호로 출고되고 케이블은 해당 번들에 연결됩니다. 같은 GH90의 완성 번들이 IMS P3에 입고되면 차감됩니다. 번호 없는 수동 출고는 불출로 인정되지 않습니다.', plFolio: '문서번호', plSurtirBtn: '불출', plParcial: '부분', plSoloAlm: '창고 담당자만 요청서를 불출할 수 있습니다.', plSinReq: '개 WIP에 요청서 없음(수동 출고): 확인 필요.', plYaWip: 'WIP 보유', plPickOk: '계획 전체가 P3 WIP에 불출되었습니다.', plPorSurtir: '불출 대상', plSinAlm: '⚠ P3 창고 재고 부족', plImprimir: '목록 인쇄', plPickTot: '총 불출량',
     plT: '생산 계획 기준 DLC 케이블 소요량', plNota: 'BOM Simulator가 게시한 P3 번들 계획에서 가져옵니다. 번들(GH90) 1개에 DLC 케이블 1개가 들어가며, 어떤 케이블(검정/흰색)인지는 BOM이 정합니다. «필요» = 계획의 잔여 번들.',
     plSin: 'BOM Simulator에 게시된 번들 계획이 아직 없습니다.', plSinDlc: '게시된 계획에 DLC 케이블이 있는 번들이 없습니다(또는 BOM에서 GH90과 GH39가 아직 연결되지 않았습니다).', plErr: '계획을 읽을 수 없습니다: ',
     plPub: '계획 게시', plViejo: '⚠ 12시간 이상 재게시 안 됨', plAlDia: '최신', plMaq: '라인', plBundle: '번들', plModelo: '모델', plEnvio: '출하일', plPend: '잔량', plCable: 'DLC 케이블',
-    plHoy: '오늘 / 지연', plNec: '필요', plWip: 'P3 WIP 벌크', plWh: 'P3 창고', plFalta: '부족', plSob: '여유', plSurtir: '오늘 WIP 불출', plOk: '충족', plRes: '케이블별 요약', plDet: '계획 번들별 상세',
+    plHoy: '오늘 / 지연', plNec: '필요', plWip: 'P3 WIP 벌크', plWh: 'P3 창고', plFalta: '부족', plSob: '여유', plSurtir: '불출 대상', plOk: '충족', plRes: '케이블별 요약', plDet: '계획 번들별 상세',
     plManual: '계획 없음 (수동 입력)', plPara: '조립 대상 (계획)', plNoCab: '이 번들은 BOM에 DLC 케이블이 없습니다', plLoteMal: '이 로트의 케이블({c})은 번들 {g}에 맞지 않습니다(필요: {e})', plNota2: '완성된 번들 안에 들어간 케이블은 벌크로 계산하지 않습니다.'
   });
 
@@ -5401,29 +5413,73 @@ window.generarReporteFecha = generarReporteFecha;
   }
   function fEnv(f) { if (!f) return '—'; var d = new Date(f + 'T00:00:00'); return isNaN(d) ? '—' : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }); }
 
-  // Lista de surtido: todo el pendiente del plan (desde que se requiere hasta quedar surtido).
-  // El cable suelto en WIP P3 cubre las líneas por fecha de envío; lo que sobra por cubrir es lo que Almacén debe entregar.
+  // Requisiciones por bundle: una por GH90 y línea, generada sola desde el plan.
+  // Se surte con el botón de Almacén (Salida del IMS P3 con folio GI). El cable surtido queda ligado a ese GH90 y se descuenta
+  // cuando entra el bundle terminado de ese mismo GH90 al IMS P3 (QR de medio proceso).
+  function puedeSurtir() { return !!user && puedeVer() && (user.role === 'admin' || user.dlcAlm === true); }
   function pickRows(res) {
-    var pl = st.plan, rows = [], rest = {};
-    PARTES.forEach(function (p) { rest[p.pn] = Math.max(0, res[p.pn].p3wip.item); });
-    (pl && pl.items || []).filter(function (i) { return i.pend > 0; }).forEach(function (i) {
-      var cub = Math.min(i.pend, rest[i.pn] || 0); rest[i.pn] = (rest[i.pn] || 0) - cub;
-      rows.push({ maq: i.maq, modelo: i.modelo, gh: i.gh, pn: i.pn, fecha: i.fecha, need: i.pend, wip: cub, surt: i.pend - cub });
+    var pl = st.plan, rows = [], iss = {}, fol = {}, first = {}, pool = {}, cons = {}, rest = {};
+    (st.movs || []).forEach(function (m) {
+      if (m.tipo !== 'ISSUE' || !m.req || m.anulado) return;
+      var gh = String(m.gh90 || '').toUpperCase(), q = Number(m.qty) || 0;
+      iss[m.req] = (iss[m.req] || 0) + q; (fol[m.req] = fol[m.req] || []).push(m.ref);
+      pool[gh] = (pool[gh] || 0) + q; if (!first[gh] || String(m.fecha) < first[gh]) first[gh] = String(m.fecha);
     });
+    Object.keys(first).forEach(function (gh) {
+      var tot = 0;
+      if (typeof items !== 'undefined' && items) items.forEach(function (i) {
+        if (String(i.pn || '').trim().toUpperCase() !== gh) return;
+        (i.historial || []).forEach(function (hh) { if (hh.tipo === 'E' && String(hh.fecha) > first[gh]) tot += Number(hh.qty) || 0; });
+      });
+      cons[gh] = tot; rest[gh] = Math.max(0, (pool[gh] || 0) - tot);
+    });
+    var linked = {};
+    Object.keys(rest).forEach(function (gh) { var cb = cableDeGH(gh); if (cb) linked[cb] = (linked[cb] || 0) + rest[gh]; });
+    (pl && pl.items || []).filter(function (i) { return i.pend > 0; }).forEach(function (i) {
+      var key = i.maq + '|' + i.gh, cub = Math.min(i.pend, rest[i.gh] || 0); rest[i.gh] = (rest[i.gh] || 0) - cub;
+      rows.push({ key: key, maq: i.maq, modelo: i.modelo, gh: i.gh, pn: i.pn, fecha: i.fecha, need: i.pend, wip: cub, surt: i.pend - cub, issued: iss[key] || 0, folios: fol[key] || [] });
+    });
+    rows.sinReq = {};
+    PARTES.forEach(function (p) { rows.sinReq[p.pn] = Math.max(0, res[p.pn].p3wip.item - (linked[p.pn] || 0)); });
     return rows;
   }
   function pickCard(res) {
     var rows = pickRows(res); st.pick = rows;
-    var pend = rows.filter(function (r) { return r.surt > 0; }), tot = {};
+    var pend = rows.filter(function (r) { return r.surt > 0; }), tot = {}, puede = puedeSurtir();
     pend.forEach(function (r) { tot[r.pn] = (tot[r.pn] || 0) + r.surt; });
     var whDe = function (pn) { return res[pn].p3wh.item; };
-    var body = '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plEnvio')) + '</th><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plCable')) + '</th><th>' + h(T('plPend')) + '</th><th>' + h(T('plYaWip')) + '</th><th>' + h(T('plSurtir')) + '</th><th>' + h(T('estado')) + '</th></tr></thead><tbody>' +
-      rows.map(function (r) {
-        return '<tr><td>' + h(fEnv(r.fecha)) + '</td><td>' + h(r.maq) + '</td><td>' + h(r.modelo) + '</td><td>' + h(r.gh) + '</td><td>' + chip(colorDe(r.pn)) + h(r.pn) + '</td><td><b>' + n(r.need) + '</b></td><td>' + n(r.wip) + '</td><td><b>' + n(r.surt) + '</b></td><td><span class="dlc-pill ' + (r.surt > 0 ? 'warn' : 'ok') + '">' + h(r.surt > 0 ? T('plPorSurtir') : T('plOk')) + '</span></td></tr>';
+    var body = '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plEnvio')) + '</th><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plCable')) + '</th><th>' + h(T('plPend')) + '</th><th>' + h(T('plYaWip')) + '</th><th>' + h(T('plSurtir')) + '</th><th>' + h(T('plFolio')) + '</th><th>' + h(T('estado')) + '</th>' + (puede ? '<th>' + h(T('accion')) + '</th>' : '') + '</tr></thead><tbody>' +
+      rows.map(function (r, ix) {
+        var est = r.surt === 0 ? ['ok', T('plOk')] : (r.wip > 0 || r.issued > 0 ? ['warn', T('plParcial')] : ['crit', T('plPorSurtir')]), mx = Math.min(r.surt, Math.max(0, whDe(r.pn)));
+        return '<tr><td>' + h(fEnv(r.fecha)) + '</td><td>' + h(r.maq) + '</td><td>' + h(r.modelo) + '</td><td><b>' + h(r.gh) + '</b></td><td>' + chip(colorDe(r.pn)) + h(r.pn) + '</td><td><b>' + n(r.need) + '</b></td><td>' + n(r.wip) + '</td><td><b>' + n(r.surt) + '</b></td><td class="dlc-mut">' + h(r.folios.slice(-2).join(', ') || '—') + '</td><td><span class="dlc-pill ' + est[0] + '">' + h(est[1]) + '</span></td>' +
+          (puede ? '<td>' + (r.surt > 0 ? '<input id="dlc-rq-' + ix + '" class="dlc-in" type="number" min="1" max="' + mx + '" value="' + mx + '" style="width:90px"> <button class="dlc-b" onclick="dlc.surtirReq(' + ix + ')">📦 ' + h(T('plSurtirBtn')) + '</button>' : '—') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table></div>' +
       '<div style="margin:.4rem 0"><b>' + h(T('plPickTot')) + ':</b> ' + (pend.length ? Object.keys(tot).map(function (k) { return chip(colorDe(k)) + h(k) + ' = <b>' + n(tot[k]) + '</b>' + (tot[k] > whDe(k) ? ' <span class="dlc-pill crit">' + h(T('plSinAlm')) + '</span>' : ''); }).join(' &nbsp; ') : '<span class="dlc-pill ok">' + h(T('plPickOk')) + '</span>') + '</div>' +
-      (pend.length ? '<button class="dlc-b2" onclick="dlc.imprimirSurtido()">🖨 ' + h(T('plImprimir')) + '</button>' : '');
+      PARTES.filter(function (p) { return rows.sinReq[p.pn] > 0; }).map(function (p) { return '<div class="dlc-mut">' + chip(p.color) + h(p.pn) + ': ' + n(rows.sinReq[p.pn]) + ' ' + h(T('plSinReq')) + '</div>'; }).join('') +
+      (pend.length && !puede ? '<div class="dlc-mut">' + h(T('plSoloAlm')) + '</div>' : '') +
+      (pend.length ? '<button class="dlc-b2" style="margin-top:.4rem" onclick="dlc.imprimirSurtido()">🖨 ' + h(T('plImprimir')) + '</button>' : '');
     return '<details class="dlc-det" open><summary>📦 ' + h(T('plPick')) + ' (' + pend.length + '/' + rows.length + ')</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('plPickNota')) + '</div>' + body + '</div></details>';
+  }
+  var surtiendo = false;
+  async function surtirReq(ix) {
+    var r = (st.pick || [])[ix]; if (!r || surtiendo) return;
+    if (!puedeSurtir()) { say(T('sinPermiso')); return; }
+    if (Date.now() >= st.ok) { bloquear(); return; }
+    extender();
+    var q = parseInt(val('dlc-rq-' + ix), 10) || 0;
+    if (q <= 0 || q > r.surt) { say(T('invalida')); return; }
+    var rr = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas())[r.pn];
+    if (q > rr.p3wh.item) { say(T('sinStock', { n: n(Math.max(0, rr.p3wh.item)) })); return; }
+    surtiendo = true;
+    try {
+      var ref = await refAuto('ISSUE');
+      await salidaIMS(r.pn, q, ref);
+      var m = { tipo: 'ISSUE', pn: r.pn, color: colorDe(r.pn), qty: q, ref: ref, nota: '', usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3', req: r.key, gh90: r.gh, maq: r.maq, modelo: r.modelo };
+      var d = await db.collection(COL_MOV).add(m); m.id = d.id; st.movs.unshift(m);
+      audit('MOV_ISSUE', r.pn + ' x' + q + ' · ' + ref + ' · REQ ' + r.gh + ' ' + r.maq);
+      say(T('okReg'), true);
+    } catch (e) { say(T('err') + e.message); console.error(e); }
+    surtiendo = false; pintar();
   }
   function imprimirSurtido() {
     var pend = (st.pick || []).filter(function (r) { return r.surt > 0; }), w = window.open('', '_blank'); if (!w) return;
@@ -5440,11 +5496,12 @@ window.generarReporteFecha = generarReporteFecha;
     html += '<div class="dlc-mut" style="margin-bottom:.5rem">' + h(T('plNota')) + '<br>' + h(T('plPub')) + ': <b>' + h(pl.pubMs ? new Date(pl.pubMs).toLocaleString('es-MX', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—') + '</b>' +
       (pl.archivo ? ' · ' + h(pl.archivo) : '') + ' <span class="dlc-pill ' + (viejo ? 'warn' : 'ok') + '">' + h(viejo ? T('plViejo') : T('plAlDia')) + '</span></div>';
     if (!pl.items.length) return html + '<div class="card dlc-mut">' + h(T('plSinDlc')) + '</div>';
-    var nec = {}, hoy = {};
+    var nec = {}, hoy = {}, pickTot = {};
+    pickRows(res).forEach(function (r) { pickTot[r.pn] = (pickTot[r.pn] || 0) + r.surt; });
     pl.items.forEach(function (i) { nec[i.pn] = (nec[i.pn] || 0) + i.pend; hoy[i.pn] = (hoy[i.pn] || 0) + i.hoy; });
     html += '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plCable')) + '</th><th>' + h(T('plNec')) + '</th><th>' + h(T('plHoy')) + '</th><th>' + h(T('plWip')) + '</th><th>' + h(T('plWh')) + '</th><th>' + h(T('plFalta')) + ' / ' + h(T('plSob')) + '</th><th>' + h(T('plSurtir')) + '</th></tr></thead><tbody>' +
       PARTES.filter(function (p) { return nec[p.pn] != null; }).map(function (p) {
-        var r = res[p.pn], wip = r.p3wip.item, wh = r.p3wh.item, need = nec[p.pn], dif = wip + wh - need, surt = Math.max(0, (hoy[p.pn] || 0) - wip);
+        var r = res[p.pn], wip = r.p3wip.item, wh = r.p3wh.item, need = nec[p.pn], dif = wip + wh - need, surt = pickTot[p.pn] || 0;
         return '<tr><td>' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</td><td><b>' + n(need) + '</b></td><td>' + n(hoy[p.pn] || 0) + '</td><td>' + n(wip) + '</td><td>' + n(wh) + '</td>' +
           '<td><span class="dlc-pill ' + (dif >= 0 ? 'ok' : 'crit') + '">' + (dif >= 0 ? h(T('plSob')) + ' ' + n(dif) : h(T('plFalta')) + ' ' + n(-dif)) + '</span></td>' +
           '<td>' + (surt ? '<span class="dlc-pill ' + (surt > wh ? 'crit' : 'warn') + '">' + n(surt) + '</span>' : '<span class="dlc-pill ok">' + h(T('plOk')) + '</span>') + '</td></tr>';
@@ -5792,7 +5849,7 @@ window.generarReporteFecha = generarReporteFecha;
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
     registrar: registrar, anular: anular, ajustar: ajustar, eliminar: eliminar, eliminarSel: eliminarSel, selTodos: selTodos, saldoInicial: saldoInicial, guardarSamsung: guardarSamsung, mapGuardar: mapGuardar, mapQuitar: mapQuitar, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
     qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrAbrir: qrAbrir, qrAjAbrir: qrAjAbrir, plegarTodo: plegarTodo, embAbrir: embAbrir, embPick: embPick, embRegistrar: embRegistrar, embGuardarGI: embGuardarGI, embRecibir: embRecibir, usarWipSamsung: usarWipSamsung, etapaAbrir: etapaAbrir, tipoPick: tipoPick, fPartePick: fPartePick, qrPartePick: qrPartePick, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
-    imprimirSurtido: imprimirSurtido,
+    imprimirSurtido: imprimirSurtido, surtirReq: surtirReq,
     _calcular: calcular
   };
   if (typeof document !== 'undefined' && document.addEventListener) {
