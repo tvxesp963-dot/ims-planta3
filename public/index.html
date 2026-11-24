@@ -4899,9 +4899,8 @@ window.generarReporteFecha = generarReporteFecha;
     var altas = [];
     for (var i = 0; i < PARTES.length; i++) {
       var pn = PARTES[i].pn, it = Math.max(0, parseInt(val('dlc-o-' + pn + '-item'), 10) || 0), bu = Math.max(0, parseInt(val('dlc-o-' + pn + '-bundle'), 10) || 0);
-      if (!it && !bu) continue;
-      if (st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) { say(T('openYa', { p: pn })); return; }
-      altas.push({ pn: pn, it: it, bu: bu });
+      if (st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) { if (it || bu) { say(T('openYa', { p: pn })); return; } continue; }   // ya tiene saldo: solo se avisa si intentan capturar otro
+      altas.push({ pn: pn, it: it, bu: bu });   // acepta 0: arrancar con el WIP vacío también activa el control
     }
     if (!altas.length) { say(T('openVacio')); return; }
     if (!confirm(T('openConf'))) return;
