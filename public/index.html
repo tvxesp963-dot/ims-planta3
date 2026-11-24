@@ -4092,7 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v24nov-1440';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v24nov-1450';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -5643,8 +5643,7 @@ window.generarReporteFecha = generarReporteFecha;
     extender();
     var q = parseInt(val('dlc-rt-' + ix), 10) || 0;
     if (q <= 0 || q > Math.min(r.wip, r.issued)) { say(T('invalida')); return; }
-    var rr = calcular(st.movs, imsStock(), hoyISO(), st.p4, imsSalidas())[r.pn];
-    if (q > rr.p3wip.item) { say(T('sinStock', { n: n(Math.max(0, rr.p3wip.item)) })); return; }
+    // el límite es lo recibido y surtido de ESTA requisición (arriba); el WIP total puede estar en 0 por el arranque en cero
     surtiendo = true;
     if (!(await pedirPw(T('plConfRet', { q: n(q), c: r.pn + ' · ' + colorTxt(colorDe(r.pn)), g: r.gh, m: r.maq })))) { surtiendo = false; return; }
     try {
