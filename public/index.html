@@ -5353,7 +5353,7 @@ window.generarReporteFecha = generarReporteFecha;
      Solo lectura del plan: no modifica nada del plan ni del BOM.
      =================================================================== */
   Object.assign(I18N.es, {
-    plPick: 'Lista de surtido para Almacén (hoy)', plPickNota: 'Sale sola del plan: lo que cada línea necesita hoy menos el cable que ya está suelto en WIP P3. Al hacer la Salida o Traslado en el IMS P3, la lista se actualiza sola.', plYaWip: 'Ya en WIP', plPickOk: 'Todo lo de hoy ya está surtido en WIP P3.', plImprimir: 'Imprimir lista', plPickTot: 'Total a surtir',
+    plPick: 'Lista de surtido para Almacén (según el plan)', plPickNota: 'Sale sola del plan: todo lo pendiente desde que se requiere hasta que queda surtido, por fecha de envío. El cable suelto en WIP P3 cubre las primeras líneas; lo demás está por surtir. Al hacer la Salida o Traslado en el IMS P3, la lista se actualiza sola.', plYaWip: 'Ya en WIP', plPickOk: 'Todo el plan ya está surtido en WIP P3.', plPorSurtir: 'Por surtir', plSinAlm: '⚠ Almacén P3 no alcanza', plImprimir: 'Imprimir lista', plPickTot: 'Total a surtir',
     plT: 'Requerimiento de cable DLC según el plan de producción', plNota: 'Sale del plan de Bundle P3 publicado por el BOM Simulator. Cada bundle (GH90) lleva 1 cable DLC y el BOM define cuál (negro o blanco). «Necesario» = bundles pendientes del plan.',
     plSin: 'Todavía no hay plan de Bundle publicado en el BOM Simulator.', plSinDlc: 'El plan publicado no tiene bundles con cable DLC (o el BOM aún no relaciona sus GH90 con un GH39).', plErr: 'No se pudo leer el plan: ',
     plPub: 'Plan publicado', plViejo: '⚠ Más de 12 h sin republicar', plAlDia: 'Al día', plMaq: 'Línea', plBundle: 'Bundle', plModelo: 'Modelo', plEnvio: 'Envío', plPend: 'Pendiente', plCable: 'Cable DLC',
@@ -5361,7 +5361,7 @@ window.generarReporteFecha = generarReporteFecha;
     plManual: 'Sin plan (captura manual)', plPara: 'Ensamblar para (plan)', plNoCab: 'Ese bundle no tiene cable DLC en el BOM', plLoteMal: 'El cable de este lote ({c}) no corresponde al bundle {g} (le toca {e})', plNota2: 'El cable ya metido en bundles terminados no cuenta como a granel.'
   });
   Object.assign(I18N.en, {
-    plPick: 'Pick list for Warehouse (today)', plPickNota: 'It comes from the plan: what each line needs today minus the loose cable already in WIP P3. When the Issue or Transfer is done in IMS P3, the list updates by itself.', plYaWip: 'Already in WIP', plPickOk: 'Everything for today is already issued to WIP P3.', plImprimir: 'Print list', plPickTot: 'Total to issue',
+    plPick: 'Pick list for Warehouse (per plan)', plPickNota: 'It comes from the plan: everything pending from the moment it is required until it is issued, by ship date. Loose cable already in WIP P3 covers the first lines; the rest is still to issue. When the Issue or Transfer is done in IMS P3, the list updates by itself.', plYaWip: 'Already in WIP', plPickOk: 'The whole plan is already issued to WIP P3.', plPorSurtir: 'To issue', plSinAlm: '⚠ P3 Warehouse is short', plImprimir: 'Print list', plPickTot: 'Total to issue',
     plT: 'DLC cable requirement from the production plan', plNota: 'Comes from the P3 Bundle plan published by the BOM Simulator. Each bundle (GH90) takes 1 DLC cable and the BOM defines which one (black or white). “Required” = pending bundles in the plan.',
     plSin: 'There is no Bundle plan published in the BOM Simulator yet.', plSinDlc: 'The published plan has no bundles with DLC cable (or the BOM does not link their GH90 to a GH39 yet).', plErr: 'Could not read the plan: ',
     plPub: 'Plan published', plViejo: '⚠ More than 12 h without republishing', plAlDia: 'Up to date', plMaq: 'Line', plBundle: 'Bundle', plModelo: 'Model', plEnvio: 'Ship date', plPend: 'Pending', plCable: 'DLC cable',
@@ -5369,7 +5369,7 @@ window.generarReporteFecha = generarReporteFecha;
     plManual: 'No plan (manual entry)', plPara: 'Assemble for (plan)', plNoCab: 'That bundle has no DLC cable in the BOM', plLoteMal: 'This lot’s cable ({c}) does not belong to bundle {g} (it needs {e})', plNota2: 'Cable already inside finished bundles does not count as bulk.'
   });
   Object.assign(I18N.ko, {
-    plPick: '창고 불출 목록 (오늘)', plPickNota: '계획에서 자동 생성: 각 라인의 오늘 필요량에서 P3 WIP에 이미 있는 벌크 케이블을 뺀 값입니다. IMS P3에서 출고 또는 이동을 하면 목록이 자동 갱신됩니다.', plYaWip: 'WIP 보유', plPickOk: '오늘 필요한 케이블이 모두 P3 WIP에 불출되었습니다.', plImprimir: '목록 인쇄', plPickTot: '총 불출량',
+    plPick: '창고 불출 목록 (계획 기준)', plPickNota: '계획에서 자동 생성: 필요 시점부터 불출 완료까지의 모든 잔량을 출하일 순으로 표시합니다. P3 WIP에 이미 있는 벌크 케이블이 앞 라인부터 충당하고 나머지는 불출 대상입니다. IMS P3에서 출고 또는 이동을 하면 목록이 자동 갱신됩니다.', plYaWip: 'WIP 보유', plPickOk: '계획 전체가 P3 WIP에 불출되었습니다.', plPorSurtir: '불출 대상', plSinAlm: '⚠ P3 창고 재고 부족', plImprimir: '목록 인쇄', plPickTot: '총 불출량',
     plT: '생산 계획 기준 DLC 케이블 소요량', plNota: 'BOM Simulator가 게시한 P3 번들 계획에서 가져옵니다. 번들(GH90) 1개에 DLC 케이블 1개가 들어가며, 어떤 케이블(검정/흰색)인지는 BOM이 정합니다. «필요» = 계획의 잔여 번들.',
     plSin: 'BOM Simulator에 게시된 번들 계획이 아직 없습니다.', plSinDlc: '게시된 계획에 DLC 케이블이 있는 번들이 없습니다(또는 BOM에서 GH90과 GH39가 아직 연결되지 않았습니다).', plErr: '계획을 읽을 수 없습니다: ',
     plPub: '계획 게시', plViejo: '⚠ 12시간 이상 재게시 안 됨', plAlDia: '최신', plMaq: '라인', plBundle: '번들', plModelo: '모델', plEnvio: '출하일', plPend: '잔량', plCable: 'DLC 케이블',
@@ -5401,13 +5401,14 @@ window.generarReporteFecha = generarReporteFecha;
   }
   function fEnv(f) { if (!f) return '—'; var d = new Date(f + 'T00:00:00'); return isNaN(d) ? '—' : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }); }
 
-  // Lista de surtido: reparte el cable suelto de WIP P3 entre las líneas por fecha y deja lo que falta por entregar
+  // Lista de surtido: todo el pendiente del plan (desde que se requiere hasta quedar surtido).
+  // El cable suelto en WIP P3 cubre las líneas por fecha de envío; lo que sobra por cubrir es lo que Almacén debe entregar.
   function pickRows(res) {
     var pl = st.plan, rows = [], rest = {};
     PARTES.forEach(function (p) { rest[p.pn] = Math.max(0, res[p.pn].p3wip.item); });
-    (pl && pl.items || []).filter(function (i) { return i.hoy > 0; }).forEach(function (i) {
-      var cub = Math.min(i.hoy, rest[i.pn] || 0); rest[i.pn] = (rest[i.pn] || 0) - cub;
-      rows.push({ maq: i.maq, modelo: i.modelo, gh: i.gh, pn: i.pn, need: i.hoy, wip: cub, surt: i.hoy - cub });
+    (pl && pl.items || []).filter(function (i) { return i.pend > 0; }).forEach(function (i) {
+      var cub = Math.min(i.pend, rest[i.pn] || 0); rest[i.pn] = (rest[i.pn] || 0) - cub;
+      rows.push({ maq: i.maq, modelo: i.modelo, gh: i.gh, pn: i.pn, fecha: i.fecha, need: i.pend, wip: cub, surt: i.pend - cub });
     });
     return rows;
   }
@@ -5415,17 +5416,19 @@ window.generarReporteFecha = generarReporteFecha;
     var rows = pickRows(res); st.pick = rows;
     var pend = rows.filter(function (r) { return r.surt > 0; }), tot = {};
     pend.forEach(function (r) { tot[r.pn] = (tot[r.pn] || 0) + r.surt; });
-    var body = pend.length ? '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plCable')) + '</th><th>' + h(T('plHoy')) + '</th><th>' + h(T('plYaWip')) + '</th><th>' + h(T('plSurtir')) + '</th></tr></thead><tbody>' +
-      pend.map(function (r) { return '<tr><td>' + h(r.maq) + '</td><td>' + h(r.modelo) + '</td><td>' + h(r.gh) + '</td><td>' + chip(colorDe(r.pn)) + h(r.pn) + '</td><td>' + n(r.need) + '</td><td>' + n(r.wip) + '</td><td><span class="dlc-pill warn">' + n(r.surt) + '</span></td></tr>'; }).join('') +
-      '</tbody></table></div><div style="margin:.4rem 0"><b>' + h(T('plPickTot')) + ':</b> ' + Object.keys(tot).map(function (k) { return chip(colorDe(k)) + h(k) + ' = <b>' + n(tot[k]) + '</b>'; }).join(' &nbsp; ') + '</div>' +
-      '<button class="dlc-b2" onclick="dlc.imprimirSurtido()">🖨 ' + h(T('plImprimir')) + '</button>'
-      : '<div class="dlc-al ok">' + h(T('plPickOk')) + '</div>';
-    return '<details class="dlc-det" open><summary>📦 ' + h(T('plPick')) + ' (' + pend.length + ')</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('plPickNota')) + '</div>' + body + '</div></details>';
+    var whDe = function (pn) { return res[pn].p3wh.item; };
+    var body = '<div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('plEnvio')) + '</th><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plCable')) + '</th><th>' + h(T('plPend')) + '</th><th>' + h(T('plYaWip')) + '</th><th>' + h(T('plSurtir')) + '</th><th>' + h(T('estado')) + '</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr><td>' + h(fEnv(r.fecha)) + '</td><td>' + h(r.maq) + '</td><td>' + h(r.modelo) + '</td><td>' + h(r.gh) + '</td><td>' + chip(colorDe(r.pn)) + h(r.pn) + '</td><td><b>' + n(r.need) + '</b></td><td>' + n(r.wip) + '</td><td><b>' + n(r.surt) + '</b></td><td><span class="dlc-pill ' + (r.surt > 0 ? 'warn' : 'ok') + '">' + h(r.surt > 0 ? T('plPorSurtir') : T('plOk')) + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div style="margin:.4rem 0"><b>' + h(T('plPickTot')) + ':</b> ' + (pend.length ? Object.keys(tot).map(function (k) { return chip(colorDe(k)) + h(k) + ' = <b>' + n(tot[k]) + '</b>' + (tot[k] > whDe(k) ? ' <span class="dlc-pill crit">' + h(T('plSinAlm')) + '</span>' : ''); }).join(' &nbsp; ') : '<span class="dlc-pill ok">' + h(T('plPickOk')) + '</span>') + '</div>' +
+      (pend.length ? '<button class="dlc-b2" onclick="dlc.imprimirSurtido()">🖨 ' + h(T('plImprimir')) + '</button>' : '');
+    return '<details class="dlc-det" open><summary>📦 ' + h(T('plPick')) + ' (' + pend.length + '/' + rows.length + ')</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('plPickNota')) + '</div>' + body + '</div></details>';
   }
   function imprimirSurtido() {
     var pend = (st.pick || []).filter(function (r) { return r.surt > 0; }), w = window.open('', '_blank'); if (!w) return;
-    w.document.write('<html><head><meta charset="utf-8"><title>' + h(T('plPick')) + '</title><style>body{font-family:Arial,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #444;padding:6px 8px;font-size:13px;text-align:left}th{background:#1e3a5f;color:#fff}</style></head><body><h2>' + h(T('plPick')) + '</h2><div>' + new Date().toLocaleString('es-MX') + '</div><br><table><thead><tr><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plCable')) + '</th><th>' + h(T('plSurtir')) + '</th></tr></thead><tbody>' +
-      pend.map(function (r) { return '<tr><td>' + h(r.maq) + '</td><td>' + h(r.modelo) + '</td><td>' + h(r.gh) + '</td><td>' + h(r.pn + ' · ' + colorTxt(colorDe(r.pn))) + '</td><td><b>' + n(r.surt) + '</b></td></tr>'; }).join('') + '</tbody></table></body></html>');
+    w.document.write('<html><head><meta charset="utf-8"><title>' + h(T('plPick')) + '</title><style>body{font-family:Arial,sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #444;padding:6px 8px;font-size:13px;text-align:left}th{background:#1e3a5f;color:#fff}</style></head><body><h2>' + h(T('plPick')) + '</h2><div>' + new Date().toLocaleString('es-MX') + '</div><br><table><thead><tr><th>' + h(T('plEnvio')) + '</th><th>' + h(T('plMaq')) + '</th><th>' + h(T('plModelo')) + '</th><th>' + h(T('plBundle')) + '</th><th>' + h(T('plCable')) + '</th><th>' + h(T('plSurtir')) + '</th></tr></thead><tbody>' +
+      pend.map(function (r) { return '<tr><td>' + h(fEnv(r.fecha)) + '</td><td>' + h(r.maq) + '</td><td>' + h(r.modelo) + '</td><td>' + h(r.gh) + '</td><td>' + h(r.pn + ' · ' + colorTxt(colorDe(r.pn))) + '</td><td><b>' + n(r.surt) + '</b></td></tr>'; }).join('') + '</tbody></table></body></html>');
     w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
   }
   function planCard(res) {
