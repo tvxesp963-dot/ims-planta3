@@ -4092,7 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v25nov-1400';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v25nov-1420';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4701,7 +4701,7 @@ window.generarReporteFecha = generarReporteFecha;
     // detalle por bundle GH90: mismas columnas y nombres que las tarjetas del recorrido (el renglón Total de cada cable cuadra con ellas)
     if (st.p4.ok) {
       var detH = '', st3 = {}, trm = transitosP3();
-      if (typeof items !== 'undefined' && items) items.forEach(function (i) { var k = nk(i.pn); st3[k] = (st3[k] || 0) + (parseFloat(i.actual) || 0); });
+      if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (esManualB(i.desc)) return; var k = nk(i.pn); st3[k] = (st3[k] || 0) + (parseFloat(i.actual) || 0); });
       keys.forEach(function (pn) {
         var padres = Object.keys(st.p4.mapa).filter(function (g) { return st.p4.mapa[g].indexOf(pn) >= 0; }).sort();
         var tS = 0, tL = 0, tP = 0, t3 = 0;
