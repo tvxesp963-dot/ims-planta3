@@ -4092,7 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v25nov-1325';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v25nov-1345';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4294,6 +4294,8 @@ window.generarReporteFecha = generarReporteFecha;
     return { alm: Math.round(al * fac), lin: Math.round(ln * fac), prev: Math.max(0, d.stock - eff), recS: recS, eff: eff };
   }
   // Tránsito P3 → P4: bundles que el IMS P4 recibió desde que arrancó el control y cuya Salida del IMS P3 aún no se completa. Se cuentan una sola vez, en P4.
+  // El tránsito solo cuenta entradas de PALLETS P3 recibidas en P4 y Salidas de P3 desde que existe el descuento automático (no retroactivo; las capturas manuales en P4 no son tránsito)
+  var TR_DESDE = Date.parse('2026-11-25T01:00:00.000Z');
   function transitosP3() {
     var out = {};
     if (typeof items === 'undefined' || !items || !st.p4 || !st.p4.ok) return out;
@@ -4302,10 +4304,10 @@ window.generarReporteFecha = generarReporteFecha;
     items.forEach(function (i) {
       var k = String(i.pn || '').trim().toUpperCase(); if (!dg[k]) return;
       s3[k] = (s3[k] || 0) + (parseFloat(i.actual) || 0);
-      (i.historial || []).forEach(function (hh) { if (hh.tipo === 'S' && !hh.anulado && fMs(hh.fecha) > fMs(dg[k])) o3[k] = (o3[k] || 0) + (Number(hh.qty) || 0); });
+      (i.historial || []).forEach(function (hh) { if (hh.tipo === 'S' && !hh.anulado && fMs(hh.fecha) >= TR_DESDE) o3[k] = (o3[k] || 0) + (Number(hh.qty) || 0); });
     });
     Object.keys(s3).forEach(function (k) {
-      var d = st.p4.det[k], recS = 0; (d.recL || []).forEach(function (e) { if (fMs(e.f) > fMs(dg[k])) recS += e.q; });
+      var d = st.p4.det[k], recS = 0; (d.recT || []).forEach(function (e) { if (fMs(e.f) > fMs(dg[k])) recS += e.q; });
       var t = Math.min(s3[k], d.stock, recS, Math.max(0, recS - (o3[k] || 0)));
       if (t > 0) out[k] = t;
     });
@@ -4513,7 +4515,7 @@ window.generarReporteFecha = generarReporteFecha;
         if (cablePns.indexOf(pn) >= 0) { var wl = enLinea(o.historial, act); p.almItem[pn] = (p.almItem[pn] || 0) + act - wl; p.linItem[pn] = (p.linItem[pn] || 0) + wl; if (money(o.precio) > 0) p.precio[pn] = money(o.precio); return; }
         if (p.mapa[pn] && (!hayBundleDesc[pn] || /BUNDLE/i.test(o.desc || ''))) {
           var wb2 = enLinea(o.historial, act); p.mapa[pn].forEach(function (c) { p.alm[c] = (p.alm[c] || 0) + act - wb2; p.lin[c] = (p.lin[c] || 0) + wb2; });
-          var d0 = p.det[pn] || (p.det[pn] = { stock: 0, lin: 0, lineas: [], rec: 0, recL: [] });   // detalle por bundle para comparar contra el Excel del IMS P4
+          var d0 = p.det[pn] || (p.det[pn] = { stock: 0, lin: 0, lineas: [], rec: 0, recL: [], recT: [] });   // detalle por bundle para comparar contra el Excel del IMS P4
           d0.stock += act; d0.lin += wb2; d0.lineas.push({ desc: String(o.desc || ''), stock: act });
           (function () {   // entradas recibidas en P4 (para el tránsito P3 → P4); una entrada revertida en P4 (REVERSIÓN · pallet) deja de contar
             var es = [], rv = [];
@@ -4524,7 +4526,7 @@ window.generarReporteFecha = generarReporteFecha;
             rv.sort(function (a, b) { return fMs(a.f) - fMs(b.f); }).forEach(function (r) {
               for (var i = es.length - 1; i >= 0; i--) { if (!es[i].x && es[i].q === r.q && fMs(es[i].f) <= fMs(r.f)) { es[i].x = 1; break; } }
             });
-            es.forEach(function (e) { if (!e.x) { d0.rec += e.q; d0.recL.push({ f: e.f, q: e.q }); } });
+            es.forEach(function (e) { if (!e.x) { d0.rec += e.q; d0.recL.push({ f: e.f, q: e.q }); if (/(^|[-_])P3[-_]/.test(e.r) && fMs(e.f) >= TR_DESDE) d0.recT.push({ f: e.f, q: e.q }); } });
           })();
         }
       });
