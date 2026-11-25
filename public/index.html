@@ -4092,7 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v25nov-1345';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v25nov-1400';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4296,13 +4296,14 @@ window.generarReporteFecha = generarReporteFecha;
   // Tránsito P3 → P4: bundles que el IMS P4 recibió desde que arrancó el control y cuya Salida del IMS P3 aún no se completa. Se cuentan una sola vez, en P4.
   // El tránsito solo cuenta entradas de PALLETS P3 recibidas en P4 y Salidas de P3 desde que existe el descuento automático (no retroactivo; las capturas manuales en P4 no son tránsito)
   var TR_DESDE = Date.parse('2026-11-25T01:00:00.000Z');
+  function esManualB(d) { return /MANUAL/i.test(String(d || '')); }   // 'MANUAL BUNDLE' es el instructivo, no lleva cable ni se recibe como bundle: no cuenta en el DLC
   function transitosP3() {
     var out = {};
     if (typeof items === 'undefined' || !items || !st.p4 || !st.p4.ok) return out;
     var s3 = {}, o3 = {}, dg = {};
     Object.keys(st.p4.det || {}).forEach(function (g) { var d = ((st.p4.mapa || {})[g] || []).map(function (cb) { return desdeCable(st.movs, cb); }).filter(Boolean).sort()[0]; if (d) dg[g] = d; });
     items.forEach(function (i) {
-      var k = String(i.pn || '').trim().toUpperCase(); if (!dg[k]) return;
+      var k = String(i.pn || '').trim().toUpperCase(); if (!dg[k] || esManualB(i.desc)) return;
       s3[k] = (s3[k] || 0) + (parseFloat(i.actual) || 0);
       (i.historial || []).forEach(function (hh) { if (hh.tipo === 'S' && !hh.anulado && fMs(hh.fecha) >= TR_DESDE) o3[k] = (o3[k] || 0) + (Number(hh.qty) || 0); });
     });
@@ -4328,7 +4329,7 @@ window.generarReporteFecha = generarReporteFecha;
     });
     items.forEach(function (i) {
       var gh = String(i.pn || '').trim().toUpperCase();
-      if (gh.indexOf('GH90') !== 0) return;
+      if (gh.indexOf('GH90') !== 0 || esManualB(i.desc)) return;
       var cbs = (((st.p4 || {}).mapa || {})[gh]) || [];   // solo bundles ligados directo al cable por el BOM (los mismos del detalle por bundle)
       cbs.forEach(function (cb) {
         var o = out[cb]; if (!o) return;
@@ -4507,13 +4508,13 @@ window.generarReporteFecha = generarReporteFecha;
       var hayBundleDesc = {};
       inv.forEach(function (d) {
         var o = d.data(), pn = String(o.pn || '').trim().toUpperCase();
-        if (p.mapa[pn] && /BUNDLE/i.test(o.desc || '')) hayBundleDesc[pn] = true;
+        if (p.mapa[pn] && /BUNDLE/i.test(o.desc || '') && !esManualB(o.desc)) hayBundleDesc[pn] = true;
       });
       inv.forEach(function (d) {
         var o = d.data(), pn = String(o.pn || '').trim().toUpperCase();
         var act = parseFloat(o.actual != null ? o.actual : o.Current) || 0;
         if (cablePns.indexOf(pn) >= 0) { var wl = enLinea(o.historial, act); p.almItem[pn] = (p.almItem[pn] || 0) + act - wl; p.linItem[pn] = (p.linItem[pn] || 0) + wl; if (money(o.precio) > 0) p.precio[pn] = money(o.precio); return; }
-        if (p.mapa[pn] && (!hayBundleDesc[pn] || /BUNDLE/i.test(o.desc || ''))) {
+        if (p.mapa[pn] && !esManualB(o.desc) && (!hayBundleDesc[pn] || /BUNDLE/i.test(o.desc || ''))) {
           var wb2 = enLinea(o.historial, act); p.mapa[pn].forEach(function (c) { p.alm[c] = (p.alm[c] || 0) + act - wb2; p.lin[c] = (p.lin[c] || 0) + wb2; });
           var d0 = p.det[pn] || (p.det[pn] = { stock: 0, lin: 0, lineas: [], rec: 0, recL: [], recT: [] });   // detalle por bundle para comparar contra el Excel del IMS P4
           d0.stock += act; d0.lin += wb2; d0.lineas.push({ desc: String(o.desc || ''), stock: act });
