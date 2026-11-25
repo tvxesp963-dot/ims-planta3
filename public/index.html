@@ -4092,7 +4092,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v24nov-1730';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v24nov-1750';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4311,6 +4311,11 @@ window.generarReporteFecha = generarReporteFecha;
     });
     return out;
   }
+  window.dlcDiag = function (gh) {   // diagnóstico del tránsito de un bundle (consola: copy(dlcDiag('GH90-72688C')))
+    var k = String(gh || '').trim().toUpperCase(), p3 = [];
+    (typeof items !== 'undefined' && items ? items : []).forEach(function (i) { if (String(i.pn || '').trim().toUpperCase() === k) p3.push({ desc: i.desc, actual: i.actual, hist: (i.historial || []).map(function (x) { return [x.tipo, x.qty, x.fecha, x.ref, x.anulado ? 'anulado' : '']; }) }); });
+    return JSON.stringify({ gh: k, tr: transitosP3()[k] || 0, abre: (((st.p4 || {}).mapa || {})[k] || []).map(function (cb) { return desdeCable(st.movs, cb); }), p4: ((st.p4 || {}).det || {})[k] || null, p3: p3 });
+  };
   function bundlesIMS3() {
     var out = {};
     if (typeof items === 'undefined' || !items || !st.movs) return out;
@@ -4514,10 +4519,10 @@ window.generarReporteFecha = generarReporteFecha;
             var es = [], rv = [];
             (o.historial || []).forEach(function (hh) {
               if (hh.tipo === 'E') es.push({ f: String(hh.fecha || ''), q: Number(hh.qty) || 0, r: String(hh.ref || '').trim().toUpperCase() });
-              else if (hh.tipo === 'A' && hh.signo === '-' && /^REVERSI[ÓO]N\s*·/i.test(String(hh.ref || ''))) rv.push({ f: String(hh.fecha || ''), id: String(hh.ref).split('·')[1].trim().toUpperCase(), q: Number(hh.qty) || 0 });
+              else if (hh.tipo === 'A' && hh.signo === '-' && /^REVERSI[ÓO]N\s*·/i.test(String(hh.ref || ''))) rv.push({ f: String(hh.fecha || ''), q: Number(hh.qty) || 0 });
             });
             rv.sort(function (a, b) { return fMs(a.f) - fMs(b.f); }).forEach(function (r) {
-              for (var i = es.length - 1; i >= 0; i--) { if (!es[i].x && es[i].r === r.id && es[i].q === r.q && fMs(es[i].f) <= fMs(r.f)) { es[i].x = 1; break; } }
+              for (var i = es.length - 1; i >= 0; i--) { if (!es[i].x && es[i].q === r.q && fMs(es[i].f) <= fMs(r.f)) { es[i].x = 1; break; } }
             });
             es.forEach(function (e) { if (!e.x) { d0.rec += e.q; d0.recL.push({ f: e.f, q: e.q }); } });
           })();
