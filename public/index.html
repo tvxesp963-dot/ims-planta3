@@ -4666,7 +4666,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v25nov-1745';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v26nov-0915';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4705,7 +4705,7 @@ window.generarReporteFecha = generarReporteFecha;
       aNeg: 'Saldo negativo en {l} ({p}): revisar movimientos.', aDif: 'Diferencia de {n} pzas contra Samsung en {p} ({l}).', aPend: '{n} bundles en WIP P3 sin enviar a P4 por más de {h} h ({p}).', aPrecio: '{p} no tiene precio en el IMS P3: no suma a la exposición.',
       secRoles: 'Roles que pueden intentar entrar: Admin y Operador. Viewer ni ve la pestaña. Aun así piden la contraseña.', secPw: 'Contraseña (solo Admin la crea y cambia). Se guarda cifrada con SHA-256 y sal, nunca en texto.',
       secLock: 'Bloqueo: 10 min sin uso. 5 intentos fallidos bloquean 5 min.', cambiarPw: 'Cambiar contraseña', pwCambiada: 'Contraseña actualizada',
-      guardarSam: 'Guardar reporte Samsung', samTog: 'Comparación contra Samsung', samEstOn: 'ENCENDIDA', samEstOff: 'APAGADA', samBtnOn: 'Encender comparación Samsung', samBtnOff: 'Apagar comparación Samsung', samConfOn: '¿Encender la comparación contra Samsung? Volverán la tabla de conciliación y las alertas de diferencias.', samConfOff: '¿Apagar la comparación contra Samsung? Se ocultan la tabla de conciliación y las alertas de diferencias.', samOnOk: 'Comparación Samsung encendida', samOffOk: 'Comparación Samsung apagada', samOk: 'Reporte Samsung guardado', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
+      guardarSam: 'Guardar reporte Samsung', arrT: 'Inicio del sistema DLC (solo Admin)', arrAct: 'Arranque actual', arrBtn: 'Iniciar / reprogramar', arrNo: 'Sistema DLC no iniciado', arrDesde: 'inicia', arrNota: 'Surtir, recibir y requisiciones están bloqueados hasta la fecha de arranque. Almacén P3, Almacén P4 y ShipQR muestran el inventario real.', arrAun: 'El sistema DLC aún no ha iniciado. Solo el Admin define la fecha y hora de arranque.', arrFalta: 'Elige fecha y hora de arranque', arrPw: 'Iniciar el sistema DLC: escribe la contraseña', arrConf: 'Iniciar el sistema DLC el {f}?\n\nDesde esa fecha y hora se cuentan WIP y bundles. Lo anterior no cuenta.', arrOk: 'Arranque del DLC guardado', samTog: 'Comparación contra Samsung', samEstOn: 'ENCENDIDA', samEstOff: 'APAGADA', samBtnOn: 'Encender comparación Samsung', samBtnOff: 'Apagar comparación Samsung', samConfOn: '¿Encender la comparación contra Samsung? Volverán la tabla de conciliación y las alertas de diferencias.', samConfOff: '¿Apagar la comparación contra Samsung? Se ocultan la tabla de conciliación y las alertas de diferencias.', samOnOk: 'Comparación Samsung encendida', samOffOk: 'Comparación Samsung apagada', samOk: 'Reporte Samsung guardado', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
       imsNota: 'Entradas y Salidas se hacen en el IMS P3 como siempre: la Entrada suma al Almacén P3 y la Salida o el Traslado a una línea/zona pasa el cable a WIP P3 (a partir del saldo inicial). En IMS P4, el Traslado a una línea/zona cuenta como WIP P4.', aSinOpen: 'Falta el saldo inicial de {p}: las salidas del IMS no se cuentan en WIP P3 hasta capturarlo.', excelOk: 'Excel generado', p4Ok: 'Conectado a IMS P4 y ShipQR · actualizado {h}', p4Err: 'No se pudo leer IMS P4 / ShipQR: {e}. Lo de P4 no es confiable.', p4SinMapa: 'El BOM no relaciona ningún bundle GH90 con el cable DLC. Carga el BOM en el BOM Simulator.', p4Nota: 'Almacén P4 = bundles en IMS P4. WIP P4 = trasladados a línea. Pre-Kit P4 = producto terminado enviado por el MES a ShipQR, aún sin embarcar.', sinMov: 'Sin movimientos todavía.', sumTotal: 'Total', itemBundle: 'A granel / Bundle', mapT: 'Relación ShipQR → Bundle (solo partes que no están en el BOM)', mapNota: 'Normalmente es automático: el BOM ya dice qué bundle lleva cada pieza. Aquí solo aparecen partes de ShipQR que no existen en el BOM; relaciónalas una sola vez con su bundle GH90 y quedan guardadas.', mapPart: 'Parte en ShipQR', mapQty: 'Cantidad en piso', mapElige: '— Elige bundle —', mapGuardar: 'Guardar', mapQuitar: 'Quitar', mapOk: 'Relación guardada', mapSin: 'Todos los pallets de ShipQR sin embarcar ya están relacionados con un bundle.', mapManual: 'Relaciones guardadas', mapElegir: 'Elige el bundle GH90', mapSoloAdmin: 'Solo el administrador puede relacionar.'
     },
     en: {
@@ -4730,7 +4730,7 @@ window.generarReporteFecha = generarReporteFecha;
       aNeg: 'Negative balance at {l} ({p}): review movements.', aDif: '{n} pcs difference against Samsung for {p} ({l}).', aPend: '{n} bundles in WIP P3 not shipped to P4 for over {h} h ({p}).', aPrecio: '{p} has no price in IMS P3: not added to the exposure.',
       secRoles: 'Roles that can try to enter: Admin and Operator. Viewer does not even see the tab. They still need the password.', secPw: 'Password (only Admin creates and changes it). Stored encrypted with SHA-256 and salt, never as plain text.',
       secLock: 'Lock: 10 min without use. 5 failed attempts lock it for 5 min.', cambiarPw: 'Change password', pwCambiada: 'Password updated',
-      guardarSam: 'Save Samsung report', samTog: 'Samsung comparison', samEstOn: 'ON', samEstOff: 'OFF', samBtnOn: 'Turn Samsung comparison ON', samBtnOff: 'Turn Samsung comparison OFF', samConfOn: 'Turn the Samsung comparison ON? The reconciliation table and difference alerts will return.', samConfOff: 'Turn the Samsung comparison OFF? The reconciliation table and difference alerts will be hidden.', samOnOk: 'Samsung comparison on', samOffOk: 'Samsung comparison off', samOk: 'Samsung report saved', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
+      guardarSam: 'Save Samsung report', arrT: 'DLC system start (Admin only)', arrAct: 'Current start', arrBtn: 'Start / reschedule', arrNo: 'DLC system not started', arrDesde: 'starts', arrNota: 'Issuing, receiving and requisitions are locked until the start date. P3 Warehouse, P4 Warehouse and ShipQR show real inventory.', arrAun: 'The DLC system has not started yet. Only the Admin sets the start date and time.', arrFalta: 'Choose a start date and time', arrPw: 'Start the DLC system: enter the password', arrConf: 'Start the DLC system on {f}?\n\nFrom that date and time WIP and bundles are counted. Earlier activity does not count.', arrOk: 'DLC start saved', samTog: 'Samsung comparison', samEstOn: 'ON', samEstOff: 'OFF', samBtnOn: 'Turn Samsung comparison ON', samBtnOff: 'Turn Samsung comparison OFF', samConfOn: 'Turn the Samsung comparison ON? The reconciliation table and difference alerts will return.', samConfOff: 'Turn the Samsung comparison OFF? The reconciliation table and difference alerts will be hidden.', samOnOk: 'Samsung comparison on', samOffOk: 'Samsung comparison off', samOk: 'Samsung report saved', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
       imsNota: 'Entries and Exits are done in IMS P3 as usual: an Entry adds to P3 Warehouse and an Exit or a Transfer to a line/zone moves the cable to WIP P3 (from the opening balance on). In IMS P4, a Transfer to a line/zone counts as WIP P4.', aSinOpen: 'Opening balance missing for {p}: IMS exits are not counted in WIP P3 until it is entered.', excelOk: 'Excel generated', p4Ok: 'Connected to IMS P4 and ShipQR · updated {h}', p4Err: 'Could not read IMS P4 / ShipQR: {e}. P4 data is not reliable.', p4SinMapa: 'The BOM does not link any GH90 bundle to the DLC cable. Load the BOM in the BOM Simulator.', p4Nota: 'P4 Warehouse = bundles in IMS P4. WIP P4 = moved to the line. P4 Pre-Kit = finished product sent by the MES to ShipQR, not yet shipped.', sinMov: 'No movements yet.', sumTotal: 'Total', itemBundle: 'Bulk / Bundle', mapT: 'ShipQR → Bundle link (only parts not in the BOM)', mapNota: 'Normally this is automatic: the BOM already says which bundle carries each part. Only ShipQR parts that do not exist in the BOM appear here; link them once to their GH90 bundle and they are saved.', mapPart: 'Part in ShipQR', mapQty: 'Qty on floor', mapElige: '— Choose bundle —', mapGuardar: 'Save', mapQuitar: 'Remove', mapOk: 'Link saved', mapSin: 'All unshipped ShipQR pallets are already linked to a bundle.', mapManual: 'Saved links', mapElegir: 'Choose the GH90 bundle', mapSoloAdmin: 'Only the administrator can link.'
     },
     ko: {
@@ -4755,7 +4755,7 @@ window.generarReporteFecha = generarReporteFecha;
       aNeg: '{l} 마이너스 잔량 ({p}): 이동 내역을 확인하세요.', aDif: '{p} ({l}) 삼성 대비 {n}개 차이.', aPend: 'P3 WIP 번들 {n}개가 {h}시간 넘게 P4로 출고되지 않았습니다 ({p}).', aPrecio: '{p} 은(는) IMS P3에 단가가 없어 노출 금액에 합산되지 않습니다.',
       secRoles: '접근 시도 가능 권한: 관리자와 작업자. Viewer는 탭이 보이지 않습니다. 그래도 비밀번호가 필요합니다.', secPw: '비밀번호(관리자만 생성·변경). SHA-256과 솔트로 암호화하여 저장하며 평문은 저장하지 않습니다.',
       secLock: '잠금: 10분간 미사용. 5회 실패 시 5분간 잠금.', cambiarPw: '비밀번호 변경', pwCambiada: '비밀번호가 변경되었습니다',
-      guardarSam: '삼성 보고서 저장', samTog: '삼성 비교', samEstOn: '켜짐', samEstOff: '꺼짐', samBtnOn: '삼성 비교 켜기', samBtnOff: '삼성 비교 끄기', samConfOn: '삼성 비교를 켜시겠습니까? 조정 표와 차이 경고가 다시 표시됩니다.', samConfOff: '삼성 비교를 끄시겠습니까? 조정 표와 차이 경고가 숨겨집니다.', samOnOk: '삼성 비교가 켜졌습니다', samOffOk: '삼성 비교가 꺼졌습니다', samOk: '삼성 보고서가 저장되었습니다', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
+      guardarSam: '삼성 보고서 저장', arrT: 'DLC 시스템 시작 (관리자 전용)', arrAct: '현재 시작', arrBtn: '시작 / 일정 변경', arrNo: 'DLC 시스템 시작 전', arrDesde: '시작', arrNota: '시작 시점 전까지 출고, 입고, 요청이 잠깁니다. P3 창고, P4 창고, ShipQR은 실제 재고를 표시합니다.', arrAun: 'DLC 시스템이 아직 시작되지 않았습니다. 관리자만 시작 일시를 정합니다.', arrFalta: '시작 일시를 선택하세요', arrPw: 'DLC 시스템 시작: 비밀번호를 입력하세요', arrConf: '{f} 에 DLC 시스템을 시작할까요?\n\n그 이후의 WIP와 번들만 집계됩니다.', arrOk: 'DLC 시작이 저장되었습니다', samTog: '삼성 비교', samEstOn: '켜짐', samEstOff: '꺼짐', samBtnOn: '삼성 비교 켜기', samBtnOff: '삼성 비교 끄기', samConfOn: '삼성 비교를 켜시겠습니까? 조정 표와 차이 경고가 다시 표시됩니다.', samConfOff: '삼성 비교를 끄시겠습니까? 조정 표와 차이 경고가 숨겨집니다.', samOnOk: '삼성 비교가 켜졌습니다', samOffOk: '삼성 비교가 꺼졌습니다', samOk: '삼성 보고서가 저장되었습니다', samNota: 'Inventory W/H · WIP Plant 3 · Finished good Plant 4',
       imsNota: '입고와 출고는 평소처럼 IMS P3에서 합니다. 입고는 P3 창고에 더해지고 출고 또는 라인/구역으로의 이동은 케이블을 P3 WIP로 옮깁니다(기초 재고 이후). IMS P4에서는 라인/구역으로의 이동이 P4 WIP입니다.', aSinOpen: '{p}의 기초 재고가 없습니다. 입력하기 전까지 IMS 출고는 P3 WIP에 반영되지 않습니다.', excelOk: 'Excel이 생성되었습니다', p4Ok: 'IMS P4 및 ShipQR 연결됨 · 업데이트 {h}', p4Err: 'IMS P4 / ShipQR을 읽을 수 없습니다: {e}. P4 데이터는 신뢰할 수 없습니다.', p4SinMapa: 'BOM에 DLC 케이블과 연결된 GH90 번들이 없습니다. BOM Simulator에서 BOM을 불러오세요.', p4Nota: 'P4 창고 = IMS P4의 번들. P4 WIP = 라인으로 이동. P4 프리킷 = MES가 ShipQR로 보낸 완제품(아직 출고 전).', sinMov: '아직 이동 내역이 없습니다.', sumTotal: '합계', itemBundle: '벌크 / 번들', mapT: 'ShipQR → 번들 연결 (BOM에 없는 품번만)', mapNota: '보통은 자동입니다. BOM이 어떤 번들에 어떤 품목이 들어가는지 이미 알려줍니다. BOM에 없는 ShipQR 품번만 여기에 표시되며, GH90 번들과 한 번 연결하면 저장됩니다.', mapPart: 'ShipQR 품번', mapQty: '현장 수량', mapElige: '— 번들 선택 —', mapGuardar: '저장', mapQuitar: '삭제', mapOk: '연결이 저장되었습니다', mapSin: '출하 전 ShipQR 팔레트가 모두 번들과 연결되어 있습니다.', mapManual: '저장된 연결', mapElegir: 'GH90 번들을 선택하세요', mapSoloAdmin: '관리자만 연결할 수 있습니다.'
     }
   };
@@ -4895,12 +4895,15 @@ window.generarReporteFecha = generarReporteFecha;
     (typeof items !== 'undefined' && items ? items : []).forEach(function (i) { if (String(i.pn || '').trim().toUpperCase() === k) p3.push({ desc: i.desc, actual: i.actual, hist: (i.historial || []).map(function (x) { return [x.tipo, x.qty, x.fecha, x.ref, x.anulado ? 'anulado' : '']; }) }); });
     return JSON.stringify({ gh: k, tr: transitosP3()[k] || 0, abre: (((st.p4 || {}).mapa || {})[k] || []).map(function (cb) { return desdeCable(st.movs, cb); }), p4: ((st.p4 || {}).det || {})[k] || null, p3: p3 });
   };
+  var DLC_ARRANQUE = null;   // v41: fecha/hora de arranque del DLC, la define solo el admin (config 'arranque'). Sin fecha = sistema no iniciado
+  function dlcActivo() { return !!DLC_ARRANQUE && Date.now() >= Date.parse(DLC_ARRANQUE); }
+  function sinIniciar() { if (dlcActivo()) return false; say(T('arrAun')); return true; }
   function bundlesIMS3() {
     var out = {};
     if (typeof items === 'undefined' || !items || !st.movs) return out;
     PARTES.forEach(function (p) {
       var ap = st.movs.filter(function (m) { return m.tipo === 'OPEN' && m.pn === p.pn && !m.anulado; });
-      if (!ap.length) return;                                   // sin saldo inicial no se deriva nada (se queda lo capturado)
+      if (!ap.length) { out[p.pn] = { desde: DLC_ARRANQUE || '9999-12-31T00:00:00.000Z', stock: 0, entr: 0, ult: 0, tr: 0, virt: true }; return; }   // v39: sin saldo inicial arranca limpio en la fecha de reinicio
       out[p.pn] = { desde: ap.map(function (m) { return m.fecha; }).sort()[0], stock: 0, entr: 0, ult: 0, tr: 0 };
     });
     items.forEach(function (i) {
@@ -4909,10 +4912,12 @@ window.generarReporteFecha = generarReporteFecha;
       var cbs = (((st.p4 || {}).mapa || {})[gh]) || [];   // solo bundles ligados directo al cable por el BOM (los mismos del detalle por bundle)
       cbs.forEach(function (cb) {
         var o = out[cb]; if (!o) return;
-        o.stock += parseFloat(i.actual) || 0;
+        var stI = parseFloat(i.actual) || 0, netoI = 0;
         (i.historial || []).forEach(function (hh) {
-          if (hh.tipo === 'E' && String(hh.fecha) > o.desde) { o.entr += Number(hh.qty) || 0; o.ult = Math.max(o.ult, Date.parse(hh.fecha) || 0); }
+          if (hh.tipo === 'E' && String(hh.fecha) > o.desde) { o.entr += Number(hh.qty) || 0; netoI += Number(hh.qty) || 0; o.ult = Math.max(o.ult, Date.parse(hh.fecha) || 0); }
+          else if (o.virt && hh.tipo === 'S' && !hh.anulado && String(hh.fecha) > o.desde) netoI -= Number(hh.qty) || 0;
         });
+        o.stock += o.virt ? Math.max(0, Math.min(stI, netoI)) : stI;   // arranque limpio: solo cuenta el bundle que entra desde el reinicio
       });
     });
     var trm = transitosP3();
@@ -5158,6 +5163,7 @@ window.generarReporteFecha = generarReporteFecha;
       st.samsung = s.exists ? (s.data().partes || null) : null;
       SAMSUNG_ON = !!(s.exists && s.data().activo === true);
     } catch (e) { st.samsung = null; }
+    try { var ar = await db.collection(COL_CFG).doc('arranque').get(); DLC_ARRANQUE = (ar.exists && ar.data().fecha) ? ar.data().fecha : null; } catch (e) { DLC_ARRANQUE = null; }
     try { var rc = await db.collection(COL_CFG).doc('reporte').get(); st.correos = (rc.exists && Array.isArray(rc.data().correos)) ? rc.data().correos : []; } catch (e) { st.correos = []; }
     if (esAdmin()) {
       try {
@@ -5187,6 +5193,9 @@ window.generarReporteFecha = generarReporteFecha;
     });
 
     var html = '';
+    // v41: estado de arranque del sistema DLC
+    if (!dlcActivo()) html += '<div class="card" style="border-color:rgba(255,179,0,.6);margin-bottom:.6rem"><b>⏸️ ' + h(T('arrNo')) + '</b>' + (DLC_ARRANQUE ? ' · ' + h(T('arrDesde')) + ' <b>' + h(new Date(DLC_ARRANQUE).toLocaleString()) + '</b>' : '') + '<div class="dlc-mut">' + h(T('arrNota')) + '</div></div>';
+    if (esAdmin()) html += '<div class="card dlc-form" style="grid-template-columns:1fr auto auto;align-items:end;margin-bottom:.6rem"><div><div class="dlc-mut">🚀 ' + h(T('arrT')) + (DLC_ARRANQUE ? ' — ' + h(T('arrAct')) + ': <b>' + h(new Date(DLC_ARRANQUE).toLocaleString()) + '</b>' : '') + '</div><input type="datetime-local" id="dlc-arr-f" class="dlc-in" style="width:100%"></div><button class="dlc-b" onclick="dlc.arranqueGuardar()">' + h(T('arrBtn')) + '</button></div>';
     // encabezado
     html += '<div class="dlc-top"><div><div class="dlc-h1">💾 ' + h(T('title')) + '</div><div class="dlc-mut">' + h(T('sub')) + ' · <b>' + APP_VER + '</b></div></div>' +
       '<div class="dlc-acts"><button class="dlc-b2" onclick="dlc.plegarTodo(false)">⊟ ' + h(T('plegarT')) + '</button><button class="dlc-b2" onclick="dlc.plegarTodo(true)">⊞ ' + h(T('desplegarT')) + '</button><button class="dlc-b2" onclick="dlc.refrescar()">↻ ' + h(T('refrescar')) + '</button>' +
@@ -5216,7 +5225,7 @@ window.generarReporteFecha = generarReporteFecha;
       if (r.enRuta > 0 && antiguedadTransito(pn) > TRANS_H * 3600000) al.push({ s: 'warn', t: T('aTransWip', { n: n(r.enRuta), h: TRANS_H, p: pn }) });
     });
     sinPrecio.forEach(function (pn) { al.push({ s: 'warn', t: T('aPrecio', { p: pn }) }); });
-    keys.forEach(function (pn) { if (!st.movs.some(function (m) { return m.tipo === 'OPEN' && m.pn === pn && !m.anulado; })) al.push({ s: 'warn', t: T('aSinOpen', { p: pn }) }); });
+    /* v39: arranque limpio sin saldo inicial: ya no se alerta */
     embarquesDe(st.movs).forEach(function (e) { if (!e.solicitud && keys.indexOf(e.pn) >= 0) al.push({ s: 'warn', t: T('aGI', { h: e.hawb || e.cont || e.emb }) }); });
     if (!st.p4.ok) al.unshift({ s: 'crit', t: T('p4Err', { e: st.p4.err || '—' }) });
     else if (!st.p4.nMapa) al.unshift({ s: 'warn', t: T('p4SinMapa') });
@@ -5557,6 +5566,17 @@ window.generarReporteFecha = generarReporteFecha;
     } catch (e) { say(T('err') + e.message); console.error(e); }
   }
 
+  async function arranqueGuardar() {
+    if (!esAdmin()) { say(T('soloAdmin')); return; }
+    var v = val('dlc-arr-f'); if (!v) { say(T('arrFalta')); return; }
+    var d = new Date(v); if (isNaN(d.getTime())) { say(T('arrFalta')); return; }
+    if (!(await pedirPw(T('arrPw')))) return;
+    if (!confirm(T('arrConf', { f: d.toLocaleString() }))) return;
+    try {
+      await db.collection(COL_CFG).doc('arranque').set({ fecha: d.toISOString(), por: user.name, at: new Date().toISOString() });
+      DLC_ARRANQUE = d.toISOString(); audit('DLC_ARRANQUE', d.toISOString()); say(T('arrOk'), true); pintar();
+    } catch (e) { say(T('err') + e.message); }
+  }
   async function toggleSamsung() {
     if (!esAdmin()) { say(T('soloAdmin')); return; }
     var nuevo = !SAMSUNG_ON;
@@ -6227,6 +6247,7 @@ window.generarReporteFecha = generarReporteFecha;
   function recDiaTodos() { recDia = ''; var d = el('dlc-rec-d'); if (d) d.value = ''; recFiltro(); }
   var surtiendo = false;
   async function surtirReq(ix) {
+    if (sinIniciar()) return;
     var r = (st.pick || [])[ix]; if (!r || surtiendo) return;
     if (!puedeSurtir()) { say(T('sinPermiso')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
@@ -6332,6 +6353,7 @@ window.generarReporteFecha = generarReporteFecha;
   }
   async function fpAbrir() {
     if (!puedeVer()) { say(T('sinPermiso')); return; }
+    if (sinIniciar()) return;
     if (Date.now() >= st.ok) { bloquear(); return; }
     extender();
     // Acceso restringido: sin contraseña no se abre el formulario
@@ -6615,6 +6637,7 @@ window.generarReporteFecha = generarReporteFecha;
     }, 250);
   }
   async function qrEscanear(tipo) {
+    if (sinIniciar()) return;
     if (!user || ROLES_ENTRAR.indexOf(user.role) < 0 || !puedeVer()) { say(T('sinPermiso')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
     qrCerrar(); qrEstilo(); qrS.tipo = tipo; qrS.last = ''; qrHechos = [];
@@ -6785,7 +6808,7 @@ window.generarReporteFecha = generarReporteFecha;
   W.dlc = {
     crearPrimera: crearPrimera, desbloquear: desbloquear, bloquear: function () { bloquear(false); },
     refrescar: function () { st.cargado = false; pintar(); }, filtrar: function (f) { st.filtro = f; pintar(); },
-    registrar: registrar, anular: anular, ajustar: ajustar, eliminar: eliminar, eliminarSel: eliminarSel, selTodos: selTodos, saldoInicial: saldoInicial, toggleSamsung: toggleSamsung, guardarSamsung: guardarSamsung, mapGuardar: mapGuardar, mapQuitar: mapQuitar, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
+    registrar: registrar, anular: anular, ajustar: ajustar, eliminar: eliminar, eliminarSel: eliminarSel, selTodos: selTodos, saldoInicial: saldoInicial, arranqueGuardar: arranqueGuardar, toggleSamsung: toggleSamsung, guardarSamsung: guardarSamsung, mapGuardar: mapGuardar, mapQuitar: mapQuitar, cambiarPw: cambiarPw, excel: excel, enviar: enviar, destinatarios: destinatarios, cambioTipo: cambioTipo,
     qrEnsamblar: qrEnsamblar, qrPlanSel: qrPlanSel, qrEscanear: qrEscanear, qrAbrir: qrAbrir, qrAjAbrir: qrAjAbrir, plegarTodo: plegarTodo, embAbrir: embAbrir, embPick: embPick, embRegistrar: embRegistrar, embGuardarGI: embGuardarGI, embRecibir: embRecibir, usarWipSamsung: usarWipSamsung, etapaAbrir: etapaAbrir, tipoPick: tipoPick, fPartePick: fPartePick, qrPartePick: qrPartePick, qrEtiqueta: etiquetaLote, qrConfirmar: qrConfirmar, qrCancelar: qrCancelar, qrCerrar: qrCerrar,
     imprimirSurtido: imprimirSurtido, surtirReq: surtirReq, devolverReq: devolverReq, cancelarGI: cancelarGI, fpAbrir: fpAbrir, fpCrear: fpCrear, fpCancelar: fpCancelar, histReq: histReq, recFiltro: recFiltro, recImprimir: recImprimir, recDiaTodos: recDiaTodos,
     _calcular: calcular
