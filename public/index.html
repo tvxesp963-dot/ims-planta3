@@ -4666,7 +4666,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v26nov-0925';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v26nov-0940';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4898,6 +4898,12 @@ window.generarReporteFecha = generarReporteFecha;
   var DLC_ARRANQUE = null;   // v41: fecha/hora de arranque del DLC, la define solo el admin (config 'arranque'). Sin fecha = sistema no iniciado
   function dlcActivo() { return !!DLC_ARRANQUE && Date.now() >= Date.parse(DLC_ARRANQUE); }
   function sinIniciar() { if (dlcActivo()) return false; say(T('arrAun')); return true; }
+  // v44: stock de bundle de P3 que cuenta el DLC = solo lo que entra después del arranque (neto de salidas), nunca más que el stock real
+  function stockFlujoP3(i) {
+    var desde = DLC_ARRANQUE || '9999-12-31T00:00:00.000Z', stI = parseFloat(i.actual) || 0, neto = 0;
+    (i.historial || []).forEach(function (hh) { if (hh.anulado || !(String(hh.fecha) > desde)) return; if (hh.tipo === 'E') neto += Number(hh.qty) || 0; else if (hh.tipo === 'S') neto -= Number(hh.qty) || 0; });
+    return Math.max(0, Math.min(stI, neto));
+  }
   function bundlesIMS3() {
     var out = {};
     if (typeof items === 'undefined' || !items || !st.movs) return out;
@@ -5232,7 +5238,7 @@ window.generarReporteFecha = generarReporteFecha;
     // Cuadre interno del sistema (IMS P3 + IMS P4 + ShipQR), sin Excel
     keys.forEach(function (pn) {
       var r = res[pn], k = nk(pn), regs = [];
-      if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (nk(i.pn) === k) regs.push(n(parseFloat(i.actual) || 0)); });
+      if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (nk(i.pn) === k && (parseFloat(i.actual) || 0) !== 0) regs.push(n(parseFloat(i.actual) || 0)); });
       if (regs.length > 1) al.push({ s: 'warn', t: T('cDup', { p: pn, n: regs.length, l: regs.join(' + ') }) });
       LOCS.forEach(function (l) { if (r[l].item < 0 || r[l].bundle < 0) al.push({ s: 'crit', t: T('cNeg', { p: pn, l: T(locKey(l)), v: n(r[l].item + r[l].bundle) }) }); });
       if (st.p4.ok) {
@@ -5240,7 +5246,7 @@ window.generarReporteFecha = generarReporteFecha;
         pad.forEach(function (g) {
           var e4 = p4Ef(g, pn, st.p4, st.movs), sk = e4.alm + e4.lin, s3 = 0;
           tS += sk; tP += st.p4.detPiso[g] || 0;
-          if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (nk(i.pn) === nk(g)) s3 += parseFloat(i.actual) || 0; });
+          if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (nk(i.pn) === nk(g)) s3 += stockFlujoP3(i); });
           if (sk > 0 && s3 - (trA[g] || 0) > 0) dbl.push(g);
         });
         var c4 = r.p4ims.bundle + r.p4wip.bundle;
@@ -5287,7 +5293,7 @@ window.generarReporteFecha = generarReporteFecha;
     // detalle por bundle GH90: mismas columnas y nombres que las tarjetas del recorrido (el renglón Total de cada cable cuadra con ellas)
     if (st.p4.ok) {
       var detH = '', st3 = {}, trm = transitosP3();
-      if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (esManualB(i.desc)) return; var k = nk(i.pn); st3[k] = (st3[k] || 0) + (parseFloat(i.actual) || 0); });
+      if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (esManualB(i.desc)) return; var k = nk(i.pn); st3[k] = (st3[k] || 0) + stockFlujoP3(i); });   // v44: solo bundle desde el arranque
       keys.forEach(function (pn) {
         var padres = Object.keys(st.p4.mapa).filter(function (g) { return st.p4.mapa[g].indexOf(pn) >= 0; }).sort();
         var tS = 0, tL = 0, tP = 0, t3 = 0;
