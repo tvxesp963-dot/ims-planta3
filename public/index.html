@@ -4666,7 +4666,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v25nov-1730';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v25nov-1745';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -6330,10 +6330,12 @@ window.generarReporteFecha = generarReporteFecha;
     var mt = Object.keys(s.mot).filter(function (k) { return s.mot[k] > 0; }).map(function (k) { return h(T('fpM_' + k)) + ' <b>' + n(s.mot[k]) + '</b>'; }).join(' · ');
     return '<div class="dlc-mut" style="margin:.4rem 0"><b>' + h(T('fpResT')) + ':</b> ' + h(T('fpResPlan')) + ' <b>' + n(s.plan) + '</b> · ' + h(T('fpTag')) + ' <b>' + n(s.fp) + '</b> (' + pct.toFixed(1) + '%)' + (mt ? '<br>' + mt : '') + '</div>';
   }
-  function fpAbrir() {
+  async function fpAbrir() {
     if (!puedeVer()) { say(T('sinPermiso')); return; }
     if (Date.now() >= st.ok) { bloquear(); return; }
     extender();
+    // Acceso restringido: sin contraseña no se abre el formulario
+    if (!(await pedirPw('📝 ' + T('fpT')))) return;
     var old = el('dlc-fp-o'); if (old) old.remove();
     var it = (st.plan && st.plan.items) || [], ghs = {}, mqs = {};
     it.forEach(function (i) { ghs[i.gh] = 1; mqs[i.maq] = 1; });
@@ -6363,7 +6365,7 @@ window.generarReporteFecha = generarReporteFecha;
     if (mot === 'otro' && !nota) { say(T('fpNotaReq')); return; }
     surtiendo = true;
     try {
-      if (!(await pedirPw(T('fpConf', { q: n(q), c: pn + ' · ' + colorTxt(colorDe(pn)), g: gh, m: maq, r: T('fpM_' + mot) })))) return;
+      if (!confirm(T('fpConf', { q: n(q), c: pn + ' · ' + colorTxt(colorDe(pn)), g: gh, m: maq, r: T('fpM_' + mot) }))) return;   // la contraseña ya se pidió al abrir
       var folio = await siguiente('REQ-FP-' + ymdLocal() + '-', 'req');
       var m = { tipo: 'REQ_FP', pn: pn, color: colorDe(pn), qty: q, ref: folio, req: folio, gh90: gh, maq: maq, motivo: mot, nota: nota, autorizo: user.name, usuario: user.name, rol: user.role, fecha: new Date().toISOString(), app: 'IMS P3' };
       var d = await db.collection(COL_MOV).add(m); m.id = d.id; st.movs.unshift(m);
