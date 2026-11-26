@@ -244,6 +244,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .ims-lang-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:2px 3px;cursor:pointer;opacity:.5;transition:all .2s;line-height:0}
 .ims-lang-btn:hover{opacity:.85;transform:scale(1.1)}
 .ims-lang-btn.active{opacity:1;border-color:var(--accent);box-shadow:0 0 6px rgba(77,166,255,.3)}
+.ba-A{background:linear-gradient(135deg,#4a3000,#d98a00);color:#fff;border:1px solid rgba(245,166,35,.3)}
+.mf.t-A::before{background:#f5a623}
+.t-A .mf-tipo{color:#f5a623}
+.bc-A{background:#d98a00;color:#fff}
+.mb-A{background:rgba(245,166,35,.14)}
 </style>
 </head>
 <body>
@@ -370,6 +375,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="ba ba-E" onclick="initMov('E');showMovGuide('E')"><div class="ba-i">⬇️</div><span id="t-btnEntrada">ENTRADA</span></button>
       <button class="ba ba-S" onclick="initMov('S');showMovGuide('S')"><div class="ba-i">⬆️</div><span id="t-btnSalida">SALIDA</span></button>
       <button class="ba ba-T" onclick="initMov('T');showMovGuide('T')"><div class="ba-i">🔀</div><span id="t-btnTraslado">TRASLADO</span></button>
+      <button class="ba ba-A" onclick="initMov('A');showMovGuide('A')"><div class="ba-i">⚖️</div><span id="t-btnAjuste">AJUSTE</span></button>
     </div>
     <!-- Guía visual de movimiento -->
     <div id="movGuide" style="display:none;margin:.4rem 0 .6rem 0;padding:9px 12px;border-radius:10px;font-size:10px;line-height:1.6;border-left:3px solid var(--accent);background:rgba(77,166,255,.06)"></div>
@@ -387,6 +393,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div style="font-size:13px;font-weight:500" id="t-escanearQR">Escanear QR del material</div>
         <div style="font-size:10px;opacity:.6;margin-top:2px" id="t-tocaActivar">Toca para activar la cámara</div>
       </div>
+      <label style="display:block;text-align:center;font-size:12px;color:var(--accent);cursor:pointer;margin-top:-.2rem;margin-bottom:.4rem">🖼️ Leer QR desde una foto
+        <input type="file" accept="image/*" style="display:none" onchange="leerQRFoto(this)">
+      </label>
     </div>
     <div class="sw"><input class="si" id="movS" style="text-transform:uppercase" placeholder="O busca el Part Number..." data-t-ph="ph_buscaPN" oninput="this.value=this.value.toUpperCase();renderMovList()" ><span class="si-ic">🔍</span></div>
     <div id="movList" style="max-height:160px;overflow-y:auto;margin-bottom:.7rem"></div>
@@ -412,6 +421,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <option value="Bandita">🏭 Bandita</option>
           <option value="Cuarentena" id="t-optCuarentena">⚠️ Cuarentena</option>
         </select>
+      </div>
+      <div id="mfAJ" style="display:none">
+        <select class="loc-sel" id="mfAjDir">
+          <option value="-" id="t-ajRestar">➖ Restar del stock (el sistema tiene de más)</option>
+          <option value="+" id="t-ajSumar">➕ Sumar al stock (el sistema tiene de menos)</option>
+        </select>
+        <input class="ref-in" id="mfMotivo" autocomplete="off" placeholder="Motivo del ajuste (obligatorio)" data-t-ph="ph_motivoAjuste">
       </div>
       <input class="ref-in" id="mfRef" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" placeholder="Referencia / OC (opcional)" data-t-ph="ph_referencia">
       <button class="btn-conf" id="mfBtn" onclick="doMov()"><span id="t-btnConfirmar">✓ CONFIRMAR</span></button>
@@ -443,11 +459,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 
   <div id="pgHist" class="page">
-    <div class="ftabs">
-      <div class="ft on" onclick="setHistF('TODOS',this)" id="t-histTodos">Todos</div>
-      <div class="ft" onclick="setHistF('E',this)"><span id="t-histEntradas">⬇️ Entradas</span></div>
-      <div class="ft" onclick="setHistF('S',this)"><span id="t-histSalidas">⬆️ Salidas</span></div>
-      <div class="ft" onclick="setHistF('T',this)"><span id="t-histTraslados">🔀 Traslados</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.7rem">
+      <div class="ftabs" style="margin-bottom:0">
+        <div class="ft on" onclick="setHistF('TODOS',this)" id="t-histTodos">Todos</div>
+        <div class="ft" onclick="setHistF('E',this)"><span id="t-histEntradas">⬇️ Entradas</span></div>
+        <div class="ft" onclick="setHistF('S',this)"><span id="t-histSalidas">⬆️ Salidas</span></div>
+        <div class="ft" onclick="setHistF('T',this)"><span id="t-histTraslados">🔀 Traslados</span></div>
+        <div class="ft" onclick="setHistF('A',this)"><span id="t-histAjustes">⚖️ Ajustes</span></div>
+      </div>
+      <button onclick="exportHistExcel()" style="padding:7px 12px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">📊 Excel</button>
     </div>
     <div class="sw"><input class="si" id="histS" style="text-transform:uppercase" placeholder="Buscar por PN..." data-t-ph="ph_buscarPNhist" oninput="this.value=this.value.toUpperCase();renderHist()" ><span class="si-ic">🔍</span></div>
     <div id="histList"></div>
@@ -478,6 +498,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="pgAdmin" class="page">
     <div class="sh" id="t-shAdmin">Administración</div>
     <div class="ag">
+      <div class="ac" onclick="abrirLiberarPallets()" style="border-color:rgba(255,179,0,.5)"><div class="ac-i">🔓</div><div class="ac-l" id="t-acLibPal">Liberar pallets</div><div class="ac-s" id="t-acLibPalSub">Revertir recepción</div></div>
       <div class="ac" onclick="abrirConfigMonitor()" style="border-color:rgba(226,75,74,.4)"><div class="ac-i">⚙️</div><div class="ac-l" id="t-acStockMin">Stock mínimo</div><div class="ac-s" id="t-acStockMinSub">Configurar límite crítico</div></div>
       <div class="ac" onclick="exportCSV()"><div class="ac-i">📊</div><div class="ac-l" id="t-acCSV">Exportar CSV</div><div class="ac-s" id="t-acCSVSub">Inventario completo</div></div>
       <div class="ac" onclick="showKPIs()"><div class="ac-i">📈</div><div class="ac-l">KPIs</div><div class="ac-s" id="t-acKPIsSub">Métricas período</div></div>
@@ -576,7 +597,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <button class="btn-conf bc-E" onclick="doAddPN()" id="t-btnAgregarPN2">+ Agregar PN</button>
     </div>
-    <div class="sh" id="t-shPendientes">Pendientes de precio</div>
+    <div class="sh" style="display:flex;justify-content:space-between;align-items:center"><span id="t-shPendientes">Pendientes de precio</span><button onclick="exportPendientesPrecio()" style="background:rgba(255,179,0,.15);border:1px solid rgba(255,179,0,.4);border-radius:6px;color:var(--amber);font-size:10px;font-weight:600;padding:4px 8px;cursor:pointer"><span id="t-btnExportarPend">📥 Exportar Excel</span></button></div>
     <div class="table-w"><table class="dt"><thead><tr><th id="t-thPN2">Part Number</th><th id="t-thFam2">Fam.</th><th id="t-thStock2">Stock</th></tr></thead><tbody id="pendBody"></tbody></table></div>
   </div>
 
@@ -1281,14 +1302,380 @@ async function recargarDesdeFirebase() {
 }
 window.recargarDesdeFirebase = recargarDesdeFirebase;
 
+/* ── Protección contra fallas de red (v36, igual que IMS P4) ── */
+const TXT_NET = {
+  es:{ off:'📵 Sin conexión a internet (WiFi).\n\nNo se registró nada. Espera a tener señal y vuelve a intentar.',
+       offShort:'📵 Sin conexión: no registres movimientos hasta que regrese el WiFi',
+       tout:'⏱️ No se pudo confirmar el guardado (conexión lenta o caída).\n\nNo registres de nuevo a ciegas: recarga la página y revisa el Historial.\nSi era un pallet, escanéalo otra vez: el sistema revisa si ya se guardó y, si no, lo registra normal.',
+       rep:'🔧 Pallet {id} regularizado: estaba marcado como recibido pero sin movimiento.',
+       fail:'❌ NO se registró el movimiento.\n\n{m}\n\nVuelve a intentarlo. Avísale al administrador si se repite.' },
+  en:{ off:'📵 No internet connection (WiFi).\n\nNothing was recorded. Wait for a signal and try again.',
+       offShort:'📵 Offline: do not record movements until WiFi is back',
+       tout:'⏱️ The save could not be confirmed (slow or lost connection).\n\nDo not record again blindly: reload the page and check the History.\nIf it was a pallet, scan it again: the system checks whether it was saved and, if not, records it normally.',
+       rep:'🔧 Pallet {id} fixed: it was marked as received but had no movement.',
+       fail:'❌ The movement was NOT recorded.\n\n{m}\n\nTry again. Tell the administrator if it repeats.' },
+  ko:{ off:'📵 인터넷(WiFi) 연결이 없습니다.\n\n아무것도 기록되지 않았습니다. 신호가 돌아오면 다시 시도하세요.',
+       offShort:'📵 오프라인: WiFi가 복구될 때까지 이동을 기록하지 마세요',
+       tout:'⏱️ 저장 여부를 확인할 수 없습니다(연결이 느리거나 끊김).\n\n무작정 다시 기록하지 마세요. 페이지를 새로고침하고 이력을 확인하세요.\n팔레트였다면 다시 스캔하세요. 저장되었는지 확인하고, 아니면 정상 등록합니다.',
+       rep:'🔧 팔레트 {id} 정정됨: 입고로 표시되었지만 이동 기록이 없었습니다.',
+       fail:'❌ 이동이 기록되지 않았습니다.\n\n{m}\n\n다시 시도하세요. 반복되면 관리자에게 알리세요.' }
+};
+function _tNet(k,o){ var t=((TXT_NET[IMS_LANG]||TXT_NET.es)[k]||TXT_NET.es[k]||k); o=o||{}; Object.keys(o).forEach(function(x){ t=t.split('{'+x+'}').join(o[x]); }); return t; }
+function _conTiempo(p,ms,def){ return Promise.race([p, new Promise(function(r){ setTimeout(function(){ r(def); },ms); })]); }
+window.addEventListener('offline',function(){ try{ toast(_tNet('offShort'),'err'); }catch(e){} });
+
+/* Movimiento + inventario en UNA sola operación atómica (todo o nada), con tiempo límite.
+   Las entradas por pallet usan un id fijo: un reintento no crea un segundo movimiento. */
 async function pushMov(mov) {
-  if (!db) return;
+  if (!db) return {ok:false, err:'Sin conexión a Firebase'};
   try {
-    await db.collection('planta3_movimientos').add(mov);
     const movItem = items.find(i=>i.pn===mov.pn && i.desc===mov.desc) || items.find(i=>i.pn===mov.pn);
-    if(movItem) await db.collection('planta3_inventario').doc(getDocId(mov.pn,movItem.desc)).set(movItem, {merge:true});
-  } catch(e) {}
+    const movRef = (mov.pallet && mov.rts)
+      ? db.collection('planta3_movimientos').doc(('mp_'+mov.pallet+'_'+mov.rts+'_'+mov.tipo+'_'+(movItem?getDocId(mov.pn,movItem.desc):mov.pn)).replace(/[\/\s.#\[\]]/g,'_').slice(0,500))
+      : db.collection('planta3_movimientos').doc();
+    const batch = db.batch();
+    batch.set(movRef, mov);
+    if (movItem) batch.set(db.collection('planta3_inventario').doc(getDocId(mov.pn,movItem.desc)), movItem, {merge:true});
+    const trabajo = batch.commit().then(function(){ return {ok:true}; }).catch(function(e){ console.error('pushMov:', e); return {ok:false, err:(e&&e.message)?e.message:String(e)}; });
+    return await _conTiempo(trabajo, 15000, {ok:false, timeout:true, err:_tNet('tout')});
+  } catch(e) { console.error('pushMov:', e); return {ok:false, err:(e&&e.message)?e.message:String(e)}; }
 }
+
+let _reclamoTs=''; // marca de tiempo de la recepción en curso: identifica el movimiento y evita duplicados al reintentar
+let _recepcionPrevia = null; // si el pallet ya venía recibido de otra planta (ej. P3), guarda ese dato por si hay que deshacer
+async function reclamarPallet(){
+  if(!scanPallet) return {ok:true};
+  _recepcionPrevia = null; _reclamoTs = '';
+  const ref=db.collection('pallets_medio').doc(scanPallet.id);
+  const por=(user&&user.name)||'', ahora=new Date().toISOString();
+  // Auto-reparación: pallet marcado RECIBIDO en P4 (últimas 24 h) pero SIN ningún movimiento = quedó a medias por una falla de red
+  let reparar=false;
+  try{
+    const pd0=await _conTiempo(ref.get(),8000,null);
+    if(pd0 && pd0.exists){
+      const p0=pd0.data();
+      if(p0.status==='RECEIVED' && p0.recibidoEn==='P3' && !p0.vinculadoManual && p0.recibidoFecha && (Date.now()-Date.parse(p0.recibidoFecha))<86400000){
+        const q1=await db.collection('planta3_movimientos').where('pallet','==',scanPallet.id).limit(1).get();
+        const q2=q1.empty ? await db.collection('planta3_movimientos').where('ref','==',scanPallet.id).limit(1).get() : q1;
+        if(q1.empty && q2.empty) reparar=true;
+      }
+    }
+  }catch(e){ console.error('reparar-check',e); reparar=false; }
+  try{
+    const espera=new Promise(res=>setTimeout(()=>res({ok:false,msg:'Tiempo agotado verificando el pallet (red o permisos). Intenta de nuevo.'}),10000));
+    const trabajo=db.runTransaction(async tx=>{
+      const d=await tx.get(ref);
+      if(d.exists){
+        const st=d.data().status;
+        if(st==='RECEIVED' && d.data().recibidoEn && d.data().recibidoEn!=='P3'){
+          // Ya lo recibió otra planta (ej. P3) y ahora llega a P4: es una segunda entrada válida, se conserva el historial
+          const dd=d.data();
+          const hist=(dd.recepciones||[]).concat([{planta:dd.recibidoEn, por:dd.recibidoPor||'', fecha:dd.recibidoFecha||''}]);
+          _recepcionPrevia={id:scanPallet.id, recibidoEn:dd.recibidoEn, recibidoPor:dd.recibidoPor||'', recibidoFecha:dd.recibidoFecha||'', recepciones:dd.recepciones||[]};
+          tx.update(ref,{status:'RECEIVED',recibidoEn:'P3',recibidoPor:por,recibidoFecha:ahora,recepciones:hist});
+          return {ok:true,maq:dd.maquina||'',modelo:dd.modelo||'',planta:dd.planta||dd.recibidoEn||'',reRecepcion:true,desde:dd.recibidoEn};
+        }
+        if(st==='RECEIVED' && reparar){
+          tx.update(ref,{recibidoPor:por,recibidoFecha:ahora,reparado:true});
+          return {ok:true,maq:d.data().maquina||'',modelo:d.data().modelo||'',planta:d.data().planta||'',reparado:true};
+        }
+        if(st==='RECEIVED') return {ok:false,msg:'Pallet '+scanPallet.id+' YA fue escaneado'+(d.data().recibidoFecha?' el '+new Date(d.data().recibidoFecha).toLocaleString():'')+(d.data().recibidoPor?' por '+d.data().recibidoPor:'')+' — no se registra de nuevo'};
+        if(st==='VOID') return {ok:false,msg:'Pallet '+scanPallet.id+' está ANULADO — no se puede recibir'};
+        tx.update(ref,{status:'RECEIVED',recibidoEn:'P3',recibidoPor:por,recibidoFecha:ahora});
+        return {ok:true,maq:d.data().maquina||'',modelo:d.data().modelo||'',planta:d.data().planta||''};
+      } else {
+        tx.set(ref,{status:'RECEIVED',recibidoEn:'P3',recibidoPor:por,recibidoFecha:ahora,creadoDesdeIMS:true});
+      }
+      return {ok:true,maq:''};
+    });
+    const rr=await Promise.race([trabajo,espera]);
+    if(rr && rr.ok) _reclamoTs=ahora;
+    return rr;
+  }catch(e){ return {ok:false,msg:'No se pudo verificar el pallet (red o permiso): '+e.message}; }
+}
+/* Si el stock no se pudo guardar, el pallet vuelve a PENDIENTE para poder escanearlo de nuevo */
+async function liberarPallet(id){
+  try{
+    if(_recepcionPrevia && _recepcionPrevia.id===id){
+      const rp=_recepcionPrevia; _recepcionPrevia=null;
+      await db.collection('pallets_medio').doc(id).update({status:'RECEIVED', recibidoEn:rp.recibidoEn, recibidoPor:rp.recibidoPor, recibidoFecha:rp.recibidoFecha, recepciones:rp.recepciones});
+      return;
+    }
+    const D = firebase.firestore.FieldValue.delete();
+    await db.collection('pallets_medio').doc(id).update({status:'PENDING', recibidoEn:D, recibidoPor:D, recibidoFecha:D});
+  }catch(e){ console.error('liberarPallet:', e); }
+}
+
+/* 🔓 LIBERAR PALLETS (solo admin): revierte la recepción de un pallet en P3 para poder escanearlo de nuevo.
+   Útil cuando el inventario se borró o se capturó mal. Si el pallet antes lo recibió otra planta (P3), vuelve a ese estado. */
+const TXT_LP = {
+  es:{ t:'Liberar pallets', nota:'Pallets recibidos en P3 hoy. Libera solo los que YA NO tienen su inventario en el IMS (se borró o se capturó mal): si el stock sigue ahí, al escanear de nuevo se duplicaría.', hoy:'Recibidos hoy en P3', vacio:'No hay pallets recibidos hoy en P3.', porId:'O escribe el pallet (varios separados por coma o espacio)', btn:'Liberar seleccionados', btnId:'Liberar por ID', cerrar:'Cerrar', sinSel:'Selecciona o escribe al menos un pallet.', conf:'¿Liberar {n} pallet(s)? Podrán escanearse otra vez en el IMS P3.', ok:'{n} pallet(s) liberado(s)', noEx:'No existe: {id}', noRec:'{id} no está recibido en P3', soloAdmin:'Solo admin puede liberar pallets', por:'Recibió', cant:'Cant.' },
+  en:{ t:'Release pallets', nota:'Pallets received in P3 today. Release only those whose inventory is NO LONGER in the IMS (deleted or entered wrong): if the stock is still there, scanning again would duplicate it.', hoy:'Received today in P3', vacio:'No pallets received in P3 today.', porId:'Or type the pallet (several separated by comma or space)', btn:'Release selected', btnId:'Release by ID', cerrar:'Close', sinSel:'Select or type at least one pallet.', conf:'Release {n} pallet(s)? They can be scanned again in IMS P3.', ok:'{n} pallet(s) released', noEx:'Does not exist: {id}', noRec:'{id} is not received in P3', soloAdmin:'Only admin can release pallets', por:'Received by', cant:'Qty' },
+  ko:{ t:'팔레트 해제', nota:'오늘 P3에서 입고된 팔레트입니다. 재고가 IMS에서 더 이상 없는 팔레트만 해제하세요(삭제되었거나 잘못 입력됨). 재고가 남아 있으면 다시 스캔 시 중복됩니다.', hoy:'오늘 P3 입고', vacio:'오늘 P3에서 입고된 팔레트가 없습니다.', porId:'또는 팔레트를 입력(여러 개는 쉼표 또는 공백으로 구분)', btn:'선택 항목 해제', btnId:'ID로 해제', cerrar:'닫기', sinSel:'팔레트를 하나 이상 선택하거나 입력하세요.', conf:'{n}개 팔레트를 해제하시겠습니까? IMS P3에서 다시 스캔할 수 있습니다.', ok:'{n}개 팔레트 해제됨', noEx:'존재하지 않음: {id}', noRec:'{id}은(는) P3에서 입고되지 않았습니다', soloAdmin:'관리자만 팔레트를 해제할 수 있습니다', por:'입고자', cant:'수량' }
+};
+Object.assign(TXT_LP.es,{ pend:'Pallets pendientes (etiquetados, sin escanear)', pendNota:'Últimos 3 días. Anula solo los que NO son reales (prueba o ya no existen); un pallet real se escanea.', pendVacio:'No hay pallets pendientes en los últimos 3 días.', btnAnu:'Anular seleccionados', sinSelAnu:'Selecciona al menos un pallet pendiente.', confAnu:'¿Anular {n} pallet(s) pendiente(s)? Ya no se podrán recibir.', okAnu:'{n} pallet(s) anulado(s)', noPend:'{id} no está pendiente', parteL:'Parte', total:'Total pendiente' });
+Object.assign(TXT_LP.en,{ pend:'Pending pallets (labeled, not scanned)', pendNote:'Last 3 days. Void only those that are NOT real (test or no longer exist); a real pallet should be scanned.', pendVacio:'No pending pallets in the last 3 days.', btnAnu:'Void selected', sinSelAnu:'Select at least one pending pallet.', confAnu:'Void {n} pending pallet(s)? They can no longer be received.', okAnu:'{n} pallet(s) voided', noPend:'{id} is not pending', parteL:'Part', total:'Pending total' });
+Object.assign(TXT_LP.ko,{ pend:'대기 중인 팔레트 (라벨 출력, 미스캔)', pendNota:'최근 3일. 실제가 아닌 것(테스트 또는 존재하지 않음)만 무효화하세요. 실제 팔레트는 스캔해야 합니다.', pendVacio:'최근 3일간 대기 중인 팔레트가 없습니다.', btnAnu:'선택 항목 무효화', sinSelAnu:'대기 중인 팔레트를 하나 이상 선택하세요.', confAnu:'{n}개 대기 팔레트를 무효화하시겠습니까? 더 이상 입고할 수 없습니다.', okAnu:'{n}개 팔레트 무효화됨', noPend:'{id}은(는) 대기 상태가 아닙니다', parteL:'부품', total:'대기 합계' });
+async function _anularPend(id){
+  const ref=db.collection('pallets_medio').doc(id), d=await ref.get();
+  if(!d.exists || d.data().status!=='PENDING') return {ok:false,msg:_tlp('noPend',{id:id})};
+  await ref.update({status:'VOID', anuladoPor:(user&&user.name)||'', anuladoFecha:new Date().toISOString(), anuladoMotivo:'Anulado desde Liberar pallets (pendiente)'});
+  return {ok:true};
+}
+function _tlp(k,o){ let s=(TXT_LP[IMS_LANG]||TXT_LP.es)[k]||TXT_LP.es[k]||k; Object.keys(o||{}).forEach(function(x){ s=s.split('{'+x+'}').join(o[x]); }); return s; }
+function _lpEsc(x){ return String(x==null?'':x).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+async function _liberarUno(id){
+  const ref=db.collection('pallets_medio').doc(id), d=await ref.get();
+  if(!d.exists) return {ok:false,msg:_tlp('noEx',{id:id})};
+  const p=d.data(), D=firebase.firestore.FieldValue.delete(), extra={liberadoPor:(user&&user.name)||'',liberadoFecha:new Date().toISOString()};
+  if(p.status!=='RECEIVED' || p.recibidoEn!=='P3') return {ok:false,msg:_tlp('noRec',{id:id})};
+  const rec=(p.recepciones||[]).slice();
+  if(rec.length){ const u=rec.pop(); await ref.update(Object.assign({status:'RECEIVED',recibidoEn:u.planta||'',recibidoPor:u.por||'',recibidoFecha:u.fecha||'',recepciones:rec},extra)); }
+  else await ref.update(Object.assign({status:'PENDING',recibidoEn:D,recibidoPor:D,recibidoFecha:D},extra));
+  return {ok:true};
+}
+async function abrirLiberarPallets(){
+  if(!user || user.role!=='admin'){ toast(_tlp('soloAdmin'),'err'); return; }
+  const old=document.getElementById('lpOv'); if(old) old.remove();
+  const o=document.createElement('div'); o.id='lpOv';
+  o.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center';
+  o.innerHTML='<div style="background:var(--bg2,#0f1830);border:1px solid var(--border,#26345c);border-radius:14px;max-width:560px;width:94%;max-height:90vh;overflow:auto;padding:16px;color:var(--text,#e8eefc)">'+
+    '<div style="font-weight:700;font-size:1rem;margin-bottom:6px">🔓 '+_lpEsc(_tlp('t'))+'</div>'+
+    '<div style="font-size:.72rem;color:var(--text2,#9fb0d6);margin-bottom:10px">'+_lpEsc(_tlp('nota'))+'</div>'+
+    '<div style="font-size:.75rem;font-weight:700;margin-bottom:4px">'+_lpEsc(_tlp('hoy'))+'</div>'+
+    '<div id="lpLista" style="font-size:.74rem;margin-bottom:10px">…</div>'+
+    '<div style="font-size:.75rem;font-weight:700;margin:6px 0 4px;border-top:1px solid var(--border,#26345c);padding-top:10px">⏳ '+_lpEsc(_tlp('pend'))+'</div>'+
+    '<div style="font-size:.72rem;color:var(--text2,#9fb0d6);margin-bottom:6px">'+_lpEsc(_tlp('pendNota'))+'</div>'+
+    '<div id="lpPend" style="font-size:.74rem;margin-bottom:8px">…</div>'+
+    '<button id="lpBtnAnu" style="background:#c0392b;color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;margin-bottom:12px">'+_lpEsc(_tlp('btnAnu'))+'</button>'+
+    '<button id="lpBtn" style="background:var(--accent2);color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;margin-bottom:12px">'+_lpEsc(_tlp('btn'))+'</button>'+
+    '<div style="font-size:.72rem;color:var(--text2,#9fb0d6);margin-bottom:4px">'+_lpEsc(_tlp('porId'))+'</div>'+
+    '<input id="lpId" type="text" style="width:100%;margin-bottom:8px" autocomplete="off">'+
+    '<button id="lpBtnId" style="background:var(--accent2);color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;margin-right:8px">'+_lpEsc(_tlp('btnId'))+'</button><button id="lpCerrar" style="background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:9px;padding:10px 14px;font-weight:600;cursor:pointer">'+_lpEsc(_tlp('cerrar'))+'</button></div>';
+  document.body.appendChild(o);
+  o.querySelector('#lpCerrar').onclick=function(){ o.remove(); };
+  async function cargar(){
+    const box=o.querySelector('#lpLista');
+    try{
+      const ini=new Date(); ini.setHours(0,0,0,0);
+      const q=await db.collection('pallets_medio').where('recibidoFecha','>=',ini.toISOString()).limit(300).get(), rs=[];
+      q.forEach(function(d){ const p=d.data(); if(p.status==='RECEIVED' && p.recibidoEn==='P3') rs.push({id:d.id,p:p}); });
+      rs.sort(function(a,b){ return String(b.p.recibidoFecha).localeCompare(String(a.p.recibidoFecha)); });
+      box.innerHTML = rs.length ? rs.map(function(r){ const f=new Date(r.p.recibidoFecha), hh=isNaN(f)?'':f.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        return '<label style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border,#26345c)"><input type="checkbox" class="lpChk" value="'+_lpEsc(r.id)+'"><span><b>'+_lpEsc(r.id)+'</b><br><span style="color:var(--text2,#9fb0d6)">'+_lpEsc(r.p.parte||'')+' · '+_lpEsc(_tlp('cant'))+' '+_lpEsc(r.p.cantidad||r.p.qty||'')+' · '+_lpEsc(hh)+' · '+_lpEsc(_tlp('por'))+' '+_lpEsc(r.p.recibidoPor||'')+'</span></span></label>'; }).join('') : _lpEsc(_tlp('vacio'));
+    }catch(e){ box.textContent='⚠️ '+(e&&e.message?e.message:e); }
+  }
+  async function liberar(ids){
+    if(!ids.length){ toast(_tlp('sinSel'),'err'); return; }
+    if(!confirm(_tlp('conf',{n:ids.length}))) return;
+    let ok=0; const fallos=[];
+    for(const id of ids){ try{ const r=await _liberarUno(id); if(r.ok) ok++; else fallos.push(r.msg); }catch(e){ fallos.push(id+': '+(e&&e.message?e.message:e)); } }
+    if(ok) toast(_tlp('ok',{n:ok}),'ok');
+    if(fallos.length) toast(fallos.join(' | '),'err');
+    o.querySelector('#lpId').value=''; await cargar();
+  }
+  o.querySelector('#lpBtn').onclick=function(){ liberar(Array.prototype.map.call(o.querySelectorAll('.lpChk:checked'),function(c){ return c.value; })); };
+  o.querySelector('#lpBtnId').onclick=function(){ liberar(o.querySelector('#lpId').value.split(/[\s,;]+/).filter(Boolean)); };
+  async function cargarPend(){
+    const box=o.querySelector('#lpPend');
+    try{
+      const d3=new Date(); d3.setDate(d3.getDate()-3);
+      const desde=d3.getFullYear()+'-'+String(d3.getMonth()+1).padStart(2,'0')+'-'+String(d3.getDate()).padStart(2,'0');
+      const q=await db.collection('pallets_medio').where('status','==','PENDING').get(), rs=[]; let tot=0;
+      q.forEach(function(d){ const p=d.data(); if(String(p.fecha||'')<desde) return; if(p.destino && p.destino!==PALLET_DEST) return; const qy=Number(p.qty)||0; if(!p.parte||qy<=0) return; tot+=qy; rs.push({id:d.id,p:p,q:qy}); });
+      rs.sort(function(a,b){ return String(b.p.fecha||'').localeCompare(String(a.p.fecha||'')); });
+      box.innerHTML = rs.length ? ('<div style="margin-bottom:4px;color:var(--text2,#9fb0d6)">'+_lpEsc(_tlp('total'))+': <b>'+tot.toLocaleString()+'</b></div>'+rs.map(function(r){
+        return '<label style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border,#26345c)"><input type="checkbox" class="lpChkP" value="'+_lpEsc(r.id)+'"><span><b>'+_lpEsc(r.id)+'</b><br><span style="color:var(--text2,#9fb0d6)">'+_lpEsc(r.p.parte)+' · '+_lpEsc(_tlp('cant'))+' '+r.q.toLocaleString()+' · '+_lpEsc(r.p.fecha||'')+(r.p.maquina?' · '+_lpEsc(r.p.maquina):'')+(r.p.desc?' · '+_lpEsc(r.p.desc):'')+'</span></span></label>'; }).join('')) : _lpEsc(_tlp('pendVacio'));
+    }catch(e){ box.textContent='⚠️ '+(e&&e.message?e.message:e); }
+  }
+  o.querySelector('#lpBtnAnu').onclick=async function(){
+    const ids=Array.prototype.map.call(o.querySelectorAll('.lpChkP:checked'),function(c){ return c.value; });
+    if(!ids.length){ toast(_tlp('sinSelAnu'),'err'); return; }
+    if(!confirm(_tlp('confAnu',{n:ids.length}))) return;
+    let ok=0; const fallos=[];
+    for(const id of ids){ try{ const r=await _anularPend(id); if(r.ok) ok++; else fallos.push(r.msg); }catch(e){ fallos.push(id+': '+(e&&e.message?e.message:e)); } }
+    if(ok) toast(_tlp('okAnu',{n:ok}),'ok');
+    if(fallos.length) toast(fallos.join(' | '),'err');
+    await cargarPend();
+  };
+  cargar(); cargarPend();
+}
+window.abrirLiberarPallets = abrirLiberarPallets;
+
+/* 🔒 CANDADO: entrada MANUAL de piezas de línea (GH69) sin etiqueta. Pide contraseña de autorización.
+   Para cambiar la contraseña, edita solo la línea de abajo. */
+const CLAVE_ENTRADA_MANUAL = 'mes2026';
+/* ⚖️ AJUSTE de inventario: corrige el stock contra el conteo físico. Pide contraseña + motivo, queda en el historial
+   como movimiento aparte (tipo 'A') y NO cuenta como entrada ni como consumo. */
+const TXT_AJ = {
+  es:{title:'AJUSTE',guide:'⚖️ <b>AJUSTE</b> — Corrige el stock contra el conteo físico.<br>🔑 Pide contraseña y motivo; queda registrado con tu usuario.<br>⚖️ NO cuenta como entrada ni como consumo.',motivoBad:'Escribe el motivo del ajuste (mínimo 5 letras)',stockInsuf:'Stock insuficiente para restar. Disponibles: ',confirm:function(pn,s,q,a,d){return 'Ajuste de inventario\n\n'+pn+'\nStock actual: '+a.toLocaleString()+'\nAjuste: '+s+q.toLocaleString()+'\nStock nuevo: '+d.toLocaleString()+'\n\n¿Confirmas?';},ok:'⚖️ Ajuste',fail:'❌ NO se registró el ajuste.\n\n',lbl:'Ajustes'},
+  en:{title:'ADJUST',guide:'⚖️ <b>ADJUST</b> — Corrects the stock against the physical count.<br>🔑 Requires password and reason; logged with your user.<br>⚖️ Does NOT count as an entry or as consumption.',motivoBad:'Write the reason for the adjustment (at least 5 letters)',stockInsuf:'Not enough stock to subtract. Available: ',confirm:function(pn,s,q,a,d){return 'Inventory adjustment\n\n'+pn+'\nCurrent stock: '+a.toLocaleString()+'\nAdjustment: '+s+q.toLocaleString()+'\nNew stock: '+d.toLocaleString()+'\n\nConfirm?';},ok:'⚖️ Adjustment',fail:'❌ The adjustment was NOT recorded.\n\n',lbl:'Adjustments'},
+  ko:{title:'조정',guide:'⚖️ <b>조정</b> — 실사 수량에 맞게 재고를 수정합니다.<br>🔑 비밀번호와 사유가 필요하며 사용자와 함께 기록됩니다.<br>⚖️ 입고나 소비로 계산되지 않습니다.',motivoBad:'조정 사유를 입력하세요 (5자 이상)',stockInsuf:'차감할 재고가 부족합니다. 가용: ',confirm:function(pn,s,q,a,d){return '재고 조정\n\n'+pn+'\n현재 재고: '+a.toLocaleString()+'\n조정: '+s+q.toLocaleString()+'\n새 재고: '+d.toLocaleString()+'\n\n확인하시겠습니까?';},ok:'⚖️ 조정',fail:'❌ 조정이 기록되지 않았습니다.\n\n',lbl:'조정'}
+};
+async function doAjuste(item, qty){
+  const L = TXT_AJ[IMS_LANG] || TXT_AJ.es;
+  const signo = (document.getElementById('mfAjDir').value==='+') ? 1 : -1;
+  const motivo = document.getElementById('mfMotivo').value.trim();
+  const actual0 = parseFloat(item.actual)||0;
+  if (motivo.length < 5) { toast(L.motivoBad,'err'); return; }
+  if (signo<0 && qty>actual0) { toast(L.stockInsuf+actual0.toLocaleString(),'err'); return; }
+  if (!(await pedirClaveManual(item.pn, qty, 'A'))) return;
+  if (!confirm(L.confirm(item.pn+' · '+item.desc, signo>0?'+':'-', qty, actual0, actual0+signo*qty))) return;
+  const antes = {actual:item.actual, ajustes:item.ajustes};
+  const delta = {entradas:0, salidas:0, actual:signo*qty, ajustes:signo*qty};
+  item.actual = actual0 + signo*qty;
+  item.ajustes = (parseFloat(item.ajustes)||0) + signo*qty;
+  const iso = new Date().toISOString();
+  const refTxt = 'AJUSTE · '+motivo;
+  const hItem = {tipo:'A',fecha:iso,qty,loc:item.ubicacion,user:user.name,ref:refTxt,signo:signo>0?'+':'-'};
+  if (!item.historial) item.historial = [];
+  item.historial.push(hItem);
+  const mov = {tipo:'A',pn:item.pn,desc:item.desc,familia:item.familia,qty,fecha:iso,user:user.name,ref:refTxt,motivo:motivo,signo:signo>0?'+':'-',stock:item.actual,loc:item.ubicacion,origen:'AJUSTE',autorizado:true};
+  movs.unshift(mov);
+  saveLocal();
+  const res = await pushMov(mov, delta, hItem);
+  if (!res.ok) {
+    item.actual = antes.actual; item.ajustes = antes.ajustes;
+    item.historial.pop(); movs.shift(); saveLocal();
+    updateDash(); renderInv(); renderHist(); renderLocMap();
+    alert(L.fail+res.err);
+    return;
+  }
+  updateDash(); renderInv(); renderHist(); renderLocMap();
+  toast(L.ok+': '+(signo>0?'+':'-')+qty.toLocaleString()+' · '+item.pn,'ok');
+  selIdx = null;
+  document.getElementById('movForm').className = 'mf';
+  document.getElementById('mfMotivo').value = '';
+  document.getElementById('mfRef').value = '';
+}
+const TXT_CLAVE = {
+  es:{tS:'🔒 Salida manual bloqueada',mS:(pn,q)=>'La parte '+pn+' ('+q.toLocaleString()+' pzs) viene de línea. Descontarla a mano requiere autorización. Ingresa la contraseña.',t:'🔒 Entrada manual bloqueada',m:(pn,q)=>'La parte '+pn+' ('+q.toLocaleString()+' pzs) viene de línea y no tiene etiqueta escaneada. Lo correcto es escanear la etiqueta del pallet. Si es un caso especial, pide autorización e ingresa la contraseña.',tA:'⚖️ Ajuste de inventario',mA:(pn,q)=>'Vas a ajustar '+pn+' ('+q.toLocaleString()+' pzs). Un ajuste corrige el stock contra el conteo físico y no cuenta como consumo. Ingresa la contraseña de autorización.',ph:'Contraseña de autorización',ok:'Autorizar',cancel:'Cancelar',bad:'Contraseña incorrecta'},
+  en:{tS:'🔒 Manual removal locked',mS:(pn,q)=>'Part '+pn+' ('+q.toLocaleString()+' pcs) comes from the line. Deducting it by hand requires authorization. Enter the password.',t:'🔒 Manual entry locked',m:(pn,q)=>'Part '+pn+' ('+q.toLocaleString()+' pcs) comes from the line and its label was not scanned. The correct way is to scan the pallet label. For a special case, ask for authorization and enter the password.',tA:'⚖️ Inventory adjustment',mA:(pn,q)=>'You are about to adjust '+pn+' ('+q.toLocaleString()+' pcs). An adjustment corrects the stock against the physical count and does not count as consumption. Enter the authorization password.',ph:'Authorization password',ok:'Authorize',cancel:'Cancel',bad:'Wrong password'},
+  ko:{tS:'🔒 수동 출고 잠김',mS:(pn,q)=>'부품 '+pn+' ('+q.toLocaleString()+' pcs)은(는) 라인에서 온 것입니다. 수동 차감은 승인이 필요합니다. 비밀번호를 입력하세요.',t:'🔒 수동 입고 잠김',m:(pn,q)=>'부품 '+pn+' ('+q.toLocaleString()+' pcs)은(는) 라인에서 온 것이며 라벨이 스캔되지 않았습니다. 팔레트 라벨을 스캔하는 것이 올바른 방법입니다. 예외 상황이면 승인을 받고 비밀번호를 입력하세요.',tA:'⚖️ 재고 조정',mA:(pn,q)=>'부품 '+pn+' ('+q.toLocaleString()+' pcs)을(를) 조정하려고 합니다. 조정은 실사 수량에 맞게 재고를 수정하며 소비로 계산되지 않습니다. 승인 비밀번호를 입력하세요.',ph:'승인 비밀번호',ok:'승인',cancel:'취소',bad:'비밀번호가 틀렸습니다'}
+};
+function pedirClaveManual(pn, qty, tipo){
+  return new Promise(function(resolve){
+    const L = TXT_CLAVE[IMS_LANG] || TXT_CLAVE.es;
+    const esS = (tipo==='S'), esA = (tipo==='A');
+    const ov = document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div style="background:#171a23;border:1px solid #f5a623;border-radius:14px;padding:20px;max-width:380px;width:100%;color:#e8eaf0;font-family:inherit">'
+      + '<div style="font-size:17px;font-weight:700;margin-bottom:8px">'+(esA?L.tA:(esS?L.tS:L.t))+'</div>'
+      + '<div style="font-size:13px;color:#aab;margin-bottom:12px;line-height:1.4">'+(esA?L.mA(pn,qty):(esS?L.mS(pn,qty):L.m(pn,qty)))+'</div>'
+      + '<input id="claveManualIn" type="password" autocomplete="off" placeholder="'+L.ph+'" style="width:100%;box-sizing:border-box;padding:11px;border-radius:8px;border:1px solid #3a4054;background:#0f1117;color:#fff;font-size:15px">'
+      + '<div id="claveManualErr" style="color:#ff6b6b;font-size:12px;min-height:16px;margin-top:6px"></div>'
+      + '<div style="display:flex;gap:8px;margin-top:8px"><button id="claveManualNo" style="flex:1;padding:11px;border-radius:8px;border:1px solid #3a4054;background:transparent;color:#e8eaf0;cursor:pointer">'+L.cancel+'</button>'
+      + '<button id="claveManualSi" style="flex:1;padding:11px;border-radius:8px;border:none;background:#f5a623;color:#111;font-weight:700;cursor:pointer">'+L.ok+'</button></div></div>';
+    document.body.appendChild(ov);
+    const inp = ov.querySelector('#claveManualIn'); inp.focus();
+    function cerrar(v){ document.body.removeChild(ov); resolve(v); }
+    function probar(){ if (inp.value === CLAVE_ENTRADA_MANUAL) cerrar(true); else { ov.querySelector('#claveManualErr').textContent = L.bad; inp.value=''; inp.focus(); } }
+    ov.querySelector('#claveManualSi').onclick = probar;
+    ov.querySelector('#claveManualNo').onclick = function(){ cerrar(false); };
+    inp.onkeydown = function(e){ if(e.key==='Enter') probar(); else if(e.key==='Escape') cerrar(false); };
+  });
+}
+function limpiarFormMov(){ try{ scanPallet=null; selIdx=null; document.getElementById('movForm').className='mf'; document.getElementById('mfRef').value=''; }catch(e){} }
+
+var TXT_REV = {
+  es:{btn:'Revertir',tagRev:'revertido',tagReversion:'reversión',soloAdmin:'Solo el administrador puede revertir un pallet',
+      nada:'No hay movimientos de este pallet por revertir (ya fue revertido o no existe).',
+      noParte:'No se encontró en el IMS la parte:\n',
+      neg:function(l){return '⛔ NO se puede revertir: el stock quedaría NEGATIVO (ya se usó material de este pallet).\n\n'+l+'\n\nHaz primero un AJUSTE o corrige el consumo.';},
+      motivo:'Motivo de la reversión (mínimo 5 letras):',motivoBad:'Escribe el motivo (mínimo 5 letras)',
+      conf:function(id,l){return '↩ REVERTIR PALLET '+id+'\n\n'+l+'\n\nEl pallet quedará PENDIENTE (se puede escanear otra vez).\n\n¿Confirmar?';},
+      ok:'↩ Pallet revertido: ',fail:'❌ La reversión se detuvo:\n',cargando:'⏳ Revirtiendo…',sale:'➖ SALE',entra:'➕ REGRESA'},
+  en:{btn:'Revert',tagRev:'reverted',tagReversion:'reversal',soloAdmin:'Only the administrator can revert a pallet',
+      nada:'There are no movements to revert for this pallet (already reverted or not found).',
+      noParte:'Part not found in IMS:\n',
+      neg:function(l){return '⛔ CANNOT revert: stock would become NEGATIVE (material from this pallet was already used).\n\n'+l+'\n\nDo an ADJUST first or fix the consumption.';},
+      motivo:'Reason for the reversal (at least 5 letters):',motivoBad:'Write the reason (at least 5 letters)',
+      conf:function(id,l){return '↩ REVERT PALLET '+id+'\n\n'+l+'\n\nThe pallet will go back to PENDING (it can be scanned again).\n\nConfirm?';},
+      ok:'↩ Pallet reverted: ',fail:'❌ The reversal stopped:\n',cargando:'⏳ Reverting…',sale:'➖ OUT',entra:'➕ BACK'},
+  ko:{btn:'되돌리기',tagRev:'취소됨',tagReversion:'취소 처리',soloAdmin:'관리자만 팔레트를 되돌릴 수 있습니다',
+      nada:'이 팔레트에 되돌릴 이동이 없습니다 (이미 취소되었거나 없음).',
+      noParte:'IMS에서 부품을 찾을 수 없습니다:\n',
+      neg:function(l){return '⛔ 되돌릴 수 없습니다: 재고가 음수가 됩니다 (이 팔레트의 자재가 이미 사용됨).\n\n'+l+'\n\n먼저 조정하거나 소비를 수정하세요.';},
+      motivo:'되돌리기 사유 (5자 이상):',motivoBad:'사유를 입력하세요 (5자 이상)',
+      conf:function(id,l){return '↩ 팔레트 되돌리기 '+id+'\n\n'+l+'\n\n팔레트는 대기(PENDING) 상태로 돌아가며 다시 스캔할 수 있습니다.\n\n확인하시겠습니까?';},
+      ok:'↩ 팔레트 되돌림: ',fail:'❌ 되돌리기가 중단되었습니다:\n',cargando:'⏳ 되돌리는 중…',sale:'➖ 출고',entra:'➕ 복원'}
+};
+var _revBusy = false;
+async function revertirPallet(palletId){
+  const L = TXT_REV[IMS_LANG] || TXT_REV.es;
+  if (!user || user.role!=='admin') { toast(L.soloAdmin,'err'); return; }
+  if (!db || _revBusy) return;
+  _revBusy = true;
+  try {
+    toast(L.cargando,'info');
+    const snapA = await db.collection('planta3_movimientos').where('pallet','==',palletId).get();
+    const snapB = await db.collection('planta3_movimientos').where('ref','==',palletId).get();
+    const docs = [], vistos = {};
+    [snapA,snapB].forEach(function(sn){ sn.forEach(function(d){ const m=d.data(); if (vistos[d.id]) return; vistos[d.id]=1; if (m.tipo==='E' && !m.revertido && (m.origen==='LINEA' || !m.origen)) docs.push({ref:d.ref, m:m}); }); });
+    if (!docs.length) { alert(L.nada); return; }
+    docs.sort(function(a,b){ return String(a.m.fecha).localeCompare(String(b.m.fecha)); });
+    const plan = [], faltan = [], corriendo = {};
+    docs.forEach(function(x){
+      const m = x.m, it = items.find(function(i){ return i.pn===m.pn && i.desc===m.desc; });
+      if (!it) { faltan.push(m.pn+' · '+m.desc); return; }
+      const qty = Number(m.qty)||0, esE = (m.tipo==='E');
+      const aplicado = esE ? qty : Math.max(0, qty-(Number(m.faltante)||0));
+      const k = it.pn+'|'+it.desc;
+      if (corriendo[k]===undefined) corriendo[k] = parseFloat(it.actual)||0;
+      const a0 = corriendo[k], nuevo = esE ? a0-qty : a0+aplicado;
+      corriendo[k] = nuevo;
+      plan.push({x:x, it:it, m:m, qty:qty, esE:esE, aplicado:aplicado, a0:a0, nuevo:nuevo});
+    });
+    if (faltan.length) { alert(L.noParte+faltan.join('\n')); return; }
+    const negs = plan.filter(function(p){ return p.nuevo<0; });
+    if (negs.length) { alert(L.neg(negs.map(function(p){ return p.m.pn+' · '+p.m.desc+'  ('+p.a0.toLocaleString()+' → '+p.nuevo.toLocaleString()+')'; }).join('\n'))); return; }
+    const lineas = plan.map(function(p){
+      return (p.esE ? L.sale : L.entra)+':  '+p.m.pn+' · '+p.m.desc+'   '+(p.esE?'-':'+')+(p.esE?p.qty:p.aplicado).toLocaleString()+'   ('+p.a0.toLocaleString()+' → '+p.nuevo.toLocaleString()+')';
+    }).join('\n');
+    const motivo = (prompt(L.motivo,'') || '').trim();
+    if (motivo.length < 5) { if (motivo) toast(L.motivoBad,'err'); return; }
+    const totalQty = plan.reduce(function(s,p){ return s+p.qty; },0);
+    if (!(await pedirClaveManual(palletId, totalQty, 'A'))) return;
+    if (!confirm(L.conf(palletId, lineas))) return;
+    const iso = new Date().toISOString(), refTxt = 'REVERSIÓN · '+palletId+' · '+motivo;
+    const hechos = [];
+    for (const p of plan) {
+      const it = p.it, cant = p.esE ? p.qty : p.aplicado, signo = p.esE ? '-' : '+';
+      const antes = {entradas:it.entradas, salidas:it.salidas, actual:it.actual};
+      if (p.esE) { it.entradas = (parseFloat(it.entradas)||0)-p.qty; it.actual = (parseFloat(it.actual)||0)-p.qty; }
+      else       { it.salidas = (parseFloat(it.salidas)||0)-p.qty;   it.actual = (parseFloat(it.actual)||0)+p.aplicado; }
+      const hItem = {tipo:'A', fecha:iso, qty:cant, loc:it.ubicacion||'Almacén', user:user.name, ref:refTxt, signo:signo};
+      if (!it.historial) it.historial = [];
+      it.historial.push(hItem);
+      const mov = {tipo:'A', pn:it.pn, desc:it.desc, familia:it.familia, qty:cant, fecha:iso, user:user.name, ref:refTxt, motivo:motivo, signo:signo, stock:it.actual, loc:it.ubicacion||'Almacén', origen:'REVERSION', pallet:palletId, autorizado:true};
+      if (p.m.vcTipo==='RECIBO') { mov.vcTipo='RECIBO'; mov.vc=p.m.vc; mov.vcKey=p.m.vcKey; mov.vcQty=-(Number(p.m.vcQty)||0); }
+      const delta = p.esE ? {entradas:-p.qty, salidas:0, actual:-p.qty} : {entradas:0, salidas:-p.qty, actual:p.aplicado};
+      movs.unshift(mov); saveLocal();
+      const res = await pushMov(mov, delta, hItem);
+      if (!res.ok) {
+        it.entradas=antes.entradas; it.salidas=antes.salidas; it.actual=antes.actual; it.historial.pop(); movs.shift(); saveLocal();
+        updateDash(); renderInv(); renderHist(); renderLocMap();
+        alert(L.fail+p.m.pn+': '+res.err+(hechos.length?'\n\n(Ya revertidos: '+hechos.join(', ')+')':'')+'\n\nEl pallet NO se liberó.');
+        return;
+      }
+      try { await p.x.ref.update({revertido:true, revertidoPor:user.name, revertidoFecha:iso, revertidoMotivo:motivo}); } catch(e) { console.error('marcar revertido:', e); }
+      hechos.push(p.m.pn);
+    }
+    try {
+      const pr = db.collection('pallets_medio').doc(palletId), d = await pr.get();
+      if (d.exists) {
+        const dd = d.data(), rec = dd.recepciones||[], D = firebase.firestore.FieldValue.delete();
+        if (rec.length) { const u = rec[rec.length-1]; await pr.update({status:'RECEIVED', recibidoEn:u.planta, recibidoPor:u.por||'', recibidoFecha:u.fecha||'', recepciones:rec.slice(0,-1)}); }
+        else await pr.update({status:'PENDING', recibidoEn:D, recibidoPor:D, recibidoFecha:D});
+      }
+    } catch(e) { console.error('liberar pallet:', e); alert('⚠️ Stock revertido, pero no se pudo dejar el pallet en PENDIENTE: '+e.message+'\nCámbialo a mano en Firestore → pallets_medio.'); }
+    updateDash(); renderInv(); renderHist(); renderLocMap();
+    toast(L.ok+palletId,'ok');
+  } catch(e) {
+    console.error(e); alert(L.fail+(e&&e.message?e.message:e));
+  } finally { _revBusy = false; }
+}
+window.revertirPallet = revertirPallet;
 
 // ── AUTH ──
 
@@ -1447,6 +1834,7 @@ const IMS_TRANSLATIONS = {
     t_shAdmin: "Administración",
     t_acStockMin: "Stock mínimo",
     t_acStockMinSub: "Configurar límite crítico",
+    t_acLibPal: "Liberar pallets", t_acLibPalSub: "Revertir recepción", t_btnAjuste: "AJUSTE", t_histAjustes: "⚖️ Ajustes", t_ajRestar: "➖ Restar del stock (el sistema tiene de más)", t_ajSumar: "➕ Sumar al stock (el sistema tiene de menos)", ph_motivoAjuste: "Motivo del ajuste (obligatorio)", t_btnExportarPend: "📥 Exportar Excel",
     t_acCSV: "Exportar CSV",
     t_acCSVSub: "Inventario completo",
     t_acKPIsSub: "Métricas período",
@@ -1605,6 +1993,7 @@ const IMS_TRANSLATIONS = {
     t_shAdmin: "Administration",
     t_acStockMin: "Minimum stock",
     t_acStockMinSub: "Configure critical limit",
+    t_acLibPal: "Liberar pallets", t_acLibPalSub: "Revertir recepción", t_btnAjuste: "AJUSTE", t_histAjustes: "⚖️ Ajustes", t_ajRestar: "➖ Restar del stock (el sistema tiene de más)", t_ajSumar: "➕ Sumar al stock (el sistema tiene de menos)", ph_motivoAjuste: "Motivo del ajuste (obligatorio)", t_btnExportarPend: "📥 Exportar Excel",
     t_acCSV: "Export CSV",
     t_acCSVSub: "Full inventory",
     t_acKPIsSub: "Period metrics",
@@ -1763,6 +2152,7 @@ const IMS_TRANSLATIONS = {
     t_shAdmin: "관리",
     t_acStockMin: "최소 재고",
     t_acStockMinSub: "임계값 설정",
+    t_acLibPal: "Liberar pallets", t_acLibPalSub: "Revertir recepción", t_btnAjuste: "AJUSTE", t_histAjustes: "⚖️ Ajustes", t_ajRestar: "➖ Restar del stock (el sistema tiene de más)", t_ajSumar: "➕ Sumar al stock (el sistema tiene de menos)", ph_motivoAjuste: "Motivo del ajuste (obligatorio)", t_btnExportarPend: "📥 Exportar Excel",
     t_acCSV: "CSV 내보내기",
     t_acCSVSub: "전체 재고",
     t_acKPIsSub: "기간 지표",
@@ -2014,6 +2404,7 @@ if(db){
   }).catch(()=>{});
 }
 
+var _monitorListaActual = [];
 function renderMonitorStock() {
   const el = document.getElementById('monitorStockMin');
   if (!el) return;
@@ -2033,12 +2424,16 @@ function renderMonitorStock() {
   function badgeCls(s){ return s>=STOCK_MIN_LIMITE?'mon-ok':s>=alerta?'mon-warn':'mon-crit'; }
   function badgeTxt(s){ return s>=STOCK_MIN_LIMITE?'OK':s>=alerta?'Alerta':'Crítico'; }
   function pct(s){ return Math.min(100,Math.round((s/STOCK_MIN_LIMITE)*100)); }
+  _monitorListaActual = lista;
   const critCount = lista.filter(i=>i.stock<STOCK_MIN_LIMITE).length;
   const modoLabel = STOCK_MIN_MODO==='auto'?'🤖 Automático':'📌 Manual';
   el.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
       '<div style="font-size:9px;color:var(--text2)">Mín: <b style="color:var(--text)">'+STOCK_MIN_LIMITE.toLocaleString()+' pzas</b> · <span style="color:var(--text2)">'+modoLabel+'</span></div>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
       (critCount>0?'<div style="font-size:9px;color:#ff6b6b;font-weight:600">⚠ '+critCount+' bajo mínimo</div>':'<div style="font-size:9px;color:var(--green)">✓ Todo OK</div>')+
+      '<button onclick="exportMonitorStock()" style="font-size:9px;background:rgba(55,138,221,.12);border:1px solid rgba(55,138,221,.3);color:var(--accent);border-radius:5px;padding:2px 7px;cursor:pointer;white-space:nowrap">⬇ Excel</button>'+
+      '</div>'+
     '</div>'+
     '<div class="mon-grid mon-hdr"><div>Artículo</div><div style="text-align:right">Stock</div><div>Nivel</div><div style="text-align:center">Estado</div></div>'+
     lista.map((i,idx)=>{
@@ -2125,6 +2520,7 @@ function showMovGuide(t) {
     'S': '⬆️ <b>SALIDA</b> — Material consumido en producción.<br>❗ Disminuye el stock.<br>📍 Ej: Piezas usadas en S1, S2, etc. No se recuperan.',
     'T': '🔀 <b>TRASLADO</b> — Material que cambia de ubicación.<br>⚖️ El stock NO cambia, solo la ubicación.<br>📍 Ej: Almacén → S1 (envío) o S1 → Almacén (regreso sin usar).'
   };
+  info['A'] = (TXT_AJ[IMS_LANG] || TXT_AJ.es).guide;
   guide.innerHTML = info[t] || '';
   guide.style.display = 'block';
 }
@@ -2154,12 +2550,13 @@ window.updateMfDestOptions = updateMfDestOptions;
 
 function initMov(t) {
   movTipo = t;
-  const labels = {E:'⬇️ ENTRADA',S:'⬆️ SALIDA',T:'🔀 TRASLADO'};
+  const labels = {E:'⬇️ ENTRADA',S:'⬆️ SALIDA',T:'🔀 TRASLADO',A:'⚖️ '+(TXT_AJ[IMS_LANG]||TXT_AJ.es).title};
   const form = document.getElementById('movForm');
   form.className = 'mf show t-'+t;
   document.getElementById('mfTipo').textContent = labels[t];
   document.getElementById('mfBtn').className = 'btn-conf bc-'+t;
   document.getElementById('mfDW').style.display = (t==='E'||t==='T')?'block':'none';
+  document.getElementById('mfAJ').style.display = (t==='A')?'block':'none';
   updateMfDestOptions();
   if (selIdx===null) { document.getElementById('mfPN').textContent='← Selecciona un Part Number'; document.getElementById('mfSt').textContent=''; }
 }
@@ -2186,20 +2583,39 @@ function selForMov(idx) {
 
 function adjQ(d) { const inp=document.getElementById('mfQty'); inp.value=Math.max(1,(parseInt(inp.value)||0)+d); }
 
-async function doMov() {
+var _movBusy=false;
+async function doMov(){
+  if(navigator.onLine===false){ alert(_tNet('off')); return; }   // sin WiFi no se registra nada
+  if(_movBusy){ toast('⏳ Espera, se está registrando…','info'); return; }
+  _movBusy=true;
+  const wd=setTimeout(function(){ _movBusy=false; },25000);   // seguro: nunca se queda trabado
+  try{ await doMovInner(); }
+  catch(e){ console.error(e); toast('❌ Error al registrar: '+(e&&e.message?e.message:e),'err'); }
+  finally{ clearTimeout(wd); _movBusy=false; }
+}
+async function doMovInner() {
   if (user && user.role === 'viewer') { toast('Solo lectura — sin permisos para movimientos','err'); return; }
   if (selIdx===null) { toast('Selecciona un Part Number','err'); return; }
   const qty = parseInt(document.getElementById('mfQty').value)||0;
   if (qty<=0) { toast('Cantidad inválida','err'); return; }
   const item = items[selIdx];
+  if (movTipo==='A') { await doAjuste(item, qty); return; }   // Ajuste: flujo aparte, no cuenta como consumo
   if (movTipo==='S'&&qty>item.actual) { toast('Stock insuficiente: '+item.actual.toLocaleString()+' disponibles','err'); return; }
   const dest = document.getElementById('mfDest').value;
   const ref = document.getElementById('mfRef').value.trim();
-  if (scanPallet && movTipo==='E' && ref.toUpperCase()===scanPallet.id.toUpperCase()) {
-    try { const pd = await db.collection('pallets_medio').doc(scanPallet.id).get();
-      if (pd.exists && ((pd.data().status==='RECEIVED' && !(pd.data().recibidoEn && pd.data().recibidoEn!=='P3')) || pd.data().status==='VOID')) { toast('Pallet '+scanPallet.id+(pd.data().status==='VOID'?' anulado':' ya recibido')+' — no se registra de nuevo','err'); return; }
-    } catch(e) {}
+  // Reclamo ATÓMICO del pallet: solo una persona/escaneo lo pasa de PENDIENTE a RECIBIDO (y repara pallets que quedaron a medias por falla de red)
+  const esPalletScan = !!(scanPallet && movTipo==='E' && ref.toUpperCase()===scanPallet.id.toUpperCase());
+  let palletInfo = null, rcInfo = null;
+  if (esPalletScan) {
+    const rc = await reclamarPallet();
+    if (!rc.ok) { limpiarFormMov(); alert('⚠️ '+rc.msg); return; }
+    rcInfo = rc;
+    palletInfo = {id:scanPallet.id, maq:rc.maq||'', planta:rc.planta||''};
+    if (rc.reparado) toast(_tNet('rep',{id:palletInfo.id}),'info');
+    if (rc.reRecepcion) toast('📦 Pallet recibido antes en '+rc.desde+' → entrada a P3','info');
+    scanPallet = null;   // ya reclamado
   }
+  const antes = {entradas:item.entradas, salidas:item.salidas, actual:item.actual, ubicacion:item.ubicacion};
   if (movTipo==='E') { item.entradas+=qty; item.actual+=qty; }
   else if (movTipo==='S') { item.salidas+=qty; item.actual-=qty; }
   else { item.salidas+=qty; item.actual-=qty; }
@@ -2208,10 +2624,20 @@ async function doMov() {
   if (!item.historial) item.historial=[];
   item.historial.push(hItem);
   const mov = {tipo:movTipo,pn:item.pn,desc:item.desc,familia:item.familia,qty,fecha:new Date().toISOString(),user:user.name,ref,stock:item.actual,loc:item.ubicacion};
+  if (palletInfo) { mov.origen='LINEA'; mov.pallet=palletInfo.id; mov.maq=palletInfo.maq; mov.planta=palletInfo.planta||''; if(_reclamoTs) mov.rts=_reclamoTs; }
   movs.unshift(mov);
   saveLocal();
-  await pushMov(mov);
-  if (movTipo==='E') await marcarPalletRecibido(ref);
+  const res = await pushMov(mov);
+  if (!res || !res.ok) {
+    // No se guardó: deshacer todo para que no quede stock de más (el pallet sigue pendiente)
+    item.entradas=antes.entradas; item.salidas=antes.salidas; item.actual=antes.actual; item.ubicacion=antes.ubicacion;
+    item.historial.pop(); movs.shift(); saveLocal();
+    if (palletInfo && !(res && res.timeout)) await _conTiempo(liberarPallet(palletInfo.id),8000);   // si fue tiempo agotado NO se libera: puede haberse guardado; al reescanear se verifica
+    updateDash(); renderInv(); renderHist(); renderLocMap();
+    selIdx=null; document.getElementById('movForm').className='mf'; document.getElementById('mfRef').value='';
+    alert(res && res.timeout ? _tNet('tout') : _tNet('fail',{m:(res&&res.err)||''}));
+    return;
+  }
   updateDash(); renderInv(); renderHist(); renderLocMap();
   const lbl = {E:'✅ Entrada',S:'📤 Salida',T:'🔀 Traslado'};
   toast(lbl[movTipo]+': '+qty.toLocaleString()+' pzas · '+item.pn,'ok');
@@ -2342,22 +2768,24 @@ async function startScan(){
     scanActive=false;
   }
 }
-function scanFrame(){
+let _scanBusy=false;
+async function scanFrame(){
   const video=document.getElementById('scanVideo');
   const canvas=document.getElementById('scanCanvas');
-  if(!video||!scanActive||video.readyState<2) return;
+  if(!video||!scanActive||video.readyState<2||_scanBusy) return;
+  _scanBusy=true;
   try{
     canvas.width=video.videoWidth||320;
     canvas.height=video.videoHeight||240;
     const ctx=canvas.getContext('2d');
     ctx.drawImage(video,0,0,canvas.width,canvas.height);
-    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-    if(code&&code.data){
+    const txt=await decodificarQR(canvas);
+    if(txt && scanActive){
       stopScan();
-      processQRScan(code.data);
+      processQRScan(txt);
     }
   }catch(e){console.warn('scan:',e);}
+  _scanBusy=false;
 }
 function stopScan(){
   scanActive=false;
@@ -2513,18 +2941,164 @@ function setHistF(f,el) { histFam=f; document.querySelectorAll('#pgHist .ft').fo
 function renderHist() {
   const q = (document.getElementById('histS')||{value:''}).value.toLowerCase();
   let f = [...movs];
-  if (histFam!=='TODOS') f=f.filter(m=>m.tipo===histFam);
-  if (q) f=f.filter(m=>m.pn&&m.pn.toLowerCase().includes(q));
+  if (histFam!=='TODOS') f=f.filter(m=>{
+    const tipoNorm = m.tipo==='OUT' ? 'S' : m.tipo==='IN' ? 'E' : m.tipo;
+    return tipoNorm===histFam;
+  });
+  if (q) {
+    const terms = q.split(' ').filter(Boolean);
+    f = f.filter(m => {
+      const texto = ((m.pn||'')+' '+(m.desc||'')).toLowerCase();
+      return terms.every(t => texto.includes(t));
+    });
+  }
   const el = document.getElementById('histList');
   el.innerHTML = f.length ? f.slice(0,60).map(movHTML).join('') : '<div class="empty">📋<br>Sin movimientos</div>';
 }
+function _lr(){ return (typeof TXT_REV!=='undefined' && TXT_REV) ? (TXT_REV[IMS_LANG]||TXT_REV.es) : {btn:'Revertir',tagRev:'revertido',tagReversion:'reversión'}; }
 function movHTML(m) {
-  const icons={E:'⬇️',S:'⬆️',T:'🔀',INI:'🏁'};
-  const cols={E:'mb-E',S:'mb-S',T:'mb-T',INI:'mb-T'};
-  const qc={E:'color:var(--green)',S:'color:var(--red)',T:'color:var(--accent)'};
-  const signs={E:'+',S:'-',T:'→'};
-  return '<div class="mc"><div class="mb '+(cols[m.tipo]||'mb-T')+'">'+(icons[m.tipo]||'🔄')+'</div><div style="flex:1;min-width:0"><div class="mc-t">'+(m.pn||'–')+'</div><div class="mc-d">'+(m.desc||'')+' · '+(m.familia||'')+' · '+(m.user||'')+'</div><div class="mc-l">📍 '+(m.loc||'–')+' · '+fmtDate(m.fecha)+(m.ref?' · '+m.ref:'')+'</div></div><div class="mc-q" style="'+(qc[m.tipo]||'')+'">'+(signs[m.tipo]||'')+(m.qty||0)+'</div></div>';
+  // Normaliza campos: el MES (Cierre de Jornada) usa nombres distintos a los nativos de IMS
+  const tipoNorm = m.tipo==='OUT' ? 'S' : m.tipo==='IN' ? 'E' : m.tipo;
+  const qty = (m.qty!==undefined && m.qty!==null) ? m.qty : (m.cantidad||0);
+  const loc = m.loc || m.ubicacion || '–';
+  const usr = m.user || m.usuario || '';
+  const ref = m.ref || m.referencia || '';
+  let badge='';
+  if (m.origen==='LINEA') badge=' · <span style="color:var(--green)">📦 Etiqueta de línea'+((m.planta&&m.planta!=='P3')?' '+m.planta:'')+(m.maq?' '+m.maq:'')+' · '+(m.pallet||'')+'</span>';
+  if (m.revertido) badge+=' · <span style="color:#f5a623">↩ '+_lr().tagRev+'</span>';
+  else if (m.origen==='REVERSION') badge+=' · <span style="color:#f5a623">↩ '+_lr().tagReversion+'</span>';
+  let btnRev='';
+  if (user && user.role==='admin' && m.pallet && !m.revertido && (m.origen==='LINEA'||m.origen==='MEDIO_PROCESO'))
+    btnRev='<div style="margin-top:5px"><button onclick="event.stopPropagation();revertirPallet(\''+String(m.pallet).replace(/[^\w\-\.]/g,'')+'\')" style="padding:4px 10px;border-radius:6px;border:1px solid #f5a623;background:transparent;color:#f5a623;font-size:11px;font-weight:600;cursor:pointer">↩ '+_lr().btn+'</button></div>';
+  const icons={E:'⬇️',S:'⬆️',T:'🔀',A:'⚖️',INI:'🏁'};
+  const cols={E:'mb-E',S:'mb-S',T:'mb-T',A:'mb-A',INI:'mb-T'};
+  const qc={E:'color:var(--green)',S:'color:var(--red)',T:'color:var(--accent)',A:'color:#f5a623'};
+  const signs={E:'+',S:'-',T:'→',A:(m.signo==='+'?'+':'-')};
+  return '<div class="mc"><div class="mb '+(cols[tipoNorm]||'mb-T')+'">'+(icons[tipoNorm]||'🔄')+'</div><div style="flex:1;min-width:0"><div class="mc-t">'+(m.pn||'–')+'</div><div class="mc-d">'+(m.desc||'')+' · '+(m.familia||'')+' · '+usr+'</div><div class="mc-l">📍 '+loc+' · '+fmtDate(m.fecha)+(ref?' · '+ref:'')+badge+'</div>'+btnRev+'</div><div class="mc-q" style="'+(qc[tipoNorm]||'')+'">'+(signs[tipoNorm]||'')+qty+'</div></div>';
 }
+
+
+// Exporta el historial (Historial > Excel) respetando el filtro de tipo y la búsqueda actuales
+function exportHistExcel() {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err'); return; }
+  const q = (document.getElementById('histS')||{value:''}).value.toLowerCase();
+  let f = [...movs];
+  if (histFam!=='TODOS') f=f.filter(m=>{
+    const tipoNorm = m.tipo==='OUT' ? 'S' : m.tipo==='IN' ? 'E' : m.tipo;
+    return tipoNorm===histFam;
+  });
+  if (q) {
+    const terms = q.split(' ').filter(Boolean);
+    f = f.filter(m => {
+      const texto = ((m.pn||'')+' '+(m.desc||'')).toLowerCase();
+      return terms.every(t => texto.includes(t));
+    });
+  }
+  if (!f.length) { toast('No hay movimientos para exportar con el filtro actual', 'warn'); return; }
+
+  const tipoLabel = {E:'Entrada',S:'Salida',T:'Traslado',A:'Ajuste',INI:'Inv. Inicial'};
+  const rows = [['Tipo','PN','Descripción','Familia','Cantidad','Ubicación','Usuario','Referencia','Fecha']];
+  f.forEach(function(m){
+    const tipoNorm = m.tipo==='OUT' ? 'S' : m.tipo==='IN' ? 'E' : m.tipo;
+    rows.push([
+      tipoLabel[tipoNorm]||tipoNorm||'',
+      m.pn||'',
+      m.desc||'',
+      m.familia||'',
+      (function(){ const q=(m.qty!==undefined && m.qty!==null) ? m.qty : (m.cantidad||0); return (tipoNorm==='A' && m.signo==='-') ? -q : q; })(),
+      m.loc || m.ubicacion || '',
+      m.user || m.usuario || '',
+      m.ref || m.referencia || '',
+      fmtDate(m.fecha)
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:14},{wch:30},{wch:10},{wch:10},{wch:12},{wch:14},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Historial');
+  const filtroNombre = histFam==='TODOS'?'Todos':histFam;
+  XLSX.writeFile(wb, 'IMS_P3_Historial_'+filtroNombre+'_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('✅ Excel descargado · '+f.length+' movimientos', 'ok');
+}
+window.exportHistExcel = exportHistExcel;
+
+
+function exportMonitorStock() {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err'); return; }
+  if (!_monitorListaActual.length) { toast('No hay datos para exportar', 'err'); return; }
+  const alerta = Math.round(STOCK_MIN_LIMITE*0.67);
+  function estado(s){ return s>=STOCK_MIN_LIMITE?'OK':s>=alerta?'Alerta':'Crítico'; }
+  const rows = [['PN','Descripción','Stock Actual','Estado']];
+  _monitorListaActual.forEach(i=>{
+    rows.push([i.pn, i.desc, i.stock, estado(i.stock)]);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:16},{wch:35},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Stock Minimo');
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'IMS_P3_StockMinimo_'+fecha+'.xlsx');
+  toast('✅ Excel exportado');
+}
+
+
+function exportPendientesPrecio() {
+  if (typeof XLSX === 'undefined') { toast('❌ Librería Excel no cargada', 'err'); return; }
+  const pend = items.filter(i=>i.precio===0&&i.actual>0);
+  if (!pend.length) { toast('✅ No hay pendientes de precio', 'ok'); return; }
+
+  const rows = [['PN','Descripción','Familia','Stock','Price']];
+  pend.forEach(function(i){
+    rows.push([i.pn||'', i.desc||'', i.familia||'', Number(i.actual)||0, '']);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:32},{wch:10},{wch:9},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Pendientes');
+
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'IMS_P3_PendientesPrecio_'+fecha+'.xlsx');
+  toast('✅ Excel descargado · '+pend.length+' partes pendientes', 'ok');
+}
+window.exportPendientesPrecio = exportPendientesPrecio;
+
+// Lector de QR: usa el detector nativo del celular (más potente) y, si no existe, jsQR
+async function decodificarQR(canvas){
+  if ('BarcodeDetector' in window) {
+    try {
+      window._bd = window._bd || new BarcodeDetector({formats:['qr_code']});
+      const r = await window._bd.detect(canvas);
+      if (r && r[0] && r[0].rawValue) return r[0].rawValue;
+    } catch(e) {}
+  }
+  const ctx = canvas.getContext('2d');
+  const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code = jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+  return (code && code.data) ? code.data : null;
+}
+// Leer el QR desde una foto o captura guardada en el celular
+function leerQRFoto(inp){
+  const f=inp.files&&inp.files[0]; if(!f) return;
+  const img=new Image();
+  img.onload=async function(){
+    let txt=null;
+    for (const esc of [1,2,3]) {
+      const c=document.createElement('canvas');
+      c.width=Math.min(3000,Math.round(img.width*esc)); c.height=Math.round(img.height*(c.width/img.width));
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      txt=await decodificarQR(c);
+      if(txt) break;
+    }
+    inp.value='';
+    URL.revokeObjectURL(img.src);
+    if(txt) processQRScan(txt); else toast('❌ No se pudo leer el QR de la foto. Acércate más o toma otra foto','err');
+  };
+  img.onerror=function(){ toast('❌ No se pudo abrir la foto','err'); };
+  img.src=URL.createObjectURL(f);
+}
+window.leerQRFoto=leerQRFoto;
 
 // ══ REPORTE DE INVENTARIO POR CORREO (mensual · primer día hábil) ══
 // Destinatarios y candado mensual guardados en ims_config/reporte_inv_p3. Solo LEE el inventario.
@@ -4092,7 +4666,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v25nov-1640';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v25nov-1730';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
