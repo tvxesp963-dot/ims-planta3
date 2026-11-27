@@ -1482,7 +1482,7 @@ async function abrirLiberarPallets(){
       const d3=new Date(); d3.setDate(d3.getDate()-3);
       const desde=d3.getFullYear()+'-'+String(d3.getMonth()+1).padStart(2,'0')+'-'+String(d3.getDate()).padStart(2,'0');
       const q=await db.collection('pallets_medio').where('status','==','PENDING').get(), rs=[]; let tot=0;
-      q.forEach(function(d){ const p=d.data(); if(String(p.fecha||'')<desde) return; if(p.destino && p.destino!==PALLET_DEST) return; const qy=Number(p.qty)||0; if(!p.parte||qy<=0) return; tot+=qy; rs.push({id:d.id,p:p,q:qy}); });
+      q.forEach(function(d){ const p=d.data(); if(String(p.fecha||'')<desde) return; if(destPallet(p) && destPallet(p)!==PALLET_DEST) return; const qy=Number(p.qty)||0; if(!p.parte||qy<=0) return; tot+=qy; rs.push({id:d.id,p:p,q:qy}); });
       rs.sort(function(a,b){ return String(b.p.fecha||'').localeCompare(String(a.p.fecha||'')); });
       box.innerHTML = rs.length ? ('<div style="margin-bottom:4px;color:var(--text2,#9fb0d6)">'+_lpEsc(_tlp('total'))+': <b>'+tot.toLocaleString()+'</b></div>'+rs.map(function(r){
         return '<label style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border,#26345c)"><input type="checkbox" class="lpChkP" value="'+_lpEsc(r.id)+'"><span><b>'+_lpEsc(r.id)+'</b><br><span style="color:var(--text2,#9fb0d6)">'+_lpEsc(r.p.parte)+' · '+_lpEsc(_tlp('cant'))+' '+r.q.toLocaleString()+' · '+_lpEsc(r.p.fecha||'')+(r.p.maquina?' · '+_lpEsc(r.p.maquina):'')+(r.p.desc?' · '+_lpEsc(r.p.desc):'')+'</span></span></label>'; }).join('')) : _lpEsc(_tlp('pendVacio'));
@@ -2875,6 +2875,9 @@ window.stopInvScan=stopInvScan;
 // ── PALLET DE LÍNEA (QR con cantidad e ID: PN|DESC|FAMILIA|CANTIDAD|ID-PALLET) ──
 var scanPallet=null;
 var PALLET_DEST='IMS P3';
+// [2026-11-27] Pallets que vienen de Planta 1: su destino real es la planta a la que se envían ("ENVIAR A" de la etiqueta,
+// sale de la columna Destino del BOM). La hoja de P1 trae destino "IMS P1" (origen); aquí se toma "IMS " + enviarA.
+function destPallet(p){ return (p && p.planta==='P1' && p.enviarA) ? 'IMS '+p.enviarA : ((p && p.destino) || ''); }
 async function aplicarPallet(parts){
   scanPallet=null;
   var q=parseInt(parts[3]), id=(parts[4]||'').trim();
@@ -2889,7 +2892,7 @@ async function aplicarPallet(parts){
       if(p.status==='RECEIVED' && !(p.recibidoEn && p.recibidoEn!=='P3')) toast('⚠️ Pallet '+id+' YA fue recibido ('+(p.recibidoEn||'')+')','err');
       else if(p.status==='RECEIVED') toast('📦 Pallet recibido antes en '+p.recibidoEn+': se registrará como entrada a P3','info');
       else if(p.status==='VOID') toast('⚠️ Pallet '+id+' está ANULADO','err');
-      else if(p.destino&&p.destino!==PALLET_DEST) toast('⚠️ Este pallet es para '+p.destino,'err');
+      else if(destPallet(p)&&destPallet(p)!==PALLET_DEST) toast('⚠️ Este pallet es para '+destPallet(p),'err');
     }
   }catch(e){}
 }
@@ -2908,13 +2911,19 @@ function processQRScan(text){
   const pn=(parts[0]||text).trim();
   const desc=(parts[1]||'').trim();
   // Si el QR tiene descripción, buscar por PN + descripción exacta primero
+  // [2026-11-27] Código + descripción (igual que IMS P4): sin importar mayúsculas, espacios ni paréntesis
+  const nP=x=>String(x||'').trim().toUpperCase().replace(/\s+/g,'');
+  const nD=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   let idx=-1;
   if(desc){
-    idx=items.findIndex(i=>i.pn===pn && i.desc.toUpperCase()===desc.toUpperCase());
+    idx=items.findIndex(i=>nP(i.pn)===nP(pn) && nD(i.desc)===nD(desc));
+    if(idx<0) idx=items.findIndex(i=>nP(i.pn)===nP(pn) && nD(i.desc) && nD(desc) && (nD(i.desc).includes(nD(desc))||nD(desc).includes(nD(i.desc))));
   }
-  // Si no encontró con desc, buscar solo por PN (QR viejo sin desc)
+  // Si no encontró con desc, buscar solo por PN (QR viejo sin desc); si el PN tiene varias descripciones, avisar
   if(idx<0){
-    idx=items.findIndex(i=>i.pn===pn);
+    idx=items.findIndex(i=>nP(i.pn)===nP(pn));
+    const variantes=items.filter(i=>nP(i.pn)===nP(pn)).length;
+    if(idx>=0 && desc && variantes>1) alert('⚠️ La etiqueta dice "'+desc+'" pero ese PN tiene '+variantes+' variantes en el IMS y ninguna coincide.\n\nSe seleccionó: '+items[idx].desc+'\n\nRevisa que sea la correcta antes de confirmar.');
   }
   if(idx>=0){
     if(!movTipo) initMov('E');
