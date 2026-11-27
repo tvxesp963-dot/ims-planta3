@@ -4675,7 +4675,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v26nov-1415';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v27nov-1210';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -5221,13 +5221,15 @@ window.generarReporteFecha = generarReporteFecha;
     // filtro
     html += '<div class="dlc-filtro"><button class="dlc-f' + (st.filtro === 'all' ? ' on' : '') + '" onclick="dlc.filtrar(\'all\')">' + h(T('todos')) + '</button>' +
       PARTES.map(function (p) { return '<button class="dlc-f' + (st.filtro === p.pn ? ' on' : '') + '" onclick="dlc.filtrar(\'' + p.pn + '\')">' + chip(p.color) + p.pn + ' · ' + h(colorTxt(p.color)) + '</button>'; }).join('') + '</div>';
-    html += embCard(keys);   // PRIMER paso del proceso: embarques de Samsung (material entrante), al inicio de la pantalla
-    html += planCard(res);   // el plan de producción es el inicio del proceso: requerimiento de cable
-    html += recCard();
-    html += qrCard();        // justo debajo del plan: armar bundle y escanear (flujo natural)
+    // v46: arriba van Recorrido del cable, Control por parte y color y Detalle de bundles; lo demás va debajo y plegado
+    var opsHtml = '', mapHtml = '';
+    opsHtml += embCard(keys);
+    opsHtml += planCard(res);
+    opsHtml += recCard();
+    opsHtml += qrCard();
     // KPIs
     var kp = function (l, v, s, c) { return '<div class="sc ' + c + '"><div class="sc-l">' + h(l) + '</div><div class="sc-v">' + v + '</div></div>'; };
-    html += '<div class="sh">' + h(T('kpiT')) + '</div><div class="dlc-grid">' + kp(T('total'), n(tot), '', 'bl') + kp(T('item'), n(it), '', 'cy') + kp(T('bundle'), n(bu), '', 'gr') + kp(T('enviadoHoy'), n(hoy), '', 'am') +
+    opsHtml += '<div class="sh">' + h(T('kpiT')) + '</div><div class="dlc-grid">' + kp(T('total'), n(tot), '', 'bl') + kp(T('item'), n(it), '', 'cy') + kp(T('bundle'), n(bu), '', 'gr') + kp(T('enviadoHoy'), n(hoy), '', 'am') +
       kp(T('expo'), '$' + n(expo), '', 'bl') + kp(T('dif'), '<span style="color:' + (dif === 0 ? 'var(--green)' : 'var(--red)') + '">' + (dif === 0 ? '0' : sg(dif)) + '</span>', '', dif === 0 ? 'gr' : 'am') + '</div>';
 
     // alertas
@@ -5264,7 +5266,7 @@ window.generarReporteFecha = generarReporteFecha;
         if (dbl.length) al.push({ s: 'warn', t: T('cDbl', { p: pn, n: dbl.length, l: dbl.slice(0, 4).join(', ') + (dbl.length > 4 ? '…' : '') }) });
       }
     });
-    html += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + ' ' + h(T('imsNota')) + '</div>';
+    opsHtml += '<div class="dlc-mut" style="margin-bottom:.4rem">' + h(st.p4.ok ? T('p4Ok', { h: new Date(st.p4.t).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }) : '') + ' ' + h(T('p4Nota')) + ' ' + h(T('imsNota')) + '</div>';
     var alHtml = '<div class="sh">' + h(T('alertas')) + '</div>' +
       (al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>');   // las alertas van al final de la pantalla
 
@@ -5314,7 +5316,7 @@ window.generarReporteFecha = generarReporteFecha;
         detH += '<tr style="font-weight:700"><td>' + chip(colorDe(pn)) + h(pn) + '</td><td>Total (' + padres.length + ')</td><td>' + n(totalLoc(res[pn], 'p3wh')) + '</td><td>' + n(totalLoc(res[pn], 'p3wip')) + '</td><td>' + n(t3) + '</td><td>' + n(totalLoc(res[pn], 'p3pk')) + '</td><td>' + n(tS - tL) + '</td><td>' + n(tL) + '</td><td>' + n(tP) + '</td></tr>';
       });
       var thL = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'].map(function (l) { return '<th>' + h(T(locKey(l))) + '</th>'; }).join('');
-      html += '<details class="dlc-det" open><summary>📋 ' + h(T('detT')) + '</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('detBundle')) + '</th>' + thL + '</tr></thead><tbody>' + detH + '</tbody></table></div><div class="dlc-mut">' + h(T('detNota')) + '</div></div></details>';
+      html += '<details class="dlc-det" data-k="det"><summary>📋 ' + h(T('detT')) + '</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('detBundle')) + '</th>' + thL + '</tr></thead><tbody>' + detH + '</tbody></table></div><div class="dlc-mut">' + h(T('detNota')) + '</div></div></details>';
       // relación propia ShipQR -> bundle
       var sinL = Object.keys(st.p4.sinMapa || {}).sort(), manL = Object.keys(st.p4.manual || {}).sort(), ghL = Object.keys(st.p4.mapa).sort();
       st.p4.sinList = sinL;
@@ -5326,9 +5328,10 @@ window.generarReporteFecha = generarReporteFecha;
       if (manL.length) mH += '<div class="sh">' + h(T('mapManual')) + '</div><div class="dlc-scroll"><table class="dlc-t"><tbody>' + manL.map(function (k, ix) {
         return '<tr><td><b>' + h(k) + '</b></td><td>→ ' + h(st.p4.manual[k]) + '</td><td>' + (esAdmin() ? '<button class="dlc-b2" onclick="dlc.mapQuitar(' + ix + ')">' + h(T('mapQuitar')) + '</button>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
-      html += '<details class="dlc-det"' + (sinL.length ? ' open' : '') + '><summary>🔗 ' + h(T('mapT')) + (sinL.length ? ' (' + sinL.length + ')' : '') + '</summary><div class="card">' + mH + '</div></details>';
+      mapHtml = '<details class="dlc-det" data-k="map"><summary>🔗 ' + h(T('mapT')) + (sinL.length ? ' (' + sinL.length + ')' : '') + '</summary><div class="card">' + mH + '</div></details>';
     }
 
+    html += opsHtml + mapHtml;
     // conciliación
     if (SAMSUNG_ON) {
     html += '<div class="sh">' + h(T('conc')) + '</div><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('tipoSam')) + '</th><th>' + h(T('sistema')) + '</th><th>' + h(T('samsung')) + '</th><th>Δ</th><th>' + h(T('estado')) + '</th></tr></thead><tbody>';
@@ -5398,19 +5401,24 @@ window.generarReporteFecha = generarReporteFecha;
     cambioTipo();
   }
   // Cada sección (título .sh + su contenido) se vuelve plegable; se recuerda qué secciones dejaste cerradas
-  var cerradas = {};
+  var cerradas = {}, abiertasDet = {};
   function plegarTodo(abrir) {
     var w = wrap(); if (!w) return;
-    Array.prototype.forEach.call(w.querySelectorAll('details.dlc-sec'), function (d) { d.open = abrir; });
+    Array.prototype.forEach.call(w.querySelectorAll('details.dlc-sec,details.dlc-det'), function (d) { d.open = abrir; });
   }
   function esCel() { return window.innerWidth < 700; }
   function colapsar(w) {
     var hijos = Array.prototype.slice.call(w.children), grupo = null;
     hijos.forEach(function (c) {
-      if (c.tagName === 'DETAILS') { grupo = null; return; }
+      if (c.tagName === 'DETAILS') {
+        grupo = null;
+        var dk = c.getAttribute('data-k');
+        if (dk) { c.open = abiertasDet[dk] === true; c.addEventListener('toggle', function () { abiertasDet[dk] = c.open; }); }
+        return;
+      }
       if (c.classList.contains('sh')) {
         var key = c.textContent.trim(), d = document.createElement('details'), sm = document.createElement('summary');
-        d.className = 'dlc-sec'; if (cerradas[key] === undefined && esCel() && [T('matrix'), T('conc'), T('movList')].indexOf(key) >= 0) cerradas[key] = true; if (!cerradas[key]) d.open = true;
+        d.className = 'dlc-sec'; if (cerradas[key] === undefined) cerradas[key] = [T('flow'), T('matrix')].indexOf(key) < 0; if (!cerradas[key]) d.open = true;
         sm.className = 'sh'; sm.style.cursor = 'pointer'; sm.textContent = c.textContent;
         d.appendChild(sm);
         d.addEventListener('toggle', function () { cerradas[key] = !d.open; });
@@ -6205,7 +6213,7 @@ window.generarReporteFecha = generarReporteFecha;
       PARTES.filter(function (p) { return rows.sinReq[p.pn] > 0; }).map(function (p) { return '<div class="dlc-mut">' + chip(p.color) + h(p.pn) + ': <span class="dlc-pill crit">' + h(T('stSobra', { n: n(rows.sinReq[p.pn]) })) + '</span> ' + h(T('plSinReq').replace(/^pzas |^pcs |^개 /, '')) + '</div>'; }).join('') +
       fpResumen(rows) + (pend.length && !puede ? '<div class="dlc-mut">' + h(T('plSoloAlm')) + '</div>' : '') +
       (pend.length ? '<button class="dlc-b2" style="margin-top:.4rem" onclick="dlc.imprimirSurtido()">🖨 ' + h(T('plImprimir')) + '</button>' : '');
-    return '<details class="dlc-det" open><summary>📦 ' + h(T('plPick')) + ' (' + pend.length + '/' + rows.length + ')</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('plPickNota')) + '</div>' + body + '</div></details>';
+    return '<details class="dlc-det" data-k="pick"><summary>📦 ' + h(T('plPick')) + ' (' + pend.length + '/' + rows.length + ')</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('plPickNota')) + '</div>' + body + '</div></details>';
   }
 
   /* Lista de recepciones en WIP P3: surtidos por lote y su escaneo (derivado de los movimientos) */
@@ -6256,7 +6264,7 @@ window.generarReporteFecha = generarReporteFecha;
   }
   function recCard() {
     var nTr = lotesGI().length;
-    return '<details class="dlc-det" open><summary>📥 ' + h(T('recT')) + (nTr ? ' · ' + h(T('plEstTr')) + ': ' + nTr : '') + '</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('recNota')) + '</div>' +
+    return '<details class="dlc-det" data-k="rec"><summary>📥 ' + h(T('recT')) + (nTr ? ' · ' + h(T('plEstTr')) + ': ' + nTr : '') + '</summary><div class="card"><div class="dlc-mut" style="margin-bottom:.4rem">' + h(T('recNota')) + '</div>' +
       '<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.5rem"><label>' + h(T('recDia')) + ' <input id="dlc-rec-d" class="dlc-in" type="date" value="' + h(recDia) + '" onchange="dlc.recFiltro()"></label>' +
       '<select id="dlc-rec-e" class="dlc-in" onchange="dlc.recFiltro()"><option value="all"' + (recEst === 'all' ? ' selected' : '') + '>' + h(T('todos')) + '</option><option value="ok"' + (recEst === 'ok' ? ' selected' : '') + '>' + h(T('c_WIP_RCV')) + '</option><option value="tr"' + (recEst === 'tr' ? ' selected' : '') + '>' + h(T('plEstTr')) + '</option><option value="can"' + (recEst === 'can' ? ' selected' : '') + '>' + h(T('recCanc')) + '</option><option value="dev"' + (recEst === 'dev' ? ' selected' : '') + '>' + h(T('recDev')) + '</option></select>' +
       '<button class="dlc-b2" onclick="dlc.recDiaTodos()">' + h(T('recVerTodo')) + '</button><button class="dlc-b2" onclick="dlc.recImprimir()">🖨 ' + h(T('plImprimir')) + '</button></div>' +
