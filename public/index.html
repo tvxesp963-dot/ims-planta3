@@ -4675,8 +4675,8 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v27nov-1845';   // versión visible en el encabezado: se actualiza en cada entrega
-  var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
+  var APP_VER = 'v27nov-1915';   // versión visible en el encabezado: se actualiza en cada entrega
+  var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p4ims', 'p4wip', 'p4pk', 'p3fl'];   // v49: sin 'Pre-Kit P3 (Almacén)': el pre-kit de P3 nunca pasa por el IMS P3 como bundle   // p3fl: pallets de P3 en ShipQR sin embarcar (Pre-Kit P3 Piso)
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
   var SAMSUNG_DEF = {
@@ -4780,7 +4780,7 @@ window.generarReporteFecha = generarReporteFecha;
   function calcular(movs, imsStock, hoyISO, p4, imsSal) {
     var res = {}, b3 = bundlesIMS3();
     PARTES.forEach(function (p) {
-      res[p.pn] = { p3wh: { item: imsStock[nk(p.pn)] || 0, bundle: 0 }, p3wip: vacio(), p3bt: vacio(), p3pk: vacio(), p4ims: vacio(), p4wip: vacio(), p4pk: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0, transito: 0, enRuta: 0, p3tr: 0 };
+      res[p.pn] = { p3wh: { item: imsStock[nk(p.pn)] || 0, bundle: 0 }, p3wip: vacio(), p3bt: vacio(), p3pk: vacio(), p4ims: vacio(), p4wip: vacio(), p4pk: vacio(), p3fl: vacio(), enviadoHoy: 0, enviadoTotal: 0, perdido: 0, ultEnsamble: 0, transito: 0, enRuta: 0, p3tr: 0 };
     });
     // de más antiguo a más nuevo
     movs.slice().sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); }).forEach(function (m) {
@@ -4819,7 +4819,11 @@ window.generarReporteFecha = generarReporteFecha;
         if (desdeCable(movs, p.pn) && Object.keys(p4.det || {}).length) { bAlm = 0; bLin = 0; Object.keys(p4.det || {}).forEach(function (g) { if (((p4.mapa || {})[g] || []).indexOf(p.pn) < 0) return; var e4 = p4Ef(g, p.pn, p4, movs); bAlm += e4.alm; bLin += e4.lin; }); }   // solo lo recibido desde el arranque
         r2.p4ims = { item: p4.almItem[p.pn] || 0, bundle: bAlm };
         r2.p4wip = { item: p4.linItem[p.pn] || 0, bundle: bLin };
-        r2.p4pk = { item: 0, bundle: p4.piso[p.pn] || 0 };   // Pre-Kit P4: producto terminado del MES en ShipQR, sin embarcar
+        r2.p4pk = { item: 0, bundle: p4.piso[p.pn] || 0 };
+        r2.p3fl = { item: 0, bundle: p4.pisoP3[p.pn] || 0 };   // Pre-Kit P3 (Piso): pallets de P3 en ShipQR, sin embarcar
+        // v49: el pre-kit de P3 (A16/A17) consume el cable de WIP P3 directo (el bundle se arma y se usa en la línea, no entra al IMS P3):
+        // cada pallet de P3 creado en ShipQR desde el arranque del DLC resta su cable de WIP P3
+        if (DLC_ARRANQUE) { var arrMs = Date.parse(DLC_ARRANQUE); (p4.p3pal || []).forEach(function (x) { if (x.c === p.pn && x.ms >= arrMs) r2.p3wip.item -= x.q; }); }   // Pre-Kit P4: producto terminado del MES en ShipQR, sin embarcar
         r2.enviadoHoy = p4.hoy[p.pn] || 0; r2.enviadoTotal = p4.env[p.pn] || 0;
       });
       // Lotes QR en Embarque P4 / Corrida: si el IMS P4 aún muestra menos, manda el lote escaneado
@@ -5069,9 +5073,16 @@ window.generarReporteFecha = generarReporteFecha;
   function bloquear(auto) { if (st.ok && auto) audit('BLOQUEO_AUTO'); st.ok = 0; if (wrap()) pintarCandado(); }
 
   /* ---------------- DATOS ---------------- */
+  /* Pallet de ShipQR producido en Planta 3 (el lote dice "(P3)"): va a Pre-Kit P3 (Piso), no a Pre-Kit P4 */
+  function palletP3(o, id) {
+    var pl = String(o.planta || o.plant || o.origen || o.origin || o.source || o.fabrica || '').trim().toUpperCase();
+    if (pl) return /^(P|PLANTA|PLANT)\s*-?\s*3$/.test(pl) || pl === '3';
+    var txt = [o.lot_number, o.lote, o.lot, o.lot_no, o.pallet_id, o.label, o.qr, id].map(function (x) { return String(x || '').toUpperCase(); }).join(' ');
+    return /(^|[^A-Z0-9])P3([^0-9]|$)/.test(txt);
+  }
   /* ---- Lectura de IMS P4 + BOM + ShipQR (todo ligado) ---- */
   async function cargarP4() {
-    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0, precio: {}, lin: {}, linItem: {}, det: {}, detPiso: {} };
+    var p = { ok: false, err: '', t: Date.now(), alm: {}, almItem: {}, piso: {}, hoy: {}, env: {}, mapa: {}, nMapa: 0, precio: {}, lin: {}, linItem: {}, det: {}, detPiso: {}, pisoP3: {}, detPisoP3: {}, p3pal: [] };
     try {
       var cablePns = PARTES.map(function (x) { return x.pn; });
       // 1) BOM: qué bundle (GH90) lleva cada cable DLC
@@ -5147,17 +5158,19 @@ window.generarReporteFecha = generarReporteFecha;
         qs.forEach(function (d) {
           var o = d.data(), pn = String(o.part_number || '').trim().toUpperCase(), q = Number(o.quantity) || 0;
           var ghs = p.mapa[pn] ? [pn] : (p.tope[pn] || p.hijo[pn] || []);   // bundle directo, relación manual, o bundle anidado del BOM
-          var cabs = [];
+          var cabs = [], deP3 = palletP3(o, d.id);
           ghs.forEach(function (g) {
-            if (o.status !== 'SHIPPED') p.detPiso[g] = (p.detPiso[g] || 0) + q;
+            if (o.status !== 'SHIPPED') { if (deP3) p.detPisoP3[g] = (p.detPisoP3[g] || 0) + q; else p.detPiso[g] = (p.detPiso[g] || 0) + q; }
             (p.mapa[g] || []).forEach(function (c) { if (cabs.indexOf(c) < 0) cabs.push(c); });
           });
+          if (deP3) { var cr3 = (o.created_at && o.created_at.seconds) ? o.created_at.seconds * 1000 : 0; cabs.forEach(function (c) { p.p3pal.push({ c: c, q: q, ms: cr3 }); }); }
           cabs.forEach(function (c) {
             if (o.status === 'SHIPPED') {
               p.env[c] = (p.env[c] || 0) + q;
               var tx = o.updated_at || o.created_at, ms = tx && tx.seconds ? tx.seconds * 1000 : 0;
               if (ms >= ini.getTime()) p.hoy[c] = (p.hoy[c] || 0) + q;
-            } else p.piso[c] = (p.piso[c] || 0) + q;
+            } else if (deP3) p.pisoP3[c] = (p.pisoP3[c] || 0) + q;
+            else p.piso[c] = (p.piso[c] || 0) + q;
           });
         });
       }
@@ -5292,7 +5305,7 @@ window.generarReporteFecha = generarReporteFecha;
       var c = lotesAll.filter(function (l) { return et === 'P4' ? (l.etapa === 'SHIP_P4' || l.etapa === 'RUN_P4' || l.etapa === 'QR') : l.etapa === et; }), q = c.reduce(function (a, l) { return a + l.qty; }, 0);
       return '<div class="dlc-nm"><button type="button" class="dlc-b2" style="padding:2px 8px;font-size:11px;margin-top:6px" onclick="dlc.etapaAbrir(\'' + et + '\')">🏷 ' + c.length + ' ' + h(T('qrLotesN')) + ' · ' + n(q) + ' pz ' + (etapaAb === et ? '▾' : '▸') + '</button></div>';
     };
-    var nodos = LOCS.map(function (l) { return [l, locKey(l), l === 'p4pk' ? 'ShipQR' : (l.indexOf('p3') === 0 ? 'IMS P3' : 'IMS P4')]; });
+    var nodos = LOCS.map(function (l) { return [l, locKey(l), (l === 'p4pk' || l === 'p3fl') ? 'ShipQR' : (l.indexOf('p3') === 0 ? 'IMS P3' : 'IMS P4')]; });
     nodos.forEach(function (nd) {
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
       var t2 = i2 + b2, pct = t2 > 0 ? Math.max(0, Math.min(100, i2 / t2 * 100)) : 0;
@@ -5300,8 +5313,7 @@ window.generarReporteFecha = generarReporteFecha;
         ((nd[0] === 'p3wh' || nd[0] === 'p3wip') ? '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' : '') +
         (nd[0] === 'p3wip' ? (function () { var tq = 0; keys.forEach(function (pn) { tq += res[pn].enRuta || 0; }); return tq > 0 ? '<div class="dlc-nm"><span>+ ' + n(tq) + ' ' + h(T('plTrans')) + '</span></div>' : ''; })() : '') + '</div>';
     });
-    var sh2 = 0; keys.forEach(function (pn) { sh2 += res[pn].enviadoHoy; });
-    html += '<div class="dlc-node qr"><div class="dlc-app">QR</div><div class="dlc-nn">' + h(T('lQR')) + '</div><div class="dlc-nv">' + n(sh2) + '</div>' + '</div></div>';
+    html += '</div>';
     html += etapaLista();
 
     // matriz parte x color
@@ -5320,15 +5332,15 @@ window.generarReporteFecha = generarReporteFecha;
       if (typeof items !== 'undefined' && items) items.forEach(function (i) { if (esManualB(i.desc)) return; var k = nk(i.pn); st3[k] = (st3[k] || 0) + stockFlujoP3(i); });   // v44: solo bundle desde el arranque
       keys.forEach(function (pn) {
         var padres = Object.keys(st.p4.mapa).filter(function (g) { return st.p4.mapa[g].indexOf(pn) >= 0; }).sort();
-        var tS = 0, tL = 0, tP = 0, t3 = 0;
+        var tS = 0, tL = 0, tP = 0, t3 = 0, tQ = 0;
         padres.forEach(function (g) {
-          var d1 = st.p4.det[g], pk = st.p4.detPiso[g] || 0, e4 = p4Ef(g, pn, st.p4, st.movs), sk = e4.alm + e4.lin, ln = e4.lin, tg = trm[g] || 0, s3 = (st3[nk(g)] || 0) - tg;
-          tS += sk; tL += ln; tP += pk; t3 += s3;
-          detH += '<tr><td>' + chip(colorDe(pn)) + h(pn) + '</td><td><b>' + h(g) + '</b></td><td></td><td></td><td>' + n(s3) + (tg > 0 ? '<br><span class="dlc-pill warn">↗ ' + n(tg) + ' ' + h(T('trP4')) + '</span>' : '') + '</td><td></td><td>' + n(sk - ln) + (e4.prev > 0 ? '<br><span class="dlc-mut">' + n(e4.prev) + ' ' + h(T('trPrev')) + '</span>' : '') + '</td><td>' + n(ln) + '</td><td>' + n(pk) + '</td></tr>';
+          var d1 = st.p4.det[g], pk = st.p4.detPiso[g] || 0, pq = (st.p4.detPisoP3 || {})[g] || 0, e4 = p4Ef(g, pn, st.p4, st.movs), sk = e4.alm + e4.lin, ln = e4.lin, tg = trm[g] || 0, s3 = (st3[nk(g)] || 0) - tg;
+          tS += sk; tL += ln; tP += pk; t3 += s3; tQ += pq;
+          detH += '<tr><td>' + chip(colorDe(pn)) + h(pn) + '</td><td><b>' + h(g) + '</b></td><td></td><td></td><td>' + n(s3) + (tg > 0 ? '<br><span class="dlc-pill warn">↗ ' + n(tg) + ' ' + h(T('trP4')) + '</span>' : '') + '</td><td>' + n(sk - ln) + (e4.prev > 0 ? '<br><span class="dlc-mut">' + n(e4.prev) + ' ' + h(T('trPrev')) + '</span>' : '') + '</td><td>' + n(ln) + '</td><td>' + n(pk) + '</td><td>' + n(pq) + '</td></tr>';
         });
-        detH += '<tr style="font-weight:700"><td>' + chip(colorDe(pn)) + h(pn) + '</td><td>Total (' + padres.length + ')</td><td>' + n(totalLoc(res[pn], 'p3wh')) + '</td><td>' + n(totalLoc(res[pn], 'p3wip')) + '</td><td>' + n(t3) + '</td><td>' + n(totalLoc(res[pn], 'p3pk')) + '</td><td>' + n(tS - tL) + '</td><td>' + n(tL) + '</td><td>' + n(tP) + '</td></tr>';
+        detH += '<tr style="font-weight:700"><td>' + chip(colorDe(pn)) + h(pn) + '</td><td>Total (' + padres.length + ')</td><td>' + n(totalLoc(res[pn], 'p3wh')) + '</td><td>' + n(totalLoc(res[pn], 'p3wip')) + '</td><td>' + n(t3) + '</td><td>' + n(tS - tL) + '</td><td>' + n(tL) + '</td><td>' + n(tP) + '</td><td>' + n(tQ) + '</td></tr>';
       });
-      var thL = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'].map(function (l) { return '<th>' + h(T(locKey(l))) + '</th>'; }).join('');
+      var thL = ['p3wh', 'p3wip', 'p3bt', 'p4ims', 'p4wip', 'p4pk', 'p3fl'].map(function (l) { return '<th>' + h(T(locKey(l))) + '</th>'; }).join('');
       html += '<details class="dlc-det" data-k="det"><summary>📋 ' + h(T('detT')) + '</summary><div class="card"><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th><th>' + h(T('detBundle')) + '</th>' + thL + '</tr></thead><tbody>' + detH + '</tbody></table></div><div class="dlc-mut">' + h(T('detNota')) + '</div></div></details>';
       // relación propia ShipQR -> bundle
       var sinL = Object.keys(st.p4.sinMapa || {}).sort(), manL = Object.keys(st.p4.manual || {}).sort(), ghL = Object.keys(st.p4.mapa).sort();
@@ -5440,7 +5452,7 @@ window.generarReporteFecha = generarReporteFecha;
       if (grupo) grupo.appendChild(c);
     });
   }
-  function locKey(l) { return { p3wh: 'lAlm3', p3wip: 'lWip3', p3bt: 'lBt3', p3pk: 'lPk3', p4ims: 'lAlm4', p4wip: 'lWip4', p4pk: 'lPk4' }[l]; }
+  function locKey(l) { return { p3wh: 'lAlm3', p3wip: 'lWip3', p3bt: 'lBt3', p3pk: 'lPk3', p4ims: 'lAlm4', p4wip: 'lWip4', p4pk: 'lPk4', p3fl: 'lQR' }[l]; }
 
   /* ---------------- ACCIONES ---------------- */
   function tipoPick(t) { var i = el('dlc-f-tipo'); if (!i) return; i.value = t; Array.prototype.forEach.call(document.querySelectorAll('#dlc-f-tipos .dq-t'), function (b) { b.classList.toggle('on', b.getAttribute('data-t') === t); }); cambioTipo(); }
@@ -6524,7 +6536,7 @@ window.generarReporteFecha = generarReporteFecha;
   var QR_PREV = { RTN_BT: 'ASSEMBLE', PREKIT_P3: 'RTN_BT', SHIP_P4: 'RTN_BT', WIP_RCV: 'ISSUE' };
   /* Corrida y Etiqueta QR final ya no se escanean: WIP P4 sale del TRASLADO en el IMS P4 y el envío a Dallas lo lleva ShipQR. */
   function prevOk(t, e) { return QR_PREV[t] === e; }
-  var QR_PASOS = ['RTN_BT', 'PREKIT_P3', 'SHIP_P4', 'WIP_RCV'];
+  var QR_PASOS = ['RTN_BT', 'SHIP_P4', 'WIP_RCV'];   // v49: sin PREKIT_P3 (el pre-kit de P3 no pasa por el IMS P3)
   var QR_FINAL = { PREKIT_P3: 1, SHIP_P4: 1, WIP_RCV: 1 };
   var qrHechos = [];
 
@@ -6808,7 +6820,7 @@ window.generarReporteFecha = generarReporteFecha;
       '.dq-t.dis,.dq-g.dis{pointer-events:none;opacity:.55}.dq-t .n{font-size:26px;font-weight:800;margin-top:2px}';
     document.head.appendChild(x);
   }
-  var QR_ETAPAS = [['ASSEMBLE', '🏭'], ['RTN_BT', '✅'], ['PREKIT_P3', '📦'], ['SHIP_P4', '🚚']];
+  var QR_ETAPAS = [['ASSEMBLE', '🏭'], ['RTN_BT', '✅'], ['SHIP_P4', '🚚']];
   var etapaAb = null;
   function etapaAbrir(e) { etapaAb = (etapaAb === e) ? null : e; pintar(); }
   function qrAjAbrir(t) {
@@ -6850,7 +6862,7 @@ window.generarReporteFecha = generarReporteFecha;
       '<label>' + h(T('cant')) + '<input id="dlc-f-qty" class="dlc-in" type="number" min="1" inputmode="numeric" style="font-size:20px"></label>' +
       '<label>' + h(T('ref')) + '<input id="dlc-f-ref" class="dlc-in" type="text" readonly placeholder="' + h(T('refAuto')) + '"></label>' +
       '<div id="dlc-loss" style="display:none;grid-column:1/-1;gap:.6rem;grid-template-columns:1fr 1fr">' +
-      '<label>' + h(T('loc')) + '<select id="dlc-f-loc" class="dlc-in">' + ['p3wip', 'p3bt', 'p3pk'].map(function (l) { return '<option value="' + l + '">' + h(T(locKey(l))) + '</option>'; }).join('') + '</select></label>' +
+      '<label>' + h(T('loc')) + '<select id="dlc-f-loc" class="dlc-in">' + ['p3wip', 'p3bt'].map(function (l) { return '<option value="' + l + '">' + h(T(locKey(l))) + '</option>'; }).join('') + '</select></label>' +
       '<label>' + h(T('kind')) + '<select id="dlc-f-kind" class="dlc-in"><option value="item">' + h(T('item')) + '</option><option value="bundle">' + h(T('bundle')) + '</option></select></label>' +
       '<label style="grid-column:1/-1">' + h(T('motivo')) + '<input id="dlc-f-nota" class="dlc-in" type="text"></label></div>' +
       '<button class="dlc-b" style="grid-column:1/-1;font-size:16px;padding:14px" onclick="dlc.registrar()">' + h(T('registrar')) + '</button></div>' +
