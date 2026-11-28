@@ -4675,7 +4675,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v27nov-1915';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v27nov-1930';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p4ims', 'p4wip', 'p4pk', 'p3fl'];   // v49: sin 'Pre-Kit P3 (Almacén)': el pre-kit de P3 nunca pasa por el IMS P3 como bundle   // p3fl: pallets de P3 en ShipQR sin embarcar (Pre-Kit P3 Piso)
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -5324,6 +5324,13 @@ window.generarReporteFecha = generarReporteFecha;
         LOCS.map(function (l) { return '<td><b>' + n(totalLoc(r, l)) + '</b><br><span class="dlc-mut">' + n(r[l].item) + ' / ' + n(r[l].bundle) + '</span>' + (l === 'p3bt' && r.p3tr > 0 ? '<br><span class="dlc-pill warn">↗ ' + n(r.p3tr) + ' ' + h(T('trP4')) + '</span>' : '') + '</td>'; }).join('') +
         '<td><b>' + n(totalPn(r)) + '</b></td></tr>';
     });
+    // v50: renglón de suma de todas las columnas (negro + blanco)
+    (function () {
+      var bs = 'border-top:2px solid var(--border2,#888);background:rgba(66,133,244,.12)';
+      html += '<tr style="font-weight:700"><td style="' + bs + '">Σ ' + h(T('sumTotal')) + '</td>' +
+        LOCS.map(function (l) { var t = 0, it = 0, bu = 0; keys.forEach(function (pn) { t += totalLoc(res[pn], l); it += res[pn][l].item; bu += res[pn][l].bundle; }); return '<td style="' + bs + '"><b>' + n(t) + '</b><br><span class="dlc-mut">' + n(it) + ' / ' + n(bu) + '</span></td>'; }).join('') +
+        '<td style="' + bs + '"><b>' + n(keys.reduce(function (s2, pn) { return s2 + totalPn(res[pn]); }, 0)) + '</b></td></tr>';
+    })();
     html += '</tbody></table></div><div class="dlc-mut">' + h(T('itemBundle')) + '</div>' + (keys.some(function (pn) { return res[pn].p3tr > 0; }) ? '<div class="dlc-mut" style="margin-top:.3rem">↗ ' + h(T('trNota')) + '</div>' : '');
 
     // detalle por bundle GH90: mismas columnas y nombres que las tarjetas del recorrido (el renglón Total de cada cable cuadra con ellas)
