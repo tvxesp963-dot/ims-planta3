@@ -4675,7 +4675,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v27nov-1210';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v27nov-1830';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -5907,25 +5907,51 @@ window.generarReporteFecha = generarReporteFecha;
 
   async function destinatarios() {
     if (!esAdmin()) { say(T('soloAdmin')); return; }
-    var L = { es: ['Elige quién recibe el reporte', 'Guardar', 'Cancelar', 'Usuarios del IMS P3 con correo'], en: ['Choose who receives the report', 'Save', 'Cancel', 'IMS P3 users with email'], ko: ['보고서를 받을 사람 선택', '저장', '취소', '이메일이 있는 IMS P3 사용자'] }[lang()] || [];
-    var usuarios = [];
-    try {
-      var q = await db.collection('ims_usuarios').get();
-      q.docs.forEach(function (d) { var u = d.data(); if (u.email && u.activo !== false) usuarios.push({ email: String(u.email).toLowerCase(), nombre: u.nombre || '' }); });
-    } catch (e) { say(T('err') + e.message); return; }
+    var L = { es: ['Elige quién recibe el reporte', 'Guardar', 'Cancelar', 'Usuarios con correo de IMS P3, MES, BOM y ESP Portal', 'Buscar nombre o correo…'], en: ['Choose who receives the report', 'Save', 'Cancel', 'Users with email from IMS P3, MES, BOM and ESP Portal', 'Search name or email…'], ko: ['보고서를 받을 사람 선택', '저장', '취소', 'IMS P3, MES, BOM, ESP 포털의 이메일 사용자', '이름 또는 이메일 검색…'] }[lang()] || [];
+    var usuarios = [], porEmail = {};
+    function addU(o, fuente) {
+      if (!o || typeof o !== 'object') return;
+      if (o.activo === false || o.active === false) return;
+      var em = o.email || o.correo || o.mail || ((typeof o.usuario === 'string' && o.usuario.indexOf('@') > 0) ? o.usuario : '') || ((typeof o.user === 'string' && o.user.indexOf('@') > 0) ? o.user : '');
+      em = String(em || '').trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return;
+      var nom = o.nombre || o.name || o.displayName || '';
+      var u = porEmail[em];
+      if (!u) { u = porEmail[em] = { email: em, nombre: nom, fuentes: [] }; usuarios.push(u); }
+      if (!u.nombre && nom) u.nombre = nom;
+      if (u.fuentes.indexOf(fuente) < 0) u.fuentes.push(fuente);
+    }
+    async function leerCol(col, fuente) {
+      try { var q = await db.collection(col).get(); q.docs.forEach(function (d) { addU(d.data(), fuente); }); } catch (e) { console.warn('Destinatarios ' + col, e); }
+    }
+    async function leerPortal() {
+      try {
+        var d = await db.collection('esp_portal').doc('usuarios').get();
+        if (!d.exists) return;
+        var data = d.data() || {};
+        Object.keys(data).forEach(function (k) {
+          var v = data[k];
+          if (Array.isArray(v)) v.forEach(function (x) { addU(x, 'Portal'); });
+          else if (v && typeof v === 'object') { if (v.email || v.correo) addU(v, 'Portal'); else Object.keys(v).forEach(function (k2) { addU(v[k2], 'Portal'); }); }
+        });
+      } catch (e) { console.warn('Destinatarios esp_portal', e); }
+    }
+    await Promise.all([leerCol('ims_usuarios', 'IMS P3'), leerCol('usuarios', 'MES'), leerCol('usuarios_bom', 'BOM'), leerPortal()]);
     var sel = {}; (st.correos || []).forEach(function (e) { sel[e] = 1; });
-    usuarios.forEach(function (u) { delete sel['_' + u.email]; });
-    (st.correos || []).forEach(function (e) { if (!usuarios.some(function (u) { return u.email === e; })) usuarios.push({ email: e, nombre: '' }); });
+    (st.correos || []).forEach(function (e) { if (!porEmail[e]) { porEmail[e] = { email: e, nombre: '', fuentes: [] }; usuarios.push(porEmail[e]); } });
+    if (!usuarios.length) { say(T('err') + 'sin usuarios'); return; }
     usuarios.sort(function (x, y) { return (x.nombre || x.email).localeCompare(y.nombre || y.email); });
     var ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
     ov.innerHTML = '<div style="background:var(--bg2,#fff);color:var(--text,#111);border:1px solid var(--border2,#ccc);border-radius:14px;max-width:460px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:16px">' +
       '<div style="font-weight:700;font-size:16px;margin-bottom:4px">👥 ' + h(L[0]) + '</div><div class="dlc-mut" style="margin-bottom:8px">' + h(L[3]) + '</div>' +
+      '<input id="dlc-dest-q" type="search" placeholder="' + h(L[4]) + '" style="padding:10px;border:1px solid var(--border2,#ccc);border-radius:10px;margin-bottom:8px;font-size:14px;background:var(--bg,#fff);color:inherit">' +
       '<div style="overflow:auto;flex:1;border:1px solid var(--border2,#ccc);border-radius:10px">' +
-      usuarios.map(function (u, i) { return '<label style="display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border2,#ddd);cursor:pointer;font-size:14px"><input type="checkbox" data-e="' + h(u.email) + '" style="width:18px;height:18px"' + (sel[u.email] ? ' checked' : '') + '><span><b>' + h(u.nombre || u.email) + '</b><br><span class="dlc-mut">' + h(u.email) + '</span></span></label>'; }).join('') +
+      usuarios.map(function (u, i) { return '<label data-q="' + h((u.nombre + ' ' + u.email).toLowerCase()) + '" style="display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border2,#ddd);cursor:pointer;font-size:14px"><input type="checkbox" data-e="' + h(u.email) + '" style="width:18px;height:18px"' + (sel[u.email] ? ' checked' : '') + '><span><b>' + h(u.nombre || u.email) + '</b><br><span class="dlc-mut">' + h(u.email) + (u.fuentes.length ? ' · ' + h(u.fuentes.join(', ')) : '') + '</span></span></label>'; }).join('') +
       '</div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="dlc-b2" id="dlc-dest-no">' + h(L[2]) + '</button><button class="dlc-b" id="dlc-dest-si">' + h(L[1]) + '</button></div></div>';
     document.body.appendChild(ov);
     ov.querySelector('#dlc-dest-no').onclick = function () { ov.remove(); };
+    ov.querySelector('#dlc-dest-q').oninput = function () { var t = this.value.trim().toLowerCase(); [].forEach.call(ov.querySelectorAll('label[data-q]'), function (l) { l.style.display = (!t || l.getAttribute('data-q').indexOf(t) >= 0) ? 'flex' : 'none'; }); };
     ov.querySelector('#dlc-dest-si').onclick = async function () {
       var lista = [].slice.call(ov.querySelectorAll('input[type=checkbox]')).filter(function (c) { return c.checked; }).map(function (c) { return c.getAttribute('data-e'); });
       try {
