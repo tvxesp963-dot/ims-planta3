@@ -4675,7 +4675,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v27nov-1930';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v27nov-2030';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p4ims', 'p4wip', 'p4pk', 'p3fl'];   // v49: sin 'Pre-Kit P3 (Almacén)': el pre-kit de P3 nunca pasa por el IMS P3 como bundle   // p3fl: pallets de P3 en ShipQR sin embarcar (Pre-Kit P3 Piso)
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -4703,7 +4703,7 @@ window.generarReporteFecha = generarReporteFecha;
       total: 'Total bajo responsabilidad', item: 'Material a granel', bundle: 'Bundle', enviadoHoy: 'Enviado a Dallas hoy', expo: 'Exposición (USD)', dif: 'Dif. vs Samsung',
       flow: 'Recorrido del cable', matrix: 'Control por parte y color', conc: 'Conciliación contra Samsung', alertas: 'Alertas', sinAlertas: 'Sin alertas. Todo cuadra.',
       movForm: 'Registrar movimiento', movList: 'Movimientos recientes', sec: 'Seguridad y bitácora', samsungT: 'Reporte de Samsung (captura)',
-      lAlm3: 'Almacén P3', lWip3: 'WIP P3', lBt3: 'Bundle term. P3', lPk3: 'Pre-Kit P3 (Almacén)', lAlm4: 'Almacén P4', lWip4: 'WIP P4', lPk4: 'Pre-Kit P4 (Piso)', detT: 'Detalle de bundles por ubicación (IMS P3, IMS P4 y Pre-Kit)', detP3: 'STOCK IMS P3', detW3: 'WIP P3 (CABLE A GRANEL)', detBundle: 'Bundle (GH90)', detDesc: 'Líneas en IMS P4', detStock: 'Stock IMS P4', detLin: 'En línea (WIP P4)', detAlm: 'En almacén', detPk: 'Pre-Kit P4 (ShipQR)', detNo: 'No existe en IMS P4', detNota: 'Cada fila es un bundle GH90 ligado al cable por el BOM. El renglón Total de cada cable cuadra con las tarjetas del recorrido. Almacén P3, WIP P3 y Pre-Kit P3 son cable/capturas, no tienen desglose por bundle.', lQR: 'Pre-Kit P3 (Piso)', parte: 'Parte', color: 'Color', black: 'Negro', white: 'Blanco',
+      lAlm3: 'Almacén P3', lWip3: 'WIP P3', lBt3: 'Bundle term. P3', lPk3: 'Pre-Kit P3 (Almacén)', lAlm4: 'Almacén P4', lWip4: 'WIP P4', lPk4: 'Pre-Kit P4 (Piso)', detT: 'Detalle de bundles por ubicación (IMS P3, IMS P4 y Pre-Kit)', detP3: 'STOCK IMS P3', detW3: 'WIP P3 (CABLE A GRANEL)', detBundle: 'Bundle (GH90)', detDesc: 'Líneas en IMS P4', detStock: 'Stock IMS P4', detLin: 'En línea (WIP P4)', detAlm: 'En almacén', detPk: 'Pre-Kit P4 (ShipQR)', detNo: 'No existe en IMS P4', detNota: 'Cada fila es un bundle GH90 ligado al cable por el BOM. El renglón Total de cada cable cuadra con las tarjetas del recorrido. Almacén P3, WIP P3 y Pre-Kit P3 son cable/capturas, no tienen desglose por bundle.', lQR: 'Pre-Kit P3 (Piso)', rtP3: 'CAMINO P3', rtLinP3: 'Pre-kit A16/A17 en línea P3 (el bundle no entra al IMS P3)', rtDallas: 'Dallas', rtRampa: 'Rampa', parte: 'Parte', color: 'Color', black: 'Negro', white: 'Blanco',
       sistema: 'Sistema', samsung: 'Samsung', estado: 'Estado', cuadra: 'Cuadra', revisar: 'Revisar', tipoSam: 'Tipo Samsung',
       tipo: 'Movimiento', cant: 'Cantidad', ref: 'Documento / referencia', nota: 'Nota', registrar: 'Registrar', loc: 'Locación', kind: 'Tipo de cable', motivo: 'Motivo (obligatorio)',
       t_ISSUE: 'Surtir de Almacén P3 a WIP P3', t_ASSEMBLE: 'Ensamblar bundle en P3', t_RTN_BT: 'Bundle terminado regresa al IMS P3', t_PREKIT_P3: 'Bundle a Pre-Kit P3 (A16 / A17)', t_SHIP_P4: 'Enviar bundle a Almacén P4', t_RUN_P4: 'Corrida: Almacén P4 a línea (WIP P4)', t_QR: 'Etiqueta QR: descuenta y envía a Dallas', t_LOSS: 'Pérdida / merma',
@@ -4728,7 +4728,7 @@ window.generarReporteFecha = generarReporteFecha;
       total: 'Total under responsibility', item: 'Bulk material', bundle: 'Bundle', enviadoHoy: 'Shipped to Dallas today', expo: 'Exposure (USD)', dif: 'Diff. vs Samsung',
       flow: 'Cable path', matrix: 'Control by part and color', conc: 'Reconciliation against Samsung', alertas: 'Alerts', sinAlertas: 'No alerts. Everything matches.',
       movForm: 'Record movement', movList: 'Recent movements', sec: 'Security and audit log', samsungT: 'Samsung report (entry)',
-      lAlm3: 'P3 Warehouse', lWip3: 'WIP P3', lBt3: 'P3 Fin. bundle', lPk3: 'P3 Pre-Kit (WH)', lAlm4: 'P4 Warehouse', lWip4: 'WIP P4', lPk4: 'P4 Pre-Kit (Floor)', detT: 'Bundle detail by location (IMS P3, IMS P4 and Pre-Kit)', detP3: 'IMS P3 STOCK', detW3: 'WIP P3 (BULK CABLE)', detBundle: 'Bundle (GH90)', detDesc: 'Lines in IMS P4', detStock: 'IMS P4 stock', detLin: 'On line (WIP P4)', detAlm: 'In warehouse', detPk: 'P4 Pre-Kit (ShipQR)', detNo: 'Not found in IMS P4', detNota: 'Each row is a GH90 bundle linked to the cable by the BOM. Each cable Total row matches the journey cards. P3 Warehouse, WIP P3 and P3 Pre-Kit are bulk cable/captured, with no per-bundle breakdown.', lQR: 'P3 Pre-Kit (Floor)', parte: 'Part', color: 'Color', black: 'Black', white: 'White',
+      lAlm3: 'P3 Warehouse', lWip3: 'WIP P3', lBt3: 'P3 Fin. bundle', lPk3: 'P3 Pre-Kit (WH)', lAlm4: 'P4 Warehouse', lWip4: 'WIP P4', lPk4: 'P4 Pre-Kit (Floor)', detT: 'Bundle detail by location (IMS P3, IMS P4 and Pre-Kit)', detP3: 'IMS P3 STOCK', detW3: 'WIP P3 (BULK CABLE)', detBundle: 'Bundle (GH90)', detDesc: 'Lines in IMS P4', detStock: 'IMS P4 stock', detLin: 'On line (WIP P4)', detAlm: 'In warehouse', detPk: 'P4 Pre-Kit (ShipQR)', detNo: 'Not found in IMS P4', detNota: 'Each row is a GH90 bundle linked to the cable by the BOM. Each cable Total row matches the journey cards. P3 Warehouse, WIP P3 and P3 Pre-Kit are bulk cable/captured, with no per-bundle breakdown.', lQR: 'P3 Pre-Kit (Floor)', rtP3: 'P3 ROUTE', rtLinP3: 'A16/A17 pre-kit on P3 line (the bundle does not enter IMS P3)', rtDallas: 'Dallas', rtRampa: 'Ramp', parte: 'Part', color: 'Color', black: 'Black', white: 'White',
       sistema: 'System', samsung: 'Samsung', estado: 'Status', cuadra: 'Matches', revisar: 'Review', tipoSam: 'Samsung type',
       tipo: 'Movement', cant: 'Quantity', ref: 'Document / reference', nota: 'Note', registrar: 'Record', loc: 'Location', kind: 'Cable type', motivo: 'Reason (required)',
       t_ISSUE: 'Issue from P3 Warehouse to WIP P3', t_ASSEMBLE: 'Assemble bundle in P3', t_RTN_BT: 'Finished bundle returns to IMS P3', t_PREKIT_P3: 'Bundle to P3 Pre-Kit (A16 / A17)', t_SHIP_P4: 'Ship bundle to P4 Warehouse', t_RUN_P4: 'Model run: P4 Warehouse to line (WIP P4)', t_QR: 'QR label: deduct and ship to Dallas', t_LOSS: 'Loss / scrap',
@@ -4753,7 +4753,7 @@ window.generarReporteFecha = generarReporteFecha;
       total: '총 관리 수량', item: '벌크 자재', bundle: '번들', enviadoHoy: '오늘 달라스 출고', expo: '노출 금액 (USD)', dif: '삼성 대비 차이',
       flow: '케이블 이동 경로', matrix: '품번·색상별 관리', conc: '삼성 보고서 대조', alertas: '알림', sinAlertas: '알림 없음. 모두 일치합니다.',
       movForm: '이동 등록', movList: '최근 이동 내역', sec: '보안 및 감사 로그', samsungT: '삼성 보고서 (입력)',
-      lAlm3: 'P3 창고', lWip3: 'P3 WIP', lBt3: 'P3 완성 번들', lPk3: 'P3 프리킷 (창고)', lAlm4: 'P4 창고', lWip4: 'P4 WIP', lPk4: 'P4 프리킷 (현장)', detT: '위치별 번들 상세 (IMS P3, IMS P4, 프리킷)', detP3: 'IMS P3 재고', detW3: 'P3 WIP (벌크 케이블)', detBundle: '번들 (GH90)', detDesc: 'IMS P4 라인', detStock: 'IMS P4 재고', detLin: '라인 (P4 WIP)', detAlm: '창고', detPk: 'P4 프리킷 (ShipQR)', detNo: 'IMS P4에 없음', detNota: '각 행은 BOM이 케이블과 연결한 GH90 번들입니다. 케이블별 합계 행은 위 흐름 카드와 일치합니다. P3 창고, P3 WIP, P3 프리킷은 번들별 내역이 없습니다.', lQR: 'P3 프리킷 (현장)', parte: '품번', color: '색상', black: '검정', white: '흰색',
+      lAlm3: 'P3 창고', lWip3: 'P3 WIP', lBt3: 'P3 완성 번들', lPk3: 'P3 프리킷 (창고)', lAlm4: 'P4 창고', lWip4: 'P4 WIP', lPk4: 'P4 프리킷 (현장)', detT: '위치별 번들 상세 (IMS P3, IMS P4, 프리킷)', detP3: 'IMS P3 재고', detW3: 'P3 WIP (벌크 케이블)', detBundle: '번들 (GH90)', detDesc: 'IMS P4 라인', detStock: 'IMS P4 재고', detLin: '라인 (P4 WIP)', detAlm: '창고', detPk: 'P4 프리킷 (ShipQR)', detNo: 'IMS P4에 없음', detNota: '각 행은 BOM이 케이블과 연결한 GH90 번들입니다. 케이블별 합계 행은 위 흐름 카드와 일치합니다. P3 창고, P3 WIP, P3 프리킷은 번들별 내역이 없습니다.', lQR: 'P3 프리킷 (현장)', rtP3: 'P3 경로', rtLinP3: 'P3 라인 A16/A17 프리킷 (번들은 IMS P3에 입고되지 않음)', rtDallas: '달라스', rtRampa: '램프', parte: '품번', color: '색상', black: '검정', white: '흰색',
       sistema: '시스템', samsung: '삼성', estado: '상태', cuadra: '일치', revisar: '확인', tipoSam: '삼성 구분',
       tipo: '이동', cant: '수량', ref: '문서 / 참조', nota: '메모', registrar: '등록', loc: '위치', kind: '케이블 구분', motivo: '사유 (필수)',
       t_ISSUE: 'P3 창고에서 P3 WIP로 불출', t_ASSEMBLE: 'P3에서 번들 조립', t_RTN_BT: '완성 번들 IMS P3 입고', t_PREKIT_P3: '번들 P3 프리킷으로 이동 (A16 / A17)', t_SHIP_P4: 'P4 창고로 번들 출고', t_RUN_P4: '모델 투입: P4 창고에서 라인(P4 WIP)으로', t_QR: 'QR 라벨: 차감 후 달라스 출고', t_LOSS: '분실 / 손실',
@@ -5297,38 +5297,51 @@ window.generarReporteFecha = generarReporteFecha;
       (al.length ? al.map(function (a) { return '<div class="dlc-al ' + a.s + '">' + h(a.t) + '</div>'; }).join('') : '<div class="dlc-al ok">' + h(T('sinAlertas')) + '</div>');   // las alertas van al final de la pantalla
 
     // flujo
-    html += '<div class="sh">' + h(T('flow')) + '</div><div class="dlc-flow">';
+    html += '<div class="sh">' + h(T('flow')) + '</div>';
     var trT = 0; keys.forEach(function (pn) { trT += Math.max(0, res[pn].transito); });
-    html += '<div class="dlc-node"><div class="dlc-app">Samsung</div><div class="dlc-nn">' + h(T('lTrN')) + '</div><div class="dlc-nv">' + n(trT) + '</div><div class="dlc-nm"><span>' + h(T('embTrans')) + '</span></div></div>';
+    var samH = '<div class="dlc-node"><div class="dlc-app">Samsung</div><div class="dlc-nn">' + h(T('lTrN')) + '</div><div class="dlc-nv">' + n(trT) + '</div><div class="dlc-nm"><span>' + h(T('embTrans')) + '</span></div></div>';
     var lotesAll = lotesDe(st.movs), ETAPA_DE = { p3wip: 'ASSEMBLE', p3bt: 'RTN_BT', p3pk: 'PREKIT_P3', p4ims: 'P4' };
     var chipLotes = function (et) {
       var c = lotesAll.filter(function (l) { return et === 'P4' ? (l.etapa === 'SHIP_P4' || l.etapa === 'RUN_P4' || l.etapa === 'QR') : l.etapa === et; }), q = c.reduce(function (a, l) { return a + l.qty; }, 0);
       return '<div class="dlc-nm"><button type="button" class="dlc-b2" style="padding:2px 8px;font-size:11px;margin-top:6px" onclick="dlc.etapaAbrir(\'' + et + '\')">🏷 ' + c.length + ' ' + h(T('qrLotesN')) + ' · ' + n(q) + ' pz ' + (etapaAb === et ? '▾' : '▸') + '</button></div>';
     };
     var nodos = LOCS.map(function (l) { return [l, locKey(l), (l === 'p4pk' || l === 'p3fl') ? 'ShipQR' : (l.indexOf('p3') === 0 ? 'IMS P3' : 'IMS P4')]; });
+    var nodoH = {};
     nodos.forEach(function (nd) {
       var i2 = 0, b2 = 0; keys.forEach(function (pn) { i2 += res[pn][nd[0]].item; b2 += res[pn][nd[0]].bundle; });
       var t2 = i2 + b2, pct = t2 > 0 ? Math.max(0, Math.min(100, i2 / t2 * 100)) : 0;
-      html += '<div class="dlc-node"><div class="dlc-app">' + nd[2] + '</div><div class="dlc-nn">' + h(T(nd[1])) + '</div><div class="dlc-nv">' + n(t2) + '</div>' +
+      nodoH[nd[0]] = '<div class="dlc-node"><div class="dlc-app">' + nd[2] + '</div><div class="dlc-nn">' + h(T(nd[1])) + '</div><div class="dlc-nv">' + n(t2) + '</div>' +
         ((nd[0] === 'p3wh' || nd[0] === 'p3wip') ? '<div class="dlc-bar"><i style="width:' + pct + '%"></i></div><div class="dlc-nm"><span>' + n(i2) + ' ' + h(T('item')) + '</span><span>' + n(b2) + ' ' + h(T('bundle')) + '</span></div>' : '') +
         (nd[0] === 'p3wip' ? (function () { var tq = 0; keys.forEach(function (pn) { tq += res[pn].enRuta || 0; }); return tq > 0 ? '<div class="dlc-nm"><span>+ ' + n(tq) + ' ' + h(T('plTrans')) + '</span></div>' : ''; })() : '') + '</div>';
     });
-    html += '</div>';
+    // v52: una fila con todo el recorrido (camino P4) + franja del camino P3 (WIP P3 -> pre-kit A16/A17 -> Pre-Kit P3 Piso)
+    var shT = 0; keys.forEach(function (pn) { shT += res[pn].enviadoHoy || 0; });
+    var ARW = '<svg class="dlc-arw" viewBox="0 0 40 24"><path d="M3 12 H33 M23 3 L35 12 L23 21" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', DNW = '<svg class="dlc-arw2" viewBox="0 0 34 34"><path d="M8 3 V24 H30 M22 16 L31 24 L22 32" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', UPW = '<svg class="dlc-arw2" viewBox="0 0 34 34"><path d="M3 24 H24 V5 M16 13 L24 3 L32 13" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var filaRt = [samH, nodoH.p3wh, nodoH.p3wip, nodoH.p3bt, nodoH.p4ims, nodoH.p4wip, nodoH.p4pk, nodoH.p3fl,
+      '<div class="dlc-node qr"><div class="dlc-app">🚚 ' + h(T('rtRampa')) + '</div><div class="dlc-nn">' + h(T('rtDallas')) + '</div><div class="dlc-nv">' + n(shT) + '</div><div class="dlc-nm"><span>' + h(T('enviadoHoy')) + '</span></div></div>'];
+    html += '<div class="dlc-rt"><div class="dlc-g">';
+    filaRt.forEach(function (c, i) {
+      html += '<div style="grid-column:' + (1 + i * 2) + ';grid-row:1;display:grid">' + c + '</div>';
+      if (i < filaRt.length - 1) html += '<span class="dlc-ar" style="grid-column:' + (2 + i * 2) + ';grid-row:1">' + ARW + '</span>';
+    });
+    html += '<div class="dlc-p3" style="grid-column:5 / 16;grid-row:2">' + DNW + '<span><b>' + h(T('rtP3')) + '</b> · ' + h(T('rtLinP3')) + '</span>' + UPW + '</div>';
+    html += '</div></div>';
     html += etapaLista();
 
-    // matriz parte x color
+    // matriz parte x color (v51: el desglose a granel / bundle solo donde puede haber cable suelto: Almacén P3 y WIP P3)
+    var GRAN_LOC = { p3wh: 1, p3wip: 1 };
     html += '<div class="sh">' + h(T('matrix')) + '</div><div class="dlc-scroll"><table class="dlc-t"><thead><tr><th>' + h(T('parte')) + '</th>' + LOCS.map(function (l) { return '<th>' + h(T(locKey(l))) + '</th>'; }).join('') + '<th>' + h(T('sumTotal')) + '</th></tr></thead><tbody>';
     keys.forEach(function (pn) {
       var r = res[pn];
       html += '<tr><td>' + chip(colorDe(pn)) + '<b>' + pn + '</b><br><span class="dlc-mut">' + h(colorTxt(colorDe(pn))) + '</span></td>' +
-        LOCS.map(function (l) { return '<td><b>' + n(totalLoc(r, l)) + '</b><br><span class="dlc-mut">' + n(r[l].item) + ' / ' + n(r[l].bundle) + '</span>' + (l === 'p3bt' && r.p3tr > 0 ? '<br><span class="dlc-pill warn">↗ ' + n(r.p3tr) + ' ' + h(T('trP4')) + '</span>' : '') + '</td>'; }).join('') +
+        LOCS.map(function (l) { return '<td><b>' + n(totalLoc(r, l)) + '</b>' + (GRAN_LOC[l] ? '<br><span class="dlc-mut">' + n(r[l].item) + ' / ' + n(r[l].bundle) + '</span>' : '') + (l === 'p3bt' && r.p3tr > 0 ? '<br><span class="dlc-pill warn">↗ ' + n(r.p3tr) + ' ' + h(T('trP4')) + '</span>' : '') + '</td>'; }).join('') +
         '<td><b>' + n(totalPn(r)) + '</b></td></tr>';
     });
     // v50: renglón de suma de todas las columnas (negro + blanco)
     (function () {
       var bs = 'border-top:2px solid var(--border2,#888);background:rgba(66,133,244,.12)';
       html += '<tr style="font-weight:700"><td style="' + bs + '">Σ ' + h(T('sumTotal')) + '</td>' +
-        LOCS.map(function (l) { var t = 0, it = 0, bu = 0; keys.forEach(function (pn) { t += totalLoc(res[pn], l); it += res[pn][l].item; bu += res[pn][l].bundle; }); return '<td style="' + bs + '"><b>' + n(t) + '</b><br><span class="dlc-mut">' + n(it) + ' / ' + n(bu) + '</span></td>'; }).join('') +
+        LOCS.map(function (l) { var t = 0, it = 0, bu = 0; keys.forEach(function (pn) { t += totalLoc(res[pn], l); it += res[pn][l].item; bu += res[pn][l].bundle; }); return '<td style="' + bs + '"><b>' + n(t) + '</b>' + (GRAN_LOC[l] ? '<br><span class="dlc-mut">' + n(it) + ' / ' + n(bu) + '</span>' : '') + '</td>'; }).join('') +
         '<td style="' + bs + '"><b>' + n(keys.reduce(function (s2, pn) { return s2 + totalPn(res[pn]); }, 0)) + '</b></td></tr>';
     })();
     html += '</tbody></table></div><div class="dlc-mut">' + h(T('itemBundle')) + '</div>' + (keys.some(function (pn) { return res[pn].p3tr > 0; }) ? '<div class="dlc-mut" style="margin-top:.3rem">↗ ' + h(T('trNota')) + '</div>' : '');
@@ -6059,6 +6072,7 @@ window.generarReporteFecha = generarReporteFecha;
       '.dlc-filtro{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.7rem}.dlc-f{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:18px;padding:7px 13px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}.dlc-f.on{background:rgba(77,166,255,.14);border-color:var(--accent);color:var(--accent)}' +
       '.dlc-chip{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:2px solid #8a97b8}.dlc-chip.k{background:#000;border-color:#8a97b8}.dlc-chip.w{background:#fff;border-color:#8a97b8}' +
       '.dlc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin-bottom:.8rem}' +
+      '.dlc-rt{overflow-x:auto;padding-bottom:.3rem}.dlc-g{display:grid;grid-template-columns:repeat(8,minmax(150px,1fr) 46px) minmax(150px,1fr);row-gap:.35rem;align-items:stretch;min-width:1650px}.dlc-ar{align-self:center;justify-self:center;color:var(--red);display:flex}.dlc-arw{width:40px;height:24px}.dlc-arw2{width:34px;height:34px;color:var(--red);flex:0 0 auto}.dlc-p3{display:flex;align-items:center;justify-content:space-between;gap:.6rem;border:2px dashed var(--red);border-top:none;border-radius:0 0 12px 12px;padding:.3rem .7rem;color:var(--text2);font-size:13px}.dlc-p3 b{color:var(--red);letter-spacing:.06em;font-size:12px}' +
       '.dlc-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.6rem}.dlc-node{background:var(--bg2);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:12px;padding:.8rem}.dlc-node.qr{border-top-color:var(--red)}' +
       '.dlc-app{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.08em}.dlc-nn{font-weight:600;margin:.1rem 0}.dlc-nv{font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700}' +
       '.dlc-bar{height:6px;border-radius:3px;background:var(--green);margin:.4rem 0;overflow:hidden}.dlc-bar i{display:block;height:100%;background:var(--accent)}.dlc-nm{display:flex;justify-content:space-between;gap:.4rem;font-size:12px;color:var(--text2)}' +
