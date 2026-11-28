@@ -4675,7 +4675,7 @@ window.generarReporteFecha = generarReporteFecha;
     { pn: 'GH39-02176A', color: 'black' },
     { pn: 'GH39-02115A', color: 'white' }
   ];
-  var APP_VER = 'v27nov-1830';   // versión visible en el encabezado: se actualiza en cada entrega
+  var APP_VER = 'v27nov-1845';   // versión visible en el encabezado: se actualiza en cada entrega
   var LOCS = ['p3wh', 'p3wip', 'p3bt', 'p3pk', 'p4ims', 'p4wip', 'p4pk'];
   var COL_MOV = 'dlc_cable_mov', COL_AUD = 'dlc_cable_auditoria', COL_CFG = 'dlc_cable_config';
   var IDLE_MS = 10 * 60 * 1000, MAX_FAILS = 5, LOCK_MIN = 5, PEND_H = 8;
@@ -5078,7 +5078,7 @@ window.generarReporteFecha = generarReporteFecha;
       var bd = await db.collection('bom_simulator_p4').doc('bom_activo').get();
       var filas = [];
       if (bd.exists && bd.data().bom) { try { filas = JSON.parse(bd.data().bom); } catch (e) { filas = []; } }
-      var sm = null, padre = null, hijosTmp = {};
+      var sm = null, padre = null, hijosTmp = {}, smL1 = {};   // smL1: códigos GH90 de nivel 1 de cada modelo (pre-kit, bundle…)
       p.tope = {};     // relaciones manuales ShipQR -> bundle (solo para partes que no están en el BOM)
       p.hijo = {};     // GH90 anidado dentro de un bundle GH90 que lleva cable -> ese bundle (relación automática del BOM)
       p.bomPn = {};    // todos los números de parte que existen en el BOM
@@ -5087,6 +5087,7 @@ window.generarReporteFecha = generarReporteFecha;
         if (pn) p.bomPn[pn] = true;
         if (f.sm !== sm) { sm = f.sm; padre = null; }
         var lvl = f.isLevel1 || f.level === 1;
+        if (lvl && pn.indexOf('GH90') === 0 && !esManualB(f.desc)) { var sl = smL1[f.sm] = smL1[f.sm] || []; if (sl.indexOf(pn) < 0) sl.push(pn); }
         if (lvl) { padre = pn.indexOf('GH90') === 0 ? pn : null; return; }
         if (padre && pn.indexOf('GH90') === 0) { var hh = hijosTmp[pn] = hijosTmp[pn] || []; if (hh.indexOf(padre) < 0) hh.push(padre); }
         if (padre && cablePns.indexOf(pn) >= 0) {
@@ -5095,6 +5096,18 @@ window.generarReporteFecha = generarReporteFecha;
         }
       });
       Object.keys(hijosTmp).forEach(function (k) { if (p.mapa[k]) return; var a2 = hijosTmp[k].filter(function (g) { return p.mapa[g]; }); if (a2.length) p.hijo[k] = a2; });
+      // Relación automática por modelo del BOM: el pre-kit (GH90 de nivel 1) de un modelo lleva el bundle con cable de ese mismo modelo
+      var porModelo = {};
+      Object.keys(smL1).forEach(function (m) {
+        var bs = smL1[m].filter(function (g) { return p.mapa[g]; });
+        if (!bs.length) return;
+        smL1[m].forEach(function (g) { if (p.mapa[g] || p.hijo[g]) return; var a3 = porModelo[g] = porModelo[g] || []; bs.forEach(function (b) { if (a3.indexOf(b) < 0) a3.push(b); }); });
+      });
+      Object.keys(porModelo).forEach(function (g) {
+        var bs = porModelo[g], cab = {};
+        bs.forEach(function (b) { p.mapa[b].forEach(function (c) { cab[c] = 1; }); });
+        if (Object.keys(cab).length === 1) p.hijo[g] = [bs[0]];   // solo si no hay duda del color del cable
+      });
       p.nMapa = Object.keys(p.mapa).length;
       // relaciones propias ShipQR -> bundle (guardadas por el usuario, no dependen de ShipQR)
       try { var md = await db.collection(COL_CFG).doc('mapa_prekit').get(); p.manual = (md.exists && md.data().mapa) ? md.data().mapa : {}; } catch (em) { p.manual = {}; }
